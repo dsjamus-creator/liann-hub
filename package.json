@@ -8,10 +8,15 @@
     "start": "node scripts/serve.mjs",
     "test": "node --test tests/unit.test.mjs",
     "test:smoke": "node tests/smoke.mjs",
-    "check": "npm test && npm run test:smoke"
+    "check": "npm test && npm run test:smoke",
+    "deploy": "wrangler deploy",
+    "deploy:check": "wrangler deploy --dry-run"
   },
   "devDependencies": {
-    "playwright-core": "1.56.1"
+    "playwright-core": "1.56.1",
+    "wrangler": "^4.40.0"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

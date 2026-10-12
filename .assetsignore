@@ -1,0 +1,17 @@
+# Only the site is uploaded: index.html, 404.html, styles.css, _headers, src/, assets/, data/.
+.git
+.gitignore
+.assetsignore
+.github
+node_modules
+tests
+scripts
+docs
+test-results
+package.json
+package-lock.json
+wrangler.jsonc
+README.md
+*.log
+.env
+.env.*
