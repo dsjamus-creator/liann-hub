@@ -99,10 +99,11 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     assert.match(await page.locator('table.words').innerText(), /一般[\s\S]*ordinary[\s\S]*一半[\s\S]*half/)
     await noOverflow(page); await shot(page, `${tag}-library`)
   })
-  await step(`${tag}: Downloads lists the manifest and offers nothing unchecked`, async () => {
+  await step(`${tag}: Downloads lists the manifest and offers only checked files (PolyFlow)`, async () => {
     await page.goto(url + '#downloads'); await page.locator('[data-slot]').first().waitFor()
     assert.equal(await page.locator('[data-slot]').count(), 13)
-    assert.equal(await page.locator('[data-slot] a[download]').count(), 0)
+    assert.equal(await page.locator('[data-slot] a[download]').count(), 1)
+    assert.equal(await page.locator('[data-slot="polyflow/windows"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/polyflow/windows/0.1.0/PolyFlow-Setup-0.1.0.exe')
     assert.equal(await page.locator('[data-slot="mahjong-tones/test-build"]').count(), 1)
     assert.doesNotMatch(await page.locator('main').innerText(), /signing|redistribution/i)
     await noOverflow(page); await shot(page, `${tag}-downloads`)
