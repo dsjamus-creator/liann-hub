@@ -27,6 +27,14 @@ If `app.lwliann.com` already has a DNS record (for example a placeholder), Cloud
 
 Until those are done, the live hub shows its pages, apps and downloads, but sign-in and the Library show "Could not reach the server".
 
+## Downloads bucket (downloads.lwliann.com)
+
+App installers are too big for the hub itself (Workers allow 25 MiB per file) and can't be linked from private repos. They are served from the public R2 bucket **`liann-downloads`**, created on 12 Oct 2026 on the lwliann.com Cloudflare account.
+
+1. Cloudflare → R2 → `liann-downloads` → Settings → **Custom Domains**: add `downloads.lwliann.com`.
+2. Cloudflare → R2 → **Manage API tokens**: create a token with *Object Read & Write*, limited to `liann-downloads`. Add it to each app repo that publishes installers as the Actions secret `LIANN_DOWNLOADS_R2_TOKEN`, together with `CLOUDFLARE_ACCOUNT_ID`. The first one is lwl-backend, for PolyFlow (lwl-backend PR #114).
+3. Each file lives at `<product>/<platform>/<version>/<file>` and never changes once published. When a file is uploaded, set its manifest entry's `file` to the full `https://downloads.lwliann.com/...` URL. The hub then shows Download, with the size and SHA-256.
+
 ## Later
 
 - **One sign-in across the hub and the games.** The hub (`app.lwliann.com`) and the games (`playtest.lwliann.com`) are different origins, so learners sign in to each separately. To make it one sign-in, either serve the games from `app.lwliann.com` too, or add a token hand-off from the hub to the games.

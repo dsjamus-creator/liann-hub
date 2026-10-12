@@ -52,6 +52,23 @@
   },
   {
     "file": null,
+    "bytes": 110447405,
+    "sha256": "b95ef832ab542617502031a079320de36cc96b2003c379ca0a8602a9534f6c73",
+    "builtAt": "2026-10-12T22:05:54Z",
+    "product": "polyflow",
+    "name": "PolyFlow for Windows",
+    "version": "0.1.0",
+    "platform": "Windows installer",
+    "hubSlot": "polyflow/windows",
+    "sourceRepo": "dsjamus-creator/lwl-backend",
+    "sourceCommit": "polyflow-desktop-v0.1.0",
+    "buildCommand": "GitHub Actions: PolyFlow Windows installer (tag polyflow-desktop-v0.1.0)",
+    "licenceNotes": "Preview installer, not code-signed; Windows may ask the user to confirm the publisher.",
+    "notes": "Built and released by Codex. Set file to https://downloads.lwliann.com/polyflow/windows/0.1.0/PolyFlow-Setup-0.1.0.exe once it is in the liann-downloads bucket (lwl-backend PR #114).",
+    "producer": "codex"
+  },
+  {
+    "file": null,
     "bytes": null,
     "sha256": null,
     "builtAt": null,

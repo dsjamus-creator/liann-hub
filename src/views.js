@@ -109,7 +109,7 @@ export function statusOf(app, downloads) {
 export function appCard(app, s) {
   const st = statusOf(app, s.downloads)
   const url = appUrl(app)
-  const act = app.st === 'ok' ? `<a class="btn" href="${esc(url)}" target="_blank" rel="noopener" data-open="${app.id}">Open</a>`
+  const act = app.st === 'ok' ? `${app.slot ? '<button class="btn ghost" data-nav="downloads">Install</button>' : ''}<a class="btn" href="${esc(url)}" target="_blank" rel="noopener" data-open="${app.id}">Open</a>`
     : app.st === 'soon' ? '<button class="btn ghost" disabled>Coming soon</button>'
       : `<button class="btn ghost" data-nav="downloads">Get</button>`
   return `<div class="c" data-app="${app.id}">${app.yt ? `<div style="position:relative">${art(app.id)}<span class="ytb">▶ YouTube app</span></div>` : art(app.id)}<div class="h"><div class="tile">${app.g}</div><div><div class="t">${esc(app.name)}</div><div class="s">${esc(app.kind)}</div></div></div>

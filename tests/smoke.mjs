@@ -101,7 +101,7 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
   })
   await step(`${tag}: Downloads lists the manifest and offers nothing unchecked`, async () => {
     await page.goto(url + '#downloads'); await page.locator('[data-slot]').first().waitFor()
-    assert.equal(await page.locator('[data-slot]').count(), 12)
+    assert.equal(await page.locator('[data-slot]').count(), 13)
     assert.equal(await page.locator('[data-slot] a[download]').count(), 0)
     assert.equal(await page.locator('[data-slot="mahjong-tones/test-build"]').count(), 1)
     assert.doesNotMatch(await page.locator('main').innerText(), /signing|redistribution/i)
