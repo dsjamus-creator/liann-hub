@@ -13,7 +13,8 @@
     "sourceCommit": "32d4a55de83adfcdcdb9166a774449c9e5440c3c",
     "buildCommand": null,
     "licenceNotes": "Review extension code, media and font licences before redistribution.",
-    "notes": "Newest committed ZIP found at Dual Subs web/dual-subs-v0.16.61.zip is 65,252,918 bytes, above 50 MB cap; newer Dual-subs source exists but no documented build command or verified release ZIP."
+    "notes": "Newest committed ZIP found at Dual Subs web/dual-subs-v0.16.61.zip is 65,252,918 bytes, above 50 MB cap; newer Dual-subs source exists but no documented build command or verified release ZIP.",
+    "producer": "codex"
   },
   {
     "file": null,
@@ -29,7 +30,8 @@
     "sourceCommit": "55815cf620b5422b6167682d10b75e3c9fe80faa",
     "buildCommand": null,
     "licenceNotes": "OCR model and other third-party notices require redistribution review.",
-    "notes": "No committed extension ZIP or documented build command found in inspected tree."
+    "notes": "No committed extension ZIP or documented build command found in inspected tree.",
+    "producer": "codex"
   },
   {
     "file": null,
@@ -45,7 +47,8 @@
     "sourceCommit": "d7574b117b4ebd2d22d849c5f9f6ea81ac4c9c97",
     "buildCommand": null,
     "licenceNotes": "Review bundled fonts, lyrics and media before redistribution.",
-    "notes": "Committed v6.17 HTML exists, but no committed offline ZIP or documented packaging command; do not invent a build."
+    "notes": "Committed v6.17 HTML exists, but no committed offline ZIP or documented packaging command; do not invent a build.",
+    "producer": "codex"
   },
   {
     "file": null,
@@ -58,10 +61,11 @@
     "platform": "Unity 6000",
     "hubSlot": "mahjong-tones/unity-package",
     "sourceRepo": "dsjamus-creator/liann-mahjong-tones-unity-under-dsjamus-creator",
-    "sourceCommit": "727b9181c97a5440611177b12e4065641796613f",
+    "sourceCommit": null,
     "buildCommand": "npm pack",
     "licenceNotes": "CC BY-SA-derived word data; pronunciation audio and OFL fonts need notices.",
-    "notes": "Package v0.2.0 branch found; terminal Git network unavailable, so npm pack could not be run. No .tgz committed."
+    "notes": "Produced by Claude, not Codex (owner, 12 Oct 2026). Claude packs it from liann-mahjong-tones-unity-under-dsjamus-creator after the DSJ-PC retest passes, then fills file, bytes, sha256 and builtAt.",
+    "producer": "claude"
   },
   {
     "file": null,
@@ -74,10 +78,11 @@
     "platform": "Unity test build",
     "hubSlot": "mahjong-tones/test-build",
     "sourceRepo": "dsjamus-creator/liann-mahjong-tones-unity-under-dsjamus-creator",
-    "sourceCommit": "727b9181c97a5440611177b12e4065641796613f",
+    "sourceCommit": null,
     "buildCommand": "LiANN > Mahjong Tones > Build Android / Build iOS / Build Windows (Unity editor menu)",
     "licenceNotes": "Same notices as Unity package; check signing secrets before upload.",
-    "notes": "No test build artifact found in inspected branch."
+    "notes": "Produced by Claude, not Codex (owner, 12 Oct 2026). Built on DSJ-PC from the Unity editor menu after the retest passes; signing stays on the build machine. Claude fills file, bytes, sha256 and builtAt.",
+    "producer": "claude"
   },
   {
     "file": null,
@@ -93,7 +98,8 @@
     "sourceCommit": "35e95dbed85449d20470d4fa440f22a43de63023",
     "buildCommand": null,
     "licenceNotes": "Do not include signing keys or personal test data.",
-    "notes": "No APK found in inspected repository tree."
+    "notes": "No APK found in inspected repository tree.",
+    "producer": "codex"
   },
   {
     "file": null,
@@ -109,7 +115,8 @@
     "sourceCommit": "7dcbb9216775afe0acca7ec0fe882b21257a90a1",
     "buildCommand": null,
     "licenceNotes": "No source word data should be embedded without attribution.",
-    "notes": "No standalone JSON/CSV template found in inspected release branch."
+    "notes": "No standalone JSON/CSV template found in inspected release branch.",
+    "producer": "codex"
   },
   {
     "file": null,
@@ -125,7 +132,8 @@
     "sourceCommit": null,
     "buildCommand": null,
     "licenceNotes": "No template to review.",
-    "notes": "Separate repository is empty; no standalone JSON/CSV template found in shared playtest tree."
+    "notes": "Separate repository is empty; no standalone JSON/CSV template found in shared playtest tree.",
+    "producer": "codex"
   },
   {
     "file": null,
@@ -141,7 +149,8 @@
     "sourceCommit": null,
     "buildCommand": null,
     "licenceNotes": "Comic art ownership and PDF font embedding require verification.",
-    "notes": "No episode PDF repository or file found in inspected account/tree inventory."
+    "notes": "No episode PDF repository or file found in inspected account/tree inventory.",
+    "producer": "codex"
   },
   {
     "file": null,
@@ -157,7 +166,8 @@
     "sourceCommit": null,
     "buildCommand": null,
     "licenceNotes": "Comic line art and fonts require verified redistribution rights.",
-    "notes": "No finished colouring PDF found; stable slot reserved."
+    "notes": "No finished colouring PDF found; stable slot reserved.",
+    "producer": "codex"
   },
   {
     "file": null,
@@ -173,7 +183,8 @@
     "sourceCommit": null,
     "buildCommand": null,
     "licenceNotes": "Character-art rights require verification.",
-    "notes": "No finished sticker PNG found; stable slot reserved."
+    "notes": "No finished sticker PNG found; stable slot reserved.",
+    "producer": "codex"
   },
   {
     "file": null,
@@ -189,7 +200,8 @@
     "sourceCommit": null,
     "buildCommand": null,
     "licenceNotes": "Character-art and font rights require verification.",
-    "notes": "No finished print-sheet PDF found; stable slot reserved."
+    "notes": "No finished print-sheet PDF found; stable slot reserved.",
+    "producer": "codex"
   },
   {
     "file": null,
@@ -205,7 +217,7 @@
     "sourceCommit": null,
     "buildCommand": null,
     "licenceNotes": "Final model and packaging rights require verification.",
-    "notes": "Only placeholders described in design; no final GLB found in inspected trees."
+    "notes": "Only placeholders described in design; no final GLB found in inspected trees.",
+    "producer": "codex"
   }
 ]
-

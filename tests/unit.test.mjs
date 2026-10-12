@@ -92,3 +92,8 @@ test('config holds public addresses only', async () => {
   assert.doesNotMatch(src, /(service_role|sb_secret_|sb_publishable_|eyJhbGci)/)
   assert.equal(config.hubOrigin, 'https://app.lwliann.com')
 })
+
+test('Game 3 Unity files are Claude-produced; every other download is expected from Codex', async () => {
+  const raw = JSON.parse(await readFile(new URL('../data/downloads.json', import.meta.url), 'utf8'))
+  for (const e of raw) assert.equal(e.producer, e.product === 'mahjong-tones' ? 'claude' : 'codex', e.hubSlot)
+})

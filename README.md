@@ -38,6 +38,6 @@ It runs at desktop and phone sizes, checks for sideways overflow, and fails on a
 
 ## Updating downloads
 
-Copy the registry's `downloads/manifest.json` to `data/downloads.json`. Entries need `hubSlot`, `name`, `file` (an https URL, or a path relative to `data/`), `bytes` and `sha256` before a Download button appears. The apps' `slot` values in `src/config.js` must exist in the manifest, and a unit test checks this.
+Copy the registry's `downloads/manifest.json` to `data/downloads.json`. Each entry has a `producer`: `claude` for the Game 3 Unity package and test build, and `codex` for everything else. Entries need `hubSlot`, `name`, `file` (an https URL, or a path relative to `data/`), `bytes` and `sha256` before a Download button appears. The apps' `slot` values in `src/config.js` must exist in the manifest, and a unit test checks this.
 
 Deploying is a separate, owner-approved step. See [docs/DEPLOY.md](docs/DEPLOY.md).
