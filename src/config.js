@@ -25,8 +25,9 @@ export const APPS = [
   { id: 'game', g: '游', name: 'Coming video game', kind: 'Game · native', desc: 'Announced soon.', st: 'soon' },
 ]
 
-// Supabase emails an 8-digit sign-in code for this project (Auth > Email OTP length). The hub also accepts 6–10 digits.
-export const CODE_LENGTH = 8
+// One six-digit email code for every LiANN sign-in (owner, 13 Oct 2026): Supabase Auth > Email > "Email OTP length" = 6.
+// account.js still accepts 6–10 digits.
+export const CODE_LENGTH = 6
 
 export const appUrl = app => app.url || (app.path ? new URL(app.path, config.gamesOrigin).href : null)
 
