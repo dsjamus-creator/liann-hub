@@ -4,6 +4,16 @@ The hub runs on Cloudflare Workers as a static-assets-only Worker named `liann-h
 
 `.assetsignore` limits the upload to the site itself: `index.html`, `404.html`, `styles.css`, `_headers`, `src/`, `assets/` and `data/`. Tests, scripts, docs, `node_modules` and the config files stay private. This was checked with `wrangler dev`: those paths return 404.
 
+## Automatic deploys (GitHub Actions)
+
+`.github/workflows/deploy.yml` runs the unit and browser tests, then deploys, on every push to `main`. You can also start it by hand: **Actions → Deploy hub → Run workflow**. Nothing is deployed if a test fails.
+
+One-time setup, in this repo's **Settings → Secrets and variables → Actions → New repository secret**:
+- `CLOUDFLARE_API_TOKEN`: a Workers token (Create Token → **Edit Cloudflare Workers** template, plus **Zone → DNS → Edit** for lwliann.com). Not the R2 downloads token.
+- `CLOUDFLARE_ACCOUNT_ID`: the 32-character ID in the dashboard address (`dash.cloudflare.com/<account id>/home`).
+
+Without both secrets the workflow still runs the tests and says the deploy was skipped.
+
 ## One-time deploy (owner, on a machine signed in to the Cloudflare account that holds lwliann.com)
 
 ```
