@@ -22,7 +22,7 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     catch { throw new AccountError('Could not reach the server. Check your connection and try again.', 'network') }
     let body = {}
     try { body = response.status === 204 ? {} : await response.json() } catch { body = {} }
-    if (!response.ok) throw new AccountError(body.error_description || body.msg || body.error || `HTTP ${response.status}`, body.error_code || body.error || 'http', response.status)
+    if (!response.ok) throw Object.assign(new AccountError(body.error_description || body.msg || body.error || `HTTP ${response.status}`, body.error_code || body.error || 'http', response.status), { body })
     return body
   }
 
@@ -119,7 +119,7 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
       const result = await backendGet('/learning/setlists')
       return Array.isArray(result.setlists) ? result.setlists : []
     } catch (error) {
-      if (error.code === 'not_a_student') throw new AccountError('Your Library starts when you save your first words in a game.', 'not_a_student', error.status)
+      if (error.code === 'not_a_student') throw Object.assign(new AccountError('Your Library needs a learner profile first.', 'not_a_student', error.status), { profile: error.body?.profile })
       throw error
     }
   }
@@ -130,5 +130,26 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     return { name: result.name, words: Array.isArray(result.words) ? result.words : [] }
   }
 
-  return { requestCode, verifyCode, accessToken, user, signOut, setlists, setlistWords, hasSession: () => Boolean(read()?.access_token) }
+  // Finish the learner profile (One LiANN account, B2): ask AlongSide for a one-time pass, which opens its profile
+  // form already signed in. Only AlongSide's own addresses are ever used, whatever the reply says.
+  async function profileLink(profile) {
+    const token = await accessToken()
+    if (!token) throw new AccountError('Sign in again to finish your profile.', 'signed_out')
+    const origin = new URL(backend).origin
+    const ours = u => { try { return new URL(u).origin === origin } catch { return false } }
+    const form = `${origin}/student#profile`
+    const passUrl = ours(profile?.sessionPass?.url) ? profile.sessionPass.url : `${origin}/learning/session-pass`
+    const next = /^\/(?!\/)[^\s\\]*$/.test(profile?.sessionPass?.next || '') ? profile.sessionPass.next : '/student#profile'
+    try {
+      const result = await json(passUrl, { method: 'POST', headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ next }) })
+      if (!ours(result.url)) throw new AccountError('AlongSide sent an unexpected address.', 'bad_pass')
+      return result.url
+    } catch (error) {
+      // An AlongSide without the pass yet: open the form; it asks the learner to sign in there.
+      if (error.status === 404) return form
+      throw error
+    }
+  }
+
+  return { requestCode, verifyCode, accessToken, user, signOut, setlists, setlistWords, profileLink, hasSession: () => Boolean(read()?.access_token) }
 }

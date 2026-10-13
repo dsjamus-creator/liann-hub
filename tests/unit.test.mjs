@@ -87,6 +87,45 @@ test('email code sign-in stores a session and reads SetLists with a bearer token
   await assert.rejects(acct.setlists(), /Sign in/)
 })
 
+test('a missing learner profile leads to AlongSide through a one-time pass, on AlongSide addresses only', async () => {
+  const f = fakeServer(), profile = { url: 'https://be.test/student#profile', sessionPass: { url: 'https://be.test/learning/session-pass', next: '/student#profile' } }
+  const acct = createAccount({ pinyinApi: 'https://api.test', backend: 'https://be.test', fetchImpl: f.fetchImpl, storage: f.storage })
+  await acct.verifyCode('a@b.c', '123456')
+  let sent
+  const pass = (url = 'https://be.test/auth/liann/continue#pass=abc') => opts => { sent = opts; return { ok: true, status: 200, json: async () => ({ url, expiresInSeconds: 60 }) } }
+  const route = (key, fn) => { const orig = f.fetchImpl; f.fetchImpl = async (u, o = {}) => `${o.method || 'GET'} ${u}` === key ? fn(o) : orig(u, o) }
+  const acct2 = () => createAccount({ pinyinApi: 'https://api.test', backend: 'https://be.test', fetchImpl: (u, o) => f.fetchImpl(u, o), storage: f.storage })
+
+  route('GET https://be.test/learning/setlists', () => ({ ok: false, status: 403, json: async () => ({ error: 'not_a_student', profile }) }))
+  const error = await acct2().setlists().then(() => null, e => e)
+  assert.equal(error.code, 'not_a_student')
+  assert.deepEqual(error.profile, profile)
+
+  route('POST https://be.test/learning/session-pass', pass())
+  assert.equal(await acct2().profileLink(profile), 'https://be.test/auth/liann/continue#pass=abc')
+  assert.equal(sent.headers.Authorization, 'Bearer at1')
+  assert.deepEqual(JSON.parse(sent.body), { next: '/student#profile' })
+
+  // A reply naming another site is never followed: the pass request stays on AlongSide, and so does the result.
+  await acct2().profileLink({ sessionPass: { url: 'https://evil.test/steal', next: '//evil.test' } })
+  assert.deepEqual(JSON.parse(sent.body), { next: '/student#profile' })
+  route('POST https://be.test/learning/session-pass', pass('https://evil.test/x'))
+  await assert.rejects(acct2().profileLink(profile), /unexpected address/)
+
+  // An AlongSide without the pass yet: open the form itself.
+  route('POST https://be.test/learning/session-pass', () => ({ ok: false, status: 404, json: async () => ({}) }))
+  assert.equal(await acct2().profileLink(undefined), 'https://be.test/student#profile')
+})
+
+test('the Library asks for the learner profile instead of showing an error', () => {
+  const html = vHub({ user: { email: 'x@y.z' }, page: 'library', theme: { ds: 'liann', t: 'dark' }, setlists: { status: 'needs_profile' } })
+  assert.match(html, /id="finishprofile"/)
+  assert.match(html, /Finish your learner profile/)
+  assert.doesNotMatch(html, /id="retrylib"/)
+  const after = vHub({ user: { email: 'x@y.z' }, page: 'library', theme: { ds: 'liann', t: 'dark' }, setlists: { status: 'needs_profile', opened: true } })
+  assert.match(after, /id="retrylib"/)
+})
+
 test('config holds public addresses only', async () => {
   const src = await readFile(new URL('../src/config.js', import.meta.url), 'utf8')
   assert.doesNotMatch(src, /(service_role|sb_secret_|sb_publishable_|eyJhbGci)/)

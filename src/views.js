@@ -177,6 +177,14 @@ function pApps(s) {
   ${f !== 'Apps' ? sec('Games', GAMES()) : ''}${f !== 'Games' ? sec('Apps', TOOLS()) : ''}`
 }
 
+// One LiANN account, B2: the learner profile is asked for the first time the Library needs it, not at sign-in.
+const profileCard = L => `<div class="c profilecard"><h3 style="margin:0 0 6px">Finish your learner profile</h3>
+  <p style="margin:0 0 6px">Your Library is kept in AlongSide, and it needs a learner profile first. It takes a minute: your name, a username, your date of birth, a parent or guardian if you are under 18, and agreeing to the Terms and Privacy Promise.</p>
+  <p class="muted" style="margin:0 0 12px">AlongSide opens in a new tab, already signed in with this account. Come back here when you have saved it.</p>
+  ${L.error ? `<p class="err" role="alert" style="margin:0 0 10px">${esc(L.error)}</p>` : ''}
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="finishprofile"${L.opening ? ' disabled' : ''}>${L.opening ? 'Opening AlongSide…' : 'Finish your learner profile'}</button>
+  ${L.opened ? '<button class="btn ghost" id="retrylib">I have saved it: show my Library</button>' : ''}</div></div>`
+
 function pLibrary(s) {
   const L = s.setlists || { status: 'loading' }
   if (s.openList) {
@@ -186,6 +194,7 @@ function pLibrary(s) {
     return `<section class="sec"><div class="sechead"><h2>${esc(o.name || 'SetList')}</h2><button class="link" id="closelist">Back to Library</button></div><div class="c">${rows}</div></section>`
   }
   const body = L.status === 'ok' ? (L.items.length ? `<div class="grid">${L.items.map(setlistCard).join('')}</div>` : '<div class="empty">No SetLists yet. Save words in Pinyin Tiles, Pinyin Puzzle or Mahjong Tones while signed in, and they appear here.</div>')
+    : L.status === 'needs_profile' ? profileCard(L)
     : L.status === 'error' ? `<div class="empty"><p style="margin:0 0 10px">${esc(L.error)}</p><button class="btn ghost" id="retrylib">Try again</button></div>` : '<div class="empty">Loading your SetLists…</div>'
   return `<section class="sec"><div class="sechead"><h2>Library</h2><span class="muted">Your SetLists from every game, kept in AlongSide</span></div>${body}</section>`
 }
