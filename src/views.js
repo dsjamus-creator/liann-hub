@@ -91,12 +91,12 @@ export function vLoading() { return `<div class="gate fade">${decor()}<div class
 export function vEmail(s) {
   return `<div class="gate fade">${decor()}<form class="card" id="f1" novalidate>
   ${LOCKUP}
-  <h1>Sign in or create your account</h1>
+  <h1>Sign in or create your LiANN account</h1>
   <div class="field"><label for="em">Email</label><input id="em" type="email" required placeholder="you@example.com" value="${esc(s.email)}" autocomplete="email"></div>
   <p id="fix" class="note" ${s.fix ? '' : 'hidden'}>${s.fix ? `Did you mean <button type="button" class="link" id="usefix" style="color:var(--accent);padding:0">${esc(s.fix)}</button>? Press the button again to keep what you typed.` : ''}</p>
   ${s.error ? `<p class="note err" role="alert">${esc(s.error)}</p>` : ''}
   <button class="btn" type="submit" ${s.busy ? 'disabled' : ''}>${s.busy ? 'Sending…' : 'Send me a code'}</button>
-  <p class="note muted">No password. We email an ${CODE_LENGTH}-digit code each time you sign in. For ages 13 and over.</p></form></div>`
+  <p class="note muted">No password. We email a ${CODE_LENGTH}-digit code each time you sign in. One LiANN account works here, in every game and in AlongSide. For ages 13 and over.</p></form></div>`
 }
 
 export function vCode(s) {
@@ -320,7 +320,7 @@ function pPlan(s) {
   const th = s.theme, pf = s.planf || 'Learners'
   return `<section class="sec"><div class="sechead"><h2>Plan</h2></div><div class="grid">
   <div class="c"><div class="t">Free</div><div class="s">Learner · no charge</div><div class="d">Pinyin games, Bella &amp; LiANN and your SetLists from every game.</div></div>
-  <div class="c"><div class="t">Account</div><div class="s">${esc(s.user.email)}</div><div class="d">You sign in with a code sent to this email.</div><div class="acts"><button class="btn ghost" id="signout">Sign out</button></div></div>
+  <div class="c"><div class="t">LiANN account</div><div class="s">${esc(s.user.email)}</div><div class="d">You sign in with a code sent to this email. The same account works in every game and in AlongSide.</div><div class="acts"><button class="btn ghost" id="signout">Sign out</button></div></div>
   <div class="c"><div class="t">Profiles</div><div class="s">1 profile</div><div class="d">Separate profiles for each learner arrive with Couple and Family plans.</div></div>
   <div class="c"><div class="t">Appearance</div><div class="s">${esc(DS.find(d => d[0] === th.ds)[1])} · ${th.t === 'dark' ? 'Dark' : 'Light'}</div><div class="d">LiANN, Amberline, Steelline, Cadence or Ivoryline, in light or dark.</div><div class="acts"><button class="btn ghost" id="apbtn2">Change</button></div></div></div></section>
   <section class="sec"><div class="sechead"><h2>Plans</h2><span class="muted" style="font-size:.85rem">Prices to be set</span></div>
