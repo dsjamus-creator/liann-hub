@@ -11,8 +11,9 @@ const LIST = '11111111-2222-4333-8444-555555555555'
 let failures = 0
 const shot = async (page, name) => { if (process.env.SHOTS) await page.waitForTimeout(400), await page.screenshot({ path: `${process.env.SHOTS}/${name}.png`, fullPage: true }) }
 
-async function mock(context, { student = true } = {}) {
+async function mock(context, { student = true, tour = false } = {}) {
   const seen = { auth: [] }
+  if (!tour) await context.addInitScript(() => localStorage.setItem('liann-hub-tour-done', 'true'))
   await context.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ status: 200, contentType: 'text/css', body: '' }))
   await context.route('https://pinyin-tiles-api-staging.onrender.com/v1/auth/config', r => r.fulfill({ json: { authentication: { enabled: true, supabaseUrl: 'https://demo.supabase.co', publishableKey: 'pk-test' } } }))
   await context.route('https://demo.supabase.co/auth/v1/**', async r => {
@@ -111,6 +112,26 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
   await step(`${tag}: Read and Kids pages render their manifest slots`, async () => {
     await page.goto(url + '#read'); await page.locator('[data-slot="read/episodes"]').waitFor()
     await page.goto(url + '#kids'); await page.locator('[data-slot="kids/colouring/flight"]').waitFor()
+    assert.match(await page.locator('main').innerText(), /Colour the characters[\s\S]*Colour by tone[\s\S]*Tone stars/)
+    assert.equal(await page.locator('main a[download]').count(), 0, 'kids files are not offered before they are in the manifest')
+    await noOverflow(page); await shot(page, `${tag}-kids`)
+  })
+  await step(`${tag}: the menu matches the approved design and every page renders`, async () => {
+    if (tag === 'desktop') assert.deepEqual(await page.locator('nav.rail .lbl').allInnerTexts(), ['Home', 'Apps', 'Library', 'Read', 'Figures', 'Discover', 'Kids', 'Shop', 'Downloads', 'Plan'])
+    else {
+      assert.deepEqual(await page.locator('nav.tabs .lbl').allInnerTexts(), ['Home', 'Apps', 'Library', 'Downloads', 'More'])
+      await page.click('#morebtn'); assert.deepEqual(await page.locator('nav.moresheet .lbl').allInnerTexts(), ['Read', 'Figures', 'Discover', 'Kids', 'Shop', 'Plan'])
+      await shot(page, 'phone-more')
+      await page.click('nav.moresheet [data-nav="shop"]'); await page.locator('[data-shopf]').first().waitFor(); assert.equal(await page.locator('nav.moresheet').count(), 0)
+    }
+    for (const [hash, text] of [['discover', /Try something new/], ['shop', /Price to be set/], ['plan', /Plans[\s\S]*Couple[\s\S]*Family/], ['apps', /Coming video game/]]) {
+      await page.goto(url + '#' + hash); await page.locator('main .sec').first().waitFor()
+      assert.match(await page.locator('main').innerText(), text, hash)
+      await noOverflow(page); await shot(page, `${tag}-${hash}`)
+    }
+    await page.goto(url + '#shop'); assert.equal(await page.locator('main .acts button:not([disabled])').count(), 0, 'nothing in the shop can be bought yet')
+    await page.click('[data-shopf="Figures"]'); assert.equal(await page.locator('main .grid > .c').count(), 2)
+    await page.goto(url + '#plan'); await page.click('[data-planf="Organisations"]'); assert.match(await page.locator('main').innerText(), /Education Department/)
   })
   await step(`${tag}: appearance changes and is remembered`, async () => {
     await page.goto(url + '#plan'); await page.locator('#apbtn2').click()
@@ -125,6 +146,26 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     await page.reload(); await page.locator('#f1').waitFor()
   })
   await step(`${tag}: no console errors`, async () => assert.deepEqual(errors, [], JSON.stringify(errors)))
+  await context.close()
+}
+
+{
+  const context = await browser.newContext({ viewport: { width: 1280, height: 860 } })
+  await mock(context, { tour: true })
+  await context.addInitScript(() => localStorage.setItem('liann-hub-session-v1', JSON.stringify({ access_token: 'at', refresh_token: 'rt', expires_at: 9999999999 })))
+  const page = await context.newPage()
+  await step('Figures page draws the 3D view from the hub’s own three.js (or says plainly when WebGL is missing)', async () => {
+    await page.goto(url + '#figures'); await page.locator('#fig3d').waitFor()
+    await page.locator('#fig3d canvas, #fig3d .load:has-text("can’t show")').first().waitFor()
+    await page.click('[data-figmode="lineup"]'); await page.locator('#fig3d .ph', { hasText: 'Early models' }).waitFor()
+  })
+  await step('first-visit tour shows once and can be skipped', async () => {
+    await page.goto(url + '#home')
+    await page.locator('.tour').waitFor(); assert.match(await page.locator('.tour').innerText(), /1 of 4/)
+    await page.click('#tnext'); assert.match(await page.locator('.tour').innerText(), /2 of 4/)
+    await page.click('#tskip'); assert.equal(await page.locator('.tour').count(), 0)
+    await page.reload(); await page.locator('.hello').waitFor(); assert.equal(await page.locator('.tour').count(), 0)
+  })
   await context.close()
 }
 

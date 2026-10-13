@@ -22,8 +22,10 @@ export const APPS = [
   { id: 'lyric', g: '歌', name: 'LyricSync', kind: 'YouTube app · Chrome / Edge on desktop', desc: 'Turn any song into a Multi-Lingual Master.', st: 'desk', yt: 1, slot: 'lyricsync/extension' },
   { id: 'dual', g: '字', name: 'Dual Subs', kind: 'YouTube app · Chrome / Edge on desktop', desc: 'Multiple SubTitled Languages at Once on YouTube.', st: 'desk', yt: 1, slot: 'dualsubs/extension' },
   { id: 'trans', g: '练', name: 'TransApp', kind: 'Practice app', desc: 'Practice App Coming Soon.', st: 'soon' },
+  { id: 'game', g: '游', name: 'Coming video game', kind: 'Game · native', desc: 'Announced soon.', st: 'soon' },
 ]
 
 export const appUrl = app => app.url || (app.path ? new URL(app.path, config.gamesOrigin).href : null)
 
-export const NAV = [['home', 'Home'], ['apps', 'Apps'], ['library', 'Library'], ['read', 'Read'], ['kids', 'Kids'], ['downloads', 'Downloads'], ['plan', 'Settings']]
+// The menu of the approved hub design (claude.ai/artifact/VtAytf4capbkRU6NDA35yh).
+export const NAV = [['home', 'Home'], ['apps', 'Apps'], ['library', 'Library'], ['read', 'Read'], ['figures', 'Figures'], ['discover', 'Discover'], ['kids', 'Kids'], ['shop', 'Shop'], ['downloads', 'Downloads'], ['plan', 'Plan']]

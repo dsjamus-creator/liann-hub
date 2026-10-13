@@ -1,6 +1,6 @@
 # Learning with LiANN hub
 
-The browser hub for **app.lwliann.com**. It is a static web app with no build step: plain HTML, CSS and ES modules. Its look follows the approved mockup (`learningwithliann-registry/HUB-MOCKUP/liann-hub.html`).
+The browser hub for **app.lwliann.com**. It is a static web app with no build step: plain HTML, CSS and ES modules. Its look and menu follow the approved hub design (https://claude.ai/artifact/VtAytf4capbkRU6NDA35yh; also `learningwithliann-registry/HUB-MOCKUP/liann-hub.html`): Home, Apps, Library, Read, Figures, Discover, Kids, Shop, Downloads and Plan. On phones the tab bar shows Home, Apps, Library and Downloads, and **More** opens the rest.
 
 ## What it does
 
@@ -8,12 +8,14 @@ The browser hub for **app.lwliann.com**. It is a static web app with no build st
 |---|---|
 | Sign-in | Email code (Supabase, spec D16). The Supabase URL and publishable key come from the Pinyin API (`/v1/auth/config`) at run time, the same as in the games. No password, and no keys in this repo. |
 | Who's learning? | The signed-in account. Family, Couple and Tutor profiles come later, once the backend has profiles (D15/D18). |
-| Home, Apps | `src/config.js`. Pinyin Tiles and Pinyin Puzzle open on `playtest.lwliann.com`. **LiANN Pinyin Mahjong Tones is the Unity app here** (owner decision, 12 Oct 2026). The web edition stays on the playtest site, and the hub lists the Unity build from Downloads. |
+| Home, Apps, Discover | `src/config.js`. Pinyin Tiles and Pinyin Puzzle open on `playtest.lwliann.com`. **LiANN Pinyin Mahjong Tones is the Unity app here** (owner decision, 12 Oct 2026). The web edition stays on the playtest site, and the hub lists the Unity build from Downloads. |
 | Library | The learner's AlongSide SetLists: `GET /learning/setlists` and `/learning/setlists/:id/words` with the Supabase bearer token. Read only. |
-| Downloads, Read, Kids | `data/downloads.json`, a copy of the registry's `downloads/manifest.json`. A file is offered only when its entry has a file, a size and a SHA-256. |
-| Settings | Account, sign out, and appearance (the five Pinyin Tiles design systems, light or dark). |
+| Downloads, Read, Kids | `data/downloads.json`, a copy of the registry's `downloads/manifest.json`. A file is offered only when its entry has a file, a size and a SHA-256; until then the Kids cards say "Coming soon". |
+| Figures | Early 3D models drawn in the browser with three.js r128 (MIT), served from `vendor/three-r128/` so the page's script policy stays `'self'`. It loads only when Figures opens. |
+| Shop | The design's items, all "Coming soon" with prices to be set. Nothing can be bought yet. |
+| Plan | The current plan (Free), account and sign-out, appearance, and the Learner, Tutor and Organisation plans. Plans other than Free say "Coming soon". |
 
-Not in this version: Shop, Figures (parked), Discover, profiles and permissions, plans and payments, and comic reading. They need content or backend work first.
+Not in this version: profiles and permissions, buying plans or shop items, and comic reading. They need content or backend work first.
 
 ## Run and test
 
@@ -30,6 +32,8 @@ The smoke test covers:
 - Home and search
 - Library (SetList words)
 - Downloads, Read and Kids
+- the full menu, Discover, Shop and Plan, and the phone More tab
+- the Figures 3D view and the first-visit tour
 - appearance
 - sign out
 - a returning user without a learner profile

@@ -2,6 +2,7 @@ import { config, NAV } from './config.js'
 import { createAccount } from './account.js'
 import { loadDownloads } from './downloads.js'
 import { DS, vLoading, vEmail, vCode, vWho, vHub } from './views.js'
+import { mountViewer, stopViewer } from './figures.js'
 
 const account = createAccount({ pinyinApi: config.pinyinApi, backend: config.backend })
 const $ = sel => document.querySelector(sel)
@@ -103,7 +104,7 @@ function bind() {
   document.querySelectorAll('#signout').forEach(b => { b.onclick = async () => { await account.signOut(); toast('Signed out'); signedOut() } })
 
   document.querySelectorAll('[data-nav]').forEach(b => { b.onclick = () => {
-    S.page = b.dataset.nav; S.openList = null; S.appf = b.dataset.f || 'All'
+    S.page = b.dataset.nav; S.openList = null; S.appf = b.dataset.f || 'All'; S.more = false
     history.replaceState(null, '', '#' + S.page); render(); const m = $('#main'); if (m) m.scrollTop = 0
   } })
   document.querySelectorAll('[data-appf]').forEach(b => { b.onclick = () => { S.appf = b.dataset.appf; render() } })
@@ -119,6 +120,40 @@ function bind() {
   document.querySelectorAll('.dsopt').forEach(b => { b.onclick = () => { S.theme = { ...S.theme, ds: b.dataset.ds }; applyTheme(); render() } })
   document.querySelectorAll('[data-mode]').forEach(b => { b.onclick = () => { S.theme = { ...S.theme, t: b.dataset.mode }; applyTheme(); render() } })
   const me = $('#me'); if (me) me.onclick = () => go('who')
+  const more = $('#morebtn'); if (more) more.onclick = () => { S.more = !S.more; render() }
+  const bell = $('#bell'); if (bell) bell.onclick = () => toast('No new notifications')
+  for (const [attr, key] of [['dchip', 'dchip'], ['shopf', 'shopf'], ['planf', 'planf'], ['figmode', 'figmode']]) {
+    document.querySelectorAll(`[data-${attr}]`).forEach(b => { b.onclick = () => { S[key] = b.dataset[attr]; render() } })
+  }
+  document.querySelectorAll('[data-fig]').forEach(b => { b.onclick = () => { S.fig = b.dataset.fig; if (S.figmode === 'lineup') S.figmode = 'figure'; render() } })
+  if (S.view === 'hub' && S.page === 'figures') mountViewer(S); else stopViewer()
+  showTour()
+}
+
+// First-visit tour of the menu, as in the approved design. Shown once per device.
+const TOUR = [['[data-nav="home"]', 'Home', 'Pick up where you left off, or type what you want to practise.'],
+  ['[data-nav="apps"]', 'Apps', 'Every game and tool. Open them or get them here.'],
+  ['[data-nav="read"]', 'Read', 'New Bella & LiANN episodes appear here.'],
+  ['#me', 'Profiles', 'Your profile and sign-out.']]
+function showTour() {
+  document.querySelectorAll('.tour,.ring').forEach(e => e.remove())
+  if (S.view !== 'hub' || S.page !== 'home' || store.get('liann-hub-tour-done', false)) return
+  const step = S.tour || 0
+  if (step >= TOUR.length) { store.set('liann-hub-tour-done', true); return }
+  const [sel, h, t] = TOUR[step]
+  const target = [...document.querySelectorAll(sel)].find(e => e.offsetParent); if (!target) return
+  const r = target.getBoundingClientRect(), ring = document.createElement('div'), box = document.createElement('div')
+  ring.className = 'ring'; Object.assign(ring.style, { left: r.left - 4 + 'px', top: r.top - 4 + 'px', width: r.width + 8 + 'px', height: r.height + 8 + 'px' })
+  box.className = 'tour'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', 'Tour')
+  box.innerHTML = `<h4>${h}<span>${step + 1} of ${TOUR.length}</span></h4><div>${t}</div><div class="acts"><button class="skip" id="tskip">Skip tour</button><button class="btn" id="tnext">${step === TOUR.length - 1 ? 'Done' : 'Next'}</button></div>`
+  document.body.append(ring, box)
+  const bw = box.offsetWidth, bh = box.offsetHeight
+  let x = r.right + 14, y = r.top
+  if (x + bw > innerWidth - 16) { x = Math.max(16, r.right - bw); y = r.bottom + 14 }
+  if (y + bh > innerHeight - 16) y = Math.max(16, r.top - bh - 14)
+  Object.assign(box.style, { left: x + 'px', top: y + 'px' })
+  $('#tnext').onclick = () => { S.tour = step + 1; showTour() }
+  $('#tskip').onclick = () => { store.set('liann-hub-tour-done', true); showTour() }
 }
 
 window.addEventListener('hashchange', () => { if (S.view === 'hub') { S.page = pageFromHash(); S.openList = null; render() } })

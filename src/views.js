@@ -9,7 +9,12 @@ const I = {
   read: '<path d="M2 5h7a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H2z"/><path d="M22 5h-7a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h8z"/>',
   kids: '<path d="M14.5 3.5l6 6L9 21H3v-6z"/><path d="M12.5 5.5l6 6"/>',
   downloads: '<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 19h16"/>',
-  plan: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  plan: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>',
+  discover: '<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/>',
+  figures: '<path d="M12 3a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/><path d="M7 21v-4a5 5 0 0 1 10 0v4"/><path d="M5 21h14"/>',
+  shop: '<path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+  bell: '<path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/>',
+  help: '<circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4.5M12 17.5h.01"/>',
   search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
   send: '<path d="M5 12h14M13 6l6 6-6 6"/>',
@@ -50,9 +55,26 @@ export function art(id) {
   if (id === 'lyric') return img('lyricsync-1.jpg', 'center', '#D8D2C6', 'LyricSync panels: on-screen subtitles capture and burned-in lyrics OCR')
   if (id === 'dual') return img('dualsubs-1.jpg', 'center 40%', '#1E1B17', 'Dual Subs on a music video: Chinese, pinyin and English lines')
   if (id === 'read') return img('comic-1.jpg', 'center 35%', '#ddd', 'Bella in the cockpit, from Bella & LiANN')
+  if (id === 'comic2') return img('comic-2.jpg', 'center 35%', '#ddd', 'Bella flying over the city, from Bella & LiANN')
+  if (id === 'game') return '<div class="cart" style="background:radial-gradient(90% 120% at 50% 100%,#3A2A12,#120E09)"><div class="soon">游</div></div>'
+  if (id.startsWith('kid:')) return kidArt(id.slice(4))
   if (id === 'kids') return img('colouring-1.jpg', 'center', '#FDEFCB', 'Colouring page: Bella landing the ship, half coloured in')
   if (id === 'trans') return '<div class="cart" style="background:radial-gradient(110% 120% at 20% 30%,#3A2C26,#15120F)"><span class="soon">练</span><span class="ytb" style="left:auto;right:10px;background:#E8AE46;color:#1C1608">Coming soon</span></div>'
   if (id === 'setlist') return '<div class="cart" style="background:linear-gradient(160deg,#5F7457,#3B4A35)"><span class="soon" style="color:#FDEFCB;-webkit-text-stroke:0;text-shadow:none;font-size:56px">表</span></div>'
+  return ''
+}
+
+const TONEC = ['#E0634F', '#E8AE46', '#6BBE86', '#7FA8CC', '#B7AFA2']
+function kidArt(k) {
+  if (k === 'cb1') return '<div class="cart img" style="background-image:url(assets/colouring-1.jpg);background-position:center;background-color:#FDEFCB" role="img" aria-label="Colouring page: Bella landing the ship, half coloured in"></div>'
+  if (k === 'cb2') return '<div class="cart" style="background:#FFFDF9"><svg viewBox="0 0 280 136" style="width:100%;height:100%" aria-hidden="true"><g font-family="Noto Sans SC,sans-serif" font-weight="700" font-size="84" text-anchor="middle" stroke="#3D3C34" stroke-width="2.4"><text x="60" y="104" fill="#E8AE46">山</text><text x="140" y="104" fill="none">水</text><text x="220" y="104" fill="#E0634F" fill-opacity=".9">火</text></g><g fill="#3D3C34" font-family="Nunito,sans-serif" font-weight="900" font-size="12" text-anchor="middle"><text x="60" y="126">shān</text><text x="140" y="126">shuǐ</text><text x="220" y="126">huǒ</text></g></svg></div>'
+  if (k === 'cb3') {
+    const W = [['妈', 1], ['麻', 2], ['马', 3], ['骂', 4], ['吗', 5], ['天', 1], ['茶', 2], ['好', 3], ['大', 4], ['的', 5]]
+    return `<div class="cart" style="background:#FFFDF9"><svg viewBox="0 0 280 136" style="width:100%;height:100%" aria-hidden="true"><g font-family="Noto Sans SC,sans-serif" font-weight="700" font-size="26" text-anchor="middle">${W.map(([z, t], i) => `<rect x="${20 + (i % 5) * 50}" y="${12 + Math.floor(i / 5) * 52}" width="42" height="44" rx="8" fill="${i < 6 ? TONEC[t - 1] : '#FFFFFF'}" fill-opacity="${i < 6 ? 0.85 : 1}" stroke="#3D3C34" stroke-width="1.5"/><text x="${41 + (i % 5) * 50}" y="${44 + Math.floor(i / 5) * 52}" fill="#2B2B28">${z}</text>`).join('')}</g><g font-family="Nunito,sans-serif" font-weight="900" font-size="10">${TONEC.map((c, i) => `<circle cx="${40 + i * 50}" cy="126" r="5" fill="${c}"/><text x="${50 + i * 50}" y="130" fill="#3D3C34">${i < 4 ? 'tone ' + (i + 1) : 'neutral'}</text>`).join('')}</g></svg></div>`
+  }
+  if (k === 'sp1') return '<div class="cart" style="background:radial-gradient(120% 120% at 30% 30%,#4C6145,#26331F)"><div style="display:flex;align-items:center;gap:14px"><img src="assets/sticker-bella.png" alt="Bella sticker" style="width:104px;height:104px;transform:rotate(-6deg)"><span class="stk" style="width:62px;height:62px;font-size:22px;transform:rotate(8deg)">贝拉<small>Bèilā</small></span><span class="stk" style="width:54px;height:54px;font-size:13px;transform:rotate(-4deg);font-family:Nunito,sans-serif;font-weight:900;color:#C24837">YAP!</span></div></div>'
+  if (k === 'sp2') return `<div class="cart" style="background:linear-gradient(160deg,#3A2C26,#1E1A15)"><div style="display:flex;align-items:center;gap:12px">${[['饺子', 'jiǎozi', 74, -8], ['茶', 'chá', 58, 6], ['菜单', 'càidān', 68, -3], ['面条', 'miàntiáo', 62, 9]].map(([z, p, w, r]) => `<span class="stk" style="width:${w}px;height:${w}px;font-size:${w / 3.4}px;transform:rotate(${r}deg)">${z}<small>${p}</small></span>`).join('')}</div></div>`
+  if (k === 'sp3') return `<div class="cart" style="background:linear-gradient(160deg,#1D2430,#121410)"><div style="display:flex;align-items:center;gap:10px">${['ā', 'á', 'ǎ', 'à', 'a'].map((t, i) => `<span class="stk" style="width:52px;height:52px;font-family:Noto Sans SC,sans-serif;font-size:24px;background:${TONEC[i]};color:#1A1310;transform:rotate(${[-8, 5, -3, 7, -5][i]}deg)">${t}</span>`).join('')}</div></div>`
   return ''
 }
 
@@ -138,14 +160,12 @@ function pHome(s) {
   const games = GAMES().filter(a => matches(q, a.name, a.desc, a.kind)), tools = TOOLS().filter(a => matches(q, a.name, a.desc, a.kind))
   return `<section class="hello"><h1>${en}, ${esc(p.name)}. <span class="han">${zh}</span></h1>
    <form class="ask" id="ask" role="search"><input id="q" value="${esc(q)}" placeholder="What do you want to practise? Try “tones” or a SetList name" aria-label="Search games, apps and your SetLists">
-    <div class="row"><span class="muted" style="font-size:.82rem">Searches games, apps and your SetLists</span><button class="iconbtn" aria-label="Search" style="background:var(--accent);color:var(--accent-fg)">${ico('send', 20)}</button></div></form></section>
+    <div class="row"><span class="muted" style="font-size:.82rem">Searches games, apps and your SetLists</span><button class="iconbtn" aria-label="Search" style="background:var(--accent);color:var(--accent-fg)">${ico('send', 20)}</button></div></form>
+   <div class="chips">${[['library', 'Open my SetLists'], ['read', 'Read Bella & LiANN'], ['kids', 'Colour with Kids'], ['figures', 'See the figures']].map(([k, t]) => `<button class="chip" data-nav="${k}">${esc(t)}</button>`).join('')}</div></section>
   ${recent.length && !q ? `<section class="sec"><div class="sechead"><h2>Jump back in</h2></div><div class="grid">${recent.map(a => appCard(a, s)).join('')}</div></section>` : ''}
   ${lists.length ? `<section class="sec"><div class="sechead"><h2>Your SetLists</h2><button class="link" data-nav="library">View all</button></div><div class="grid">${lists.slice(0, 3).map(setlistCard).join('')}</div></section>` : ''}
   ${games.length ? `<section class="sec"><div class="sechead"><h2>Games</h2><button class="link" data-nav="apps" data-f="Games">View all</button></div><div class="grid">${games.map(a => appCard(a, s)).join('')}</div></section>` : ''}
   ${tools.length ? `<section class="sec"><div class="sechead"><h2>Apps</h2><button class="link" data-nav="apps" data-f="Apps">View all</button></div><div class="grid">${tools.map(a => appCard(a, s)).join('')}</div></section>` : ''}
-  ${q ? '' : `<section class="sec"><div class="sechead"><h2>Read and colour</h2></div><div class="grid">
-   <div class="c">${art('read')}<div class="t">Bella &amp; LiANN</div><div class="d">The comic, with pinyin and English.</div><div class="acts"><button class="btn ghost" data-nav="read">Read</button></div></div>
-   <div class="c">${art('kids')}<div class="t">Kids</div><div class="d">Colouring books and stickers to print at home.</div><div class="acts"><button class="btn ghost" data-nav="kids">Open</button></div></div></div></section>`}
   ${q && !games.length && !tools.length && !lists.length ? `<div class="empty">Nothing matches “${esc(q)}”.</div>` : ''}`
 }
 
@@ -172,13 +192,16 @@ function pLibrary(s) {
 
 const PRODUCT_GLYPH = { 'dual-subs': '字', lyricsync: '歌', polyflow: '琴', 'mahjong-tones': '声', 'alongside-mobile': '伴', 'pinyin-tiles': '拼', 'pinyin-puzzle': '谜', 'bella-liann': '漫', kids: '小', figures: '偶' }
 
+const DOWNLOAD_ART = { 'dual-subs': 'dual', lyricsync: 'lyric', polyflow: 'poly', 'mahjong-tones': 'tones', 'alongside-mobile': 'dash', 'pinyin-tiles': 'tiles', 'pinyin-puzzle': 'puzzle', 'bella-liann': 'read', 'kids/colouring/flight': 'kid:cb1', kids: 'kid:sp1' }
+
 // licenceNotes in the manifest are reviewer notes for whoever publishes the file; they are not shown to learners.
 function downloadCard(d) {
   const meta = d.available ? `<div class="status">Version ${esc(d.version || '—')}${d.builtAt ? ` · built ${esc(d.builtAt.slice(0, 10))}` : ''}</div>
    <div class="d">${esc(formatBytes(d.bytes))}</div><div class="d mono" title="SHA-256">SHA-256 ${esc(d.sha256)}</div>`
     : '<div class="status" style="color:var(--muted)">Waiting for the latest file</div><div class="d" style="font-size:.78rem">Version, size and checksum appear here when the file arrives.</div>'
   const act = d.available ? `<a class="btn" href="${esc(d.href)}" download rel="noopener">Download</a>` : '<button class="btn ghost" disabled>Download</button>'
-  return `<div class="c" data-slot="${esc(d.slot)}"><div class="h"><div class="tile">${esc(PRODUCT_GLYPH[d.product] || d.name.trim()[0])}</div><div><div class="t">${esc(d.name)}</div><div class="s">${esc(d.platform)}</div></div></div>${meta}<div class="acts">${act}</div></div>`
+  const pic = art(DOWNLOAD_ART[d.slot] || DOWNLOAD_ART[d.product] || '')
+  return `<div class="c" data-slot="${esc(d.slot)}">${d.product === 'dual-subs' || d.product === 'lyricsync' ? `<div style="position:relative">${pic}<span class="ytb">▶ YouTube app</span></div>` : pic}<div class="h"><div class="tile">${esc(PRODUCT_GLYPH[d.product] || d.name.trim()[0])}</div><div><div class="t">${esc(d.name)}</div><div class="s">${esc(d.platform)}</div></div></div>${meta}<div class="acts">${act}</div></div>`
 }
 
 function downloadsFor(s, filter) {
@@ -201,18 +224,100 @@ function pRead(s) {
   ${downloadsFor(s, d => d.product === 'bella-liann')}</section>`
 }
 
-function pKids(s) {
-  return `<section class="sec"><div class="sechead"><h2>Kids</h2><span class="muted">Colouring books and sticker artwork to print at home</span></div>
-  <div class="grid"><div class="c">${art('kids')}<div class="t">Bella &amp; LiANN colouring book: Flight</div><div class="d">Pages from the comic to colour in.</div></div></div>
-  ${downloadsFor(s, d => d.product === 'kids')}</section>`
+// A download button for a manifest slot: live when the checked file is in the manifest, otherwise "Coming soon".
+function slotButton(s, slot, label) {
+  const d = Array.isArray(s.downloads) ? s.downloads.find(x => x.slot === slot) : null
+  return d?.available ? `<a class="btn" href="${esc(d.href)}" download rel="noopener">${esc(label)}</a>` : '<button class="btn ghost" disabled>Coming soon</button>'
 }
 
+const KIDBOOKS = [['cb1', 'Bella &amp; LiANN colouring book: Flight', '12 pages from the comic', 'Colour Bella’s flight, then print it at home.', 'kids/colouring/flight'],
+  ['cb2', 'Colour the characters', 'Big outlined characters with pinyin', '山 水 火 and 27 more.'],
+  ['cb3', 'Colour by tone', 'Each tone has its own colour', 'Read a word, colour its tone.']]
+const KIDSTICK = [['sp1', 'Bella sticker pack', '12 stickers', 'Print them on sticker paper.', 'kids/stickers/bella-print'],
+  ['sp2', 'Food word stickers', '10 stickers', '饺子, 茶, 菜单, 面条 and more, with pinyin.'],
+  ['sp3', 'Tone stars', '5 stickers', 'One for each tone.']]
+
+function kidCard(s, [k, t, sub, d, slot], label) {
+  return `<div class="c"${slot ? ` data-slot="${slot}"` : ''}>${art('kid:' + k)}<div class="t">${t}</div><div class="s">${esc(sub)}</div><div class="d">${esc(d)}</div><div class="acts">${slot ? slotButton(s, slot, label) : '<button class="btn ghost" disabled>Coming soon</button>'}</div></div>`
+}
+
+function pKids(s) {
+  return `<div class="kidhead"><img src="assets/sticker-bella.png" alt=""><div><h2 style="margin:0;font-size:1.5rem">Kids</h2><div class="muted">Colouring books and sticker packs to print at home with a grown-up.</div></div></div>
+  <section class="sec"><div class="sechead"><h2>Colouring books</h2></div><div class="grid">${KIDBOOKS.map(x => kidCard(s, x, 'Download PDF')).join('')}</div></section>
+  <section class="sec"><div class="sechead"><h2>Sticker packs</h2></div><div class="grid">${KIDSTICK.map(x => kidCard(s, x, 'Download artwork')).join('')}</div></section>`
+}
+
+function pDiscover(s) {
+  const f = s.dchip || 'Featured'
+  const list = f === 'Games' ? GAMES() : f === 'Apps' ? TOOLS() : ['poly', 'lyric', 'trans'].map(id => APPS.find(a => a.id === id))
+  return `<section class="sec"><h2 style="margin:0;font-size:clamp(1.5rem,3vw,2.1rem);font-weight:900">Discover</h2>
+  <div class="chips" style="justify-content:flex-start">${['Featured', 'Games', 'Apps'].map(c => `<button class="chip" data-dchip="${c}" aria-pressed="${f === c}">${c}</button>`).join('')}</div>
+  <div class="feature"><div class="art" style="background:#ddd url(assets/comic-2.jpg) center/cover" role="img" aria-label="Bella flying over the city, from Bella & LiANN"></div>
+  <div class="txt"><div class="eyebrow">Coming soon</div><h3>Bella &amp; LiANN</h3><p class="muted" style="margin:0">Read the comic with pinyin and English, and save words to your SetLists.</p><div><button class="btn" data-nav="read">See episodes</button></div></div></div></section>
+  <section class="sec"><div class="sechead"><h2>${f === 'Featured' ? 'Try something new' : f}</h2><button class="link" data-nav="apps">View all</button></div><div class="grid">${list.map(a => appCard(a, s)).join('')}</div></section>`
+}
+
+// The 3D viewer itself lives in figures.js; this is its frame.
+export const CHARS = [
+  { id: 'bella', n: 'Bella', hz: '贝拉', py: 'Bèilā', d: 'The fluffy white pilot dog', col: 0xF4F1EA, acc: 0x5B6B4A, real: 1 },
+  { id: 'liann', n: 'LiANN', hz: '', py: '', d: 'Figure coming soon', col: 0xDE5A4F, acc: 0x8A9B7E },
+  { id: 'c3', n: 'Character 3', hz: '', py: '', d: 'Revealed soon', col: 0x7FA8CC, acc: 0xE8AE46 },
+  { id: 'c4', n: 'Character 4', hz: '', py: '', d: 'Revealed soon', col: 0xE8AE46, acc: 0x3A332B }]
+const hex = n => '#' + n.toString(16).padStart(6, '0')
+
+function pFigures(s) {
+  const c = CHARS.find(x => x.id === s.fig) || CHARS[0], m = s.figmode || 'figure'
+  return `<section class="sec"><div class="sechead"><h2>Figures</h2><button class="link" data-nav="shop">See them in the Shop</button></div>
+  <div class="grid">${CHARS.map(x => `<button class="chartile" data-fig="${x.id}" aria-pressed="${x.id === c.id && m !== 'lineup'}"><span class="sw" style="background:${hex(x.col)};box-shadow:inset 0 -8px 0 ${hex(x.acc)}"></span><span><b>${x.n}</b>${x.hz ? ` <span class="han">${x.hz}</span>` : ''}<br><span class="muted" style="font-size:.82rem">${x.d}</span></span></button>`).join('')}</div>
+  <div class="chips" style="justify-content:flex-start">${[['figure', 'Figure'], ['box', 'In its box'], ['lineup', 'All four boxed']].map(([k, t]) => `<button class="chip" data-figmode="${k}" aria-pressed="${m === k}">${t}</button>`).join('')}</div>
+  <div class="fig3d" id="fig3d"><div class="load">Loading 3D…</div><span class="ph">${m === 'lineup' ? 'Early models' : c.real ? 'Early model' : 'Stand-in until the figure is ready'}</span><span class="hint">Drag to turn · scroll or pinch to zoom</span></div>
+  <p class="muted" style="margin:0;font-size:.85rem">These are early models. The finished figures will look like the characters in the comic.</p></section>`
+}
+
+const SHOP = [
+  { cat: 'Comics', n: 'Bella & LiANN · Episodes 1–4, printed', d: 'Full-colour print edition with pinyin and English', art: '<div style="display:flex;gap:14px;align-items:center"><div class="book" style="background-image:url(assets/comic-1.jpg);transform:rotate(-6deg)"></div><div class="book" style="background-image:url(assets/comic-2.jpg);transform:rotate(5deg)"></div></div>' },
+  { cat: 'Comics', n: 'Bella & LiANN · Collected volume', d: 'Hardback, episodes 1–8', art: '<div class="book" style="width:110px;height:140px;background-image:url(assets/comic-2.jpg)"></div>' },
+  { cat: 'Stickers', n: 'Bella sticker sheet', d: 'Printed vinyl stickers: Bella, 贝拉, YAP!', art: '<div style="display:flex;align-items:center;gap:10px"><img src="assets/sticker-bella.png" alt="" style="width:96px;transform:rotate(-6deg)"><span class="stk" style="width:56px;height:56px;font-size:20px">贝拉<small>Bèilā</small></span></div>' },
+  { cat: 'Stickers', n: 'Food words sticker sheet', d: '饺子, 茶, 菜单, 面条 and more, with pinyin', art: `<div style="display:flex;gap:8px">${[['饺子', 'jiǎozi'], ['茶', 'chá'], ['菜单', 'càidān']].map(([z, p], i) => `<span class="stk" style="width:62px;height:62px;font-size:18px;transform:rotate(${[-6, 4, -2][i]}deg)">${z}<small>${p}</small></span>`).join('')}</div>` },
+  { cat: 'Figures', n: 'Bella 3D figure', d: 'Collectible figure of Bella (贝拉)', art: '<div class="fig"><img src="assets/sticker-bella.png" alt="" style="width:110px;filter:drop-shadow(0 6px 8px rgba(0,0,0,.5))"><div class="pod"></div></div>' },
+  { cat: 'Figures', n: 'LiANN 3D figure', d: 'Collectible figure of LiANN', art: '<div class="fig"><svg width="90" height="110" viewBox="0 0 90 110" aria-hidden="true"><circle cx="45" cy="28" r="20" fill="#3A332B" stroke="#E8AE46" stroke-width="2"/><path d="M12 108c2-34 14-52 33-52s31 18 33 52z" fill="#3A332B" stroke="#E8AE46" stroke-width="2"/><text x="45" y="35" text-anchor="middle" font-family="Georgia,serif" font-size="20" fill="#E8AE46">?</text></svg><div class="pod"></div></div>' }]
+
+function pShop(s) {
+  const f = s.shopf || 'All'
+  return `<section class="sec"><div class="sechead"><h2>Shop</h2><span class="muted" style="font-size:.85rem">Physical items, delivered · prices to be set</span></div>
+  <div class="chips" style="justify-content:flex-start">${['All', 'Comics', 'Stickers', 'Figures'].map(c => `<button class="chip" data-shopf="${c}" aria-pressed="${f === c}">${c}</button>`).join('')}</div>
+  <div class="grid">${SHOP.filter(x => f === 'All' || x.cat === f).map(x => `<div class="c"><div class="cart" style="background:radial-gradient(110% 120% at 50% 20%,#3A2C26,#15120F)">${x.art}<span class="ytb" style="left:auto;right:10px;background:#E8AE46;color:#1C1608">Coming soon</span></div>
+   <div class="t">${esc(x.n)}</div><div class="s">${x.cat}</div><div class="d">${esc(x.d)}</div><div style="font-weight:900;color:var(--accent)">Price to be set</div>
+   <div class="acts"><button class="btn ghost" disabled>Coming soon</button></div></div>`).join('')}</div>
+  <p class="muted" style="margin:0;font-size:.85rem">The shop isn’t open yet. Physical items will be paid on our secure web checkout, not through the app stores.</p></section>`
+}
+
+const PLANS = [
+  { g: 'Learners', n: 'Free', who: 'Individual learners, 13+', price: 'Free', f: ['Pinyin games and Bella &amp; LiANN comics', 'AlongSide classroom', 'Your SetLists from every game'], cur: 1 },
+  { g: 'Learners', n: 'Couple', who: 'Two adults', price: 'Price to be set', f: ['2 profiles, each with its own progress', 'Everything in Free', 'One bill'] },
+  { g: 'Learners', n: 'Family', who: 'A couple with 1–4 children', price: 'Price to be set', f: ['3–6 profiles: two adults and up to four children', 'Everything in Couple', 'Optional PIN on each profile', 'One bill'] },
+  { g: 'Tutors', n: 'Tutor', who: 'Private tutors', price: 'Monthly or yearly · price to be set', f: ['Everything in Free', 'Full import to MultiBoard', 'Author lessons in AuthorBoard'] },
+  { g: 'Tutors', n: 'Tutor + introduced students', who: 'Tutors who take students we introduce', price: 'A percentage of the tuition fee (to be set)', f: ['Everything in Tutor', 'AlongSide messaging with students', 'Students pay tuition in AlongSide'] },
+  { g: 'Organisations', n: 'School', who: 'One school: teachers and classes', price: 'Licence · price to be set', f: ['Licences for teachers and classes', 'School sign-in and class lists', 'Invoice billing'] },
+  { g: 'Organisations', n: 'Institution', who: 'Universities, language schools, academies', price: 'Licence · price to be set', f: ['Licences across several sites', 'Single sign-on and course-platform links', 'Reports across sites'] },
+  { g: 'Organisations', n: 'Education Department', who: 'Regional or national education authorities', price: 'Licence · price to be set', f: ['Licences for many schools at once', 'Central reports', 'Purchase-order buying'] }]
+
+const planCard = x => `<div class="c" style="${x.cur ? 'border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)' : ''}"><div class="t" style="font-size:1.15rem">${x.n}</div><div class="s">${x.who}</div>
+  <div style="font-weight:900;color:var(--accent)">${x.price}</div>
+  <ul style="margin:0;padding-left:1.1rem;display:grid;gap:4px;color:var(--muted);font-size:.9rem">${x.f.map(i => `<li>${i}</li>`).join('')}</ul>
+  <div class="acts">${x.cur ? '<span class="status">Current plan</span>' : '<button class="btn ghost" disabled>Coming soon</button>'}</div></div>`
+
 function pPlan(s) {
-  const th = s.theme
-  return `<section class="sec"><div class="sechead"><h2>Settings</h2></div><div class="grid">
+  const th = s.theme, pf = s.planf || 'Learners'
+  return `<section class="sec"><div class="sechead"><h2>Plan</h2></div><div class="grid">
+  <div class="c"><div class="t">Free</div><div class="s">Learner · no charge</div><div class="d">Pinyin games, Bella &amp; LiANN and your SetLists from every game.</div></div>
   <div class="c"><div class="t">Account</div><div class="s">${esc(s.user.email)}</div><div class="d">You sign in with a code sent to this email.</div><div class="acts"><button class="btn ghost" id="signout">Sign out</button></div></div>
-  <div class="c"><div class="t">Appearance</div><div class="s">${esc(DS.find(d => d[0] === th.ds)[1])} · ${th.t === 'dark' ? 'Dark' : 'Light'}</div><div class="d">LiANN, Amberline, Steelline, Cadence or Ivoryline, in light or dark.</div><div class="acts"><button class="btn ghost" id="apbtn2">Change</button></div></div>
-  <div class="c"><div class="t">Plans and profiles</div><div class="s">Coming soon</div><div class="d">Family, Couple and Tutor plans, and separate profiles for each learner.</div></div></div></section>`
+  <div class="c"><div class="t">Profiles</div><div class="s">1 profile</div><div class="d">Separate profiles for each learner arrive with Couple and Family plans.</div></div>
+  <div class="c"><div class="t">Appearance</div><div class="s">${esc(DS.find(d => d[0] === th.ds)[1])} · ${th.t === 'dark' ? 'Dark' : 'Light'}</div><div class="d">LiANN, Amberline, Steelline, Cadence or Ivoryline, in light or dark.</div><div class="acts"><button class="btn ghost" id="apbtn2">Change</button></div></div></div></section>
+  <section class="sec"><div class="sechead"><h2>Plans</h2><span class="muted" style="font-size:.85rem">Prices to be set</span></div>
+  <div class="chips" style="justify-content:flex-start">${['Learners', 'Tutors', 'Organisations'].map(c => `<button class="chip" data-planf="${c}" aria-pressed="${pf === c}">${c}</button>`).join('')}</div>
+  <div class="grid">${PLANS.filter(x => x.g === pf).map(planCard).join('')}</div>
+  <p class="muted" style="margin:0;font-size:.85rem">Learners use the hub free, or choose a Couple or Family plan. Tutors subscribe monthly or yearly. Schools, institutions and education departments buy licences.</p></section>`
 }
 
 export function appearHTML(th) {
@@ -222,19 +327,20 @@ export function appearHTML(th) {
  <p class="note muted" style="margin:0">Same design systems as Pinyin Tiles. Saved on this device.</p></div>`
 }
 
-// Phone tab bar: Read and Kids are reached from Home there.
-const TAB_PAGES = ['home', 'apps', 'library', 'downloads', 'plan']
+// Phone tab bar: four pages, then More for the rest of the menu.
+const TAB_PAGES = ['home', 'apps', 'library', 'downloads']
 
-export const PAGES = { home: pHome, apps: pApps, library: pLibrary, read: pRead, kids: pKids, downloads: pDownloads, plan: pPlan }
+export const PAGES = { home: pHome, apps: pApps, library: pLibrary, read: pRead, figures: pFigures, discover: pDiscover, kids: pKids, shop: pShop, downloads: pDownloads, plan: pPlan }
 
 export function vHub(s) {
   const p = profileOf(s.user), page = PAGES[s.page] ? s.page : 'home'
   return `<div class="app ${s.slim ? 'slim' : ''}">
   <header class="top"><button class="iconbtn menu" id="slim" aria-label="${s.slim ? 'Expand' : 'Collapse'} menu">${ico('menu')}</button>${LOCKUP}
    <form class="search" id="topsearch" role="search">${ico('search', 18)}<input id="ts" value="${esc(s.query || '')}" placeholder="Search Learning with LiANN" aria-label="Search"></form>
-   <button class="iconbtn" id="apbtn" aria-label="Appearance">${ico('palette')}</button>
+   <button class="iconbtn" id="apbtn" aria-label="Appearance">${ico('palette')}</button><button class="iconbtn help" aria-label="Help and account" data-nav="plan">${ico('help')}</button><button class="iconbtn" id="bell" aria-label="Notifications">${ico('bell')}</button>
    <button class="tile avatar" id="me" aria-label="Profile (${esc(p.name)})">${esc(p.g)}</button></header>
   <nav class="rail" aria-label="Main">${NAV.map(rItem(page)).join('')}</nav>
   <main id="main"><div class="wrap fade">${PAGES[page](s)}</div></main>
-  <nav class="tabs" aria-label="Main">${NAV.filter(([k]) => TAB_PAGES.includes(k)).map(rItem(page)).join('')}</nav></div>${s.appear ? appearHTML(s.theme) : ''}`
+  <nav class="tabs" aria-label="Main">${NAV.filter(([k]) => TAB_PAGES.includes(k)).map(rItem(page)).join('')}<button class="ritem" id="morebtn" aria-expanded="${!!s.more}" ${TAB_PAGES.includes(page) ? '' : 'aria-current="page"'}><span class="ic">${ico('menu')}</span><span class="lbl">More</span></button></nav>
+  ${s.more ? `<nav class="moresheet" aria-label="More">${NAV.filter(([k]) => !TAB_PAGES.includes(k)).map(rItem(page)).join('')}</nav>` : ''}</div>${s.appear ? appearHTML(s.theme) : ''}`
 }
