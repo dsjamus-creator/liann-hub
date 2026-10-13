@@ -1,0 +1,46 @@
+# Tests the hub, then deploys it to app.lwliann.com (Cloudflare Worker "liann-hub").
+# Runs on every push to main, and on demand from the Actions tab (Run workflow).
+# Needs two repository secrets: CLOUDFLARE_API_TOKEN (a Workers token: "Edit Cloudflare Workers"
+# template plus Zone > DNS > Edit for lwliann.com) and CLOUDFLARE_ACCOUNT_ID.
+name: Deploy hub
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-hub
+  cancel-in-progress: false
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      HAS_CLOUDFLARE: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Unit tests
+        run: npm test
+      - name: Browser smoke test
+        run: npm run test:smoke
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+      - name: Deploy to app.lwliann.com
+        if: env.HAS_CLOUDFLARE == 'true'
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Deploy skipped
+        if: env.HAS_CLOUDFLARE != 'true'
+        run: echo "::warning::Not deployed. Add the CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repository secrets."

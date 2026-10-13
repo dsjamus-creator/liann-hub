@@ -1,0 +1,16 @@
+{
+  // Learning with LiANN hub at https://app.lwliann.com: a static-assets-only Worker (no server code).
+  // `npx wrangler deploy` uploads the site and attaches app.lwliann.com as a Custom Domain, which creates
+  // the DNS record and HTTPS certificate in the lwliann.com zone. See docs/DEPLOY.md.
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "liann-hub",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./",
+    "not_found_handling": "404-page"
+  },
+  "routes": [
+    { "pattern": "app.lwliann.com", "custom_domain": true }
+  ],
+  "workers_dev": false
+}
