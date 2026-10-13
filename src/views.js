@@ -1,5 +1,5 @@
 // Pure render functions: state in, HTML string out. Markup and art follow the approved mockup.
-import { APPS, NAV, appUrl } from './config.js'
+import { APPS, NAV, CODE_LENGTH, appUrl } from './config.js'
 import { formatBytes } from './downloads.js'
 
 const I = {
@@ -96,7 +96,7 @@ export function vEmail(s) {
   <p id="fix" class="note" ${s.fix ? '' : 'hidden'}>${s.fix ? `Did you mean <button type="button" class="link" id="usefix" style="color:var(--accent);padding:0">${esc(s.fix)}</button>? Press the button again to keep what you typed.` : ''}</p>
   ${s.error ? `<p class="note err" role="alert">${esc(s.error)}</p>` : ''}
   <button class="btn" type="submit" ${s.busy ? 'disabled' : ''}>${s.busy ? 'Sending…' : 'Send me a code'}</button>
-  <p class="note muted">No password. We email a 6-digit code each time you sign in. For ages 13 and over.</p></form></div>`
+  <p class="note muted">No password. We email an ${CODE_LENGTH}-digit code each time you sign in. For ages 13 and over.</p></form></div>`
 }
 
 export function vCode(s) {
@@ -104,7 +104,7 @@ export function vCode(s) {
   ${LOCKUP}
   <h1>Enter the code we sent</h1>
   <p class="muted" style="margin:0">Sent to <b>${esc(s.email)}</b>. Check your spam folder if it hasn't arrived.</p>
-  <div class="code">${[0, 1, 2, 3, 4, 5].map(i => `<input id="c${i}" inputmode="numeric" autocomplete="${i ? 'off' : 'one-time-code'}" maxlength="1" aria-label="Digit ${i + 1}">`).join('')}</div>
+  <div class="code">${Array.from({ length: CODE_LENGTH }, (_, i) => i).map(i => `<input id="c${i}" inputmode="numeric" autocomplete="${i ? 'off' : 'one-time-code'}" maxlength="1" aria-label="Digit ${i + 1}">`).join('')}</div>
   ${s.error ? `<p class="note err" role="alert">${esc(s.error)}</p>` : ''}
   <button class="btn" type="submit" ${s.busy ? 'disabled' : ''}>${s.busy ? 'Checking…' : 'Sign in'}</button>
   <div style="display:flex;justify-content:space-between"><button type="button" class="link" id="back">Use a different email</button><button type="button" class="link" id="resend">Resend code</button></div></form></div>`

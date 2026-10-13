@@ -25,6 +25,9 @@ export const APPS = [
   { id: 'game', g: '游', name: 'Coming video game', kind: 'Game · native', desc: 'Announced soon.', st: 'soon' },
 ]
 
+// Supabase emails an 8-digit sign-in code for this project (Auth > Email OTP length). The hub also accepts 6–10 digits.
+export const CODE_LENGTH = 8
+
 export const appUrl = app => app.url || (app.path ? new URL(app.path, config.gamesOrigin).href : null)
 
 // The menu of the approved hub design (claude.ai/artifact/VtAytf4capbkRU6NDA35yh).

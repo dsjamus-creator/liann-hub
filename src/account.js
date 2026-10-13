@@ -51,7 +51,7 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
   }
 
   async function verifyCode(email, code) {
-    if (!/^\d{6}$/.test(code)) throw new AccountError('Enter the 6-digit code from the email.', 'bad_code')
+    if (!/^\d{6,10}$/.test(code)) throw new AccountError('Enter the code from the email.', 'bad_code')
     const s = await settings()
     let session
     try {

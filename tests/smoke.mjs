@@ -20,7 +20,7 @@ async function mock(context, { student = true, tour = false } = {}) {
     const u = new URL(r.request().url()), body = r.request().postDataJSON?.() || {}
     seen.auth.push(u.pathname)
     if (u.pathname.endsWith('/otp')) return r.fulfill({ json: {} })
-    if (u.pathname.endsWith('/verify')) return body.token === '246810'
+    if (u.pathname.endsWith('/verify')) return body.token === '24681012'
       ? r.fulfill({ json: { access_token: 'at', refresh_token: 'rt', expires_in: 3600, user: { email: body.email } } })
       : r.fulfill({ status: 403, json: { error_code: 'otp_expired' } })
     if (u.pathname.endsWith('/user')) return r.fulfill({ json: { email: 'ann.mingen@example.com', email_confirmed_at: '2026-10-12T00:00:00Z' } })
@@ -67,12 +67,13 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     assert.ok(seen.auth.some(p => p.endsWith('/otp')))
   })
   await step(`${tag}: a wrong code is refused with a clear message`, async () => {
-    await page.locator('#c0').pressSequentially('111111')
+    assert.equal(await page.locator('#f2 .code input').count(), 8, 'Supabase sends 8-digit codes')
+    await page.locator('#c0').pressSequentially('11111111')
     await page.getByRole('alert').waitFor()
     assert.match(await page.getByRole('alert').innerText(), /wrong or has expired/)
   })
   await step(`${tag}: the right code signs in and shows "Who's learning?"`, async () => {
-    await page.locator('#c0').pressSequentially('246810')
+    await page.locator('#c0').pressSequentially('24681012')
     await page.locator('#pick').waitFor()
     assert.match(await page.locator('.who').innerText(), /Ann Mingen/)
   })

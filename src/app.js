@@ -1,4 +1,4 @@
-import { config, NAV } from './config.js'
+import { config, NAV, CODE_LENGTH } from './config.js'
 import { createAccount } from './account.js'
 import { loadDownloads } from './downloads.js'
 import { DS, vLoading, vEmail, vCode, vWho, vHub } from './views.js'
@@ -94,9 +94,9 @@ function bind() {
     ins.forEach((el, i) => {
       el.oninput = () => { el.value = el.value.replace(/\D/g, '').slice(-1); if (el.value && ins[i + 1]) ins[i + 1].focus(); if (ins.every(x => x.value)) submit() }
       el.onkeydown = e => { if (e.key === 'Backspace' && !el.value && ins[i - 1]) ins[i - 1].focus() }
-      el.onpaste = e => { const d = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 6); if (d.length === 6) { e.preventDefault(); ins.forEach((x, j) => { x.value = d[j] }); submit() } }
+      el.onpaste = e => { const d = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, CODE_LENGTH); if (d.length >= 6) { e.preventDefault(); ins.forEach((x, j) => { x.value = d[j] || '' }); submit() } }
     })
-    f2.onsubmit = e => { e.preventDefault(); if (code().length !== 6) { S.error = 'Enter all 6 digits.'; render(); return } submit() }
+    f2.onsubmit = e => { e.preventDefault(); if (code().length < 6) { S.error = `Enter the ${CODE_LENGTH}-digit code from the email.`; render(); return } submit() }
     $('#back').onclick = () => go('email')
     $('#resend').onclick = async () => { try { await account.requestCode(S.email); toast('New code sent') } catch (error) { S.error = error.message; render() } }
   }
