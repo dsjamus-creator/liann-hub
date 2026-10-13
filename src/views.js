@@ -143,7 +143,7 @@ const TOOLS = () => APPS.filter(a => !a.kind.startsWith('Game'))
 
 function matches(q, ...fields) { const n = q.trim().toLowerCase(); return !n || fields.some(f => String(f || '').toLowerCase().includes(n)) }
 
-const SOURCES = { 'pinyin-tiles': 'Pinyin Tiles', 'pinyin-puzzle': 'Pinyin Puzzle', 'liann-mahjong-tones': 'Mahjong Tones' }
+const SOURCES = { 'pinyin-tiles': 'Pinyin Tiles', 'pinyin-puzzle': 'Pinyin Puzzle', 'liann-mahjong-tones': 'Mahjong Tones', lyricsync: 'LyricSync', 'dual-subs': 'Dual Subs', dualsubs: 'Dual Subs', polyflow: 'PolyFlow', alongside: 'AlongSide', multiboard: 'MultiBoard', authorboard: 'AuthorBoard', transapp: 'TransApp' }
 export const sourceName = id => SOURCES[id] || id || ''
 
 function setlistCard(l) {

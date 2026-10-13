@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises'
 import { parseManifest, safeFileUrl, formatBytes } from '../src/downloads.js'
 import { createAccount } from '../src/account.js'
 import { APPS, appUrl, config } from '../src/config.js'
-import { esc, vHub, statusOf, profileOf } from '../src/views.js'
+import { esc, vHub, statusOf, profileOf, sourceName } from '../src/views.js'
 
 const BASE = 'https://app.lwliann.com/data/downloads.json'
 const SHA = 'a'.repeat(64)
@@ -96,4 +96,10 @@ test('config holds public addresses only', async () => {
 test('Game 3 Unity files are Claude-produced; every other download is expected from Codex', async () => {
   const raw = JSON.parse(await readFile(new URL('../data/downloads.json', import.meta.url), 'utf8'))
   for (const e of raw) assert.equal(e.producer, e.product === 'mahjong-tones' ? 'claude' : 'codex', e.hubSlot)
+})
+
+test('SetList sources show product names, and unknown ones pass through', () => {
+  assert.equal(sourceName('lyricsync'), 'LyricSync')
+  assert.equal(sourceName('liann-mahjong-tones'), 'Mahjong Tones')
+  assert.equal(sourceName('something-new'), 'something-new')
 })
