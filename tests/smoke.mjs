@@ -103,10 +103,11 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     assert.match(await page.locator('table.words').innerText(), /一般[\s\S]*ordinary[\s\S]*一半[\s\S]*half/)
     await noOverflow(page); await shot(page, `${tag}-library`)
   })
-  await step(`${tag}: Downloads offers the five publicly verified files`, async () => {
+  await step(`${tag}: Downloads offers the 18 publicly verified files`, async () => {
     await page.goto(url + '#downloads'); await page.locator('[data-slot]').first().waitFor()
-    assert.equal(await page.locator('[data-slot]').count(), 14)
-    assert.equal(await page.locator('[data-slot] a[download]').count(), 5)
+    assert.equal(await page.locator('[data-slot]').count(), 25, 'the reserved figures slot is hidden from Downloads')
+    assert.equal(await page.locator('[data-slot] a[download]').count(), 18)
+    assert.equal(await page.locator('[data-slot="dualsubs/extension"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/dual-subs/chrome-edge/0.16.117/dual-subs-v0.16.117.zip?v=d3d2e5b19c54')
     assert.equal(await page.locator('[data-slot="polyflow/windows"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/polyflow/windows/0.1.0/PolyFlow-Setup-0.1.0.exe')
     assert.equal(await page.locator('[data-slot="mahjong-tones/test-build"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/mahjong-tones/windows/0.2.0/LiANN-Mahjong-Tones-Windows-0.2.0.zip')
     assert.equal(await page.locator('[data-slot="alongside/android-test"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/alongside-dashboard/android/0.1.3/AlongSide-Dashboard-0.1.3-debug.apk')
@@ -114,13 +115,29 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     assert.equal(await page.locator('[data-slot="kids/stickers/bella"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/kids/stickers/2026-10-14/bella-sticker-1440px-upscaled-full.png?v=5ffdac')
     assert.doesNotMatch(await page.locator('main').innerText(), /signing|redistribution/i)
     await noOverflow(page); await shot(page, `${tag}-downloads`)
+    if (tag === 'phone') {
+      await page.locator('[data-slot="kids/stickers/kinetic-shield-specular"]').scrollIntoViewIfNeeded()
+      await shot(page, 'phone-downloads-last')
+    }
   })
   await step(`${tag}: Read and Kids pages render their manifest slots`, async () => {
     await page.goto(url + '#read'); await page.locator('[data-slot="read/episodes"]').waitFor()
+    assert.equal(await page.locator('main a[download]').count(), 0, 'no episode PDF is in the source folder')
+    await shot(page, `${tag}-read`)
     await page.goto(url + '#kids'); await page.locator('[data-slot="kids/colouring/flight"]').waitFor()
-    assert.match(await page.locator('main').innerText(), /Colour the characters[\s\S]*Colour by tone[\s\S]*Tone stars/)
-    assert.equal(await page.locator('main a[download]').count(), 0, 'kids files are not offered before they are in the manifest')
+    assert.match(await page.locator('main').innerText(), /Colour the characters[\s\S]*Colour by tone[\s\S]*Specular sticker sheets[\s\S]*Kinetic Shield sticker pack/)
+    assert.equal(await page.locator('main a[download]').count(), 13)
+    assert.equal(await page.locator('[data-slot="kids/colouring/characters"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/kids/colouring/1.1.0/BellaLiANN-Colour-the-Characters-1.1.0-A4.pdf?v=fbd7b2172238')
+    assert.equal(await page.locator('[data-slot="kids/colouring/by-tone"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/kids/colouring/1.2.0/BellaLiANN-Colour-by-Tone-1.2.0-A4.pdf?v=a0f093fc20d6')
+    assert.equal(await page.locator('[data-slot="kids/stickers/specular"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/kids/stickers/issue1-2026-10-14/Bella_LiANN_Issue1_Specular_Sticker_Sheets_A4.pdf?v=a04c96464c4f')
+    assert.equal(await page.locator('[data-slot="kids/stickers/kinetic-shield"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/kids/stickers/issue1-2026-10-14/Bella_LiANN_Kinetic_Shield_BW_and_Specular_Sticker_Pack_A4.pdf?v=b2fce50e4943')
     await noOverflow(page); await shot(page, `${tag}-kids`)
+    if (tag === 'phone') {
+      await page.locator('[data-slot="kids/stickers/specular"]').scrollIntoViewIfNeeded()
+      await shot(page, 'phone-kids-stickers')
+      await page.locator('[data-slot="kids/stickers/kinetic-shield-specular"]').scrollIntoViewIfNeeded()
+      await shot(page, 'phone-kids-artwork')
+    }
   })
   await step(`${tag}: the menu matches the approved design and every page renders`, async () => {
     if (tag === 'desktop') assert.deepEqual(await page.locator('nav.rail .lbl').allInnerTexts(), ['Home', 'Apps', 'Library', 'Read', 'Figures', 'Discover', 'Kids', 'Shop', 'Downloads', 'Plan'])

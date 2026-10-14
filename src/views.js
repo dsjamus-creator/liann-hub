@@ -67,14 +67,14 @@ export function art(id) {
 const TONEC = ['#E0634F', '#E8AE46', '#6BBE86', '#7FA8CC', '#B7AFA2']
 function kidArt(k) {
   if (k === 'cb1') return '<div class="cart img" style="background-image:url(assets/colouring-1.jpg);background-position:center;background-color:#FDEFCB" role="img" aria-label="Colouring page: Bella landing the ship, half coloured in"></div>'
+  if (k === 'cb4') return kidArt('cb1')
   if (k === 'cb2') return '<div class="cart" style="background:#FFFDF9"><svg viewBox="0 0 280 136" style="width:100%;height:100%" aria-hidden="true"><g font-family="Noto Sans SC,sans-serif" font-weight="700" font-size="84" text-anchor="middle" stroke="#3D3C34" stroke-width="2.4"><text x="60" y="104" fill="#E8AE46">山</text><text x="140" y="104" fill="none">水</text><text x="220" y="104" fill="#E0634F" fill-opacity=".9">火</text></g><g fill="#3D3C34" font-family="Nunito,sans-serif" font-weight="900" font-size="12" text-anchor="middle"><text x="60" y="126">shān</text><text x="140" y="126">shuǐ</text><text x="220" y="126">huǒ</text></g></svg></div>'
   if (k === 'cb3') {
     const W = [['妈', 1], ['麻', 2], ['马', 3], ['骂', 4], ['吗', 5], ['天', 1], ['茶', 2], ['好', 3], ['大', 4], ['的', 5]]
     return `<div class="cart" style="background:#FFFDF9"><svg viewBox="0 0 280 136" style="width:100%;height:100%" aria-hidden="true"><g font-family="Noto Sans SC,sans-serif" font-weight="700" font-size="26" text-anchor="middle">${W.map(([z, t], i) => `<rect x="${20 + (i % 5) * 50}" y="${12 + Math.floor(i / 5) * 52}" width="42" height="44" rx="8" fill="${i < 6 ? TONEC[t - 1] : '#FFFFFF'}" fill-opacity="${i < 6 ? 0.85 : 1}" stroke="#3D3C34" stroke-width="1.5"/><text x="${41 + (i % 5) * 50}" y="${44 + Math.floor(i / 5) * 52}" fill="#2B2B28">${z}</text>`).join('')}</g><g font-family="Nunito,sans-serif" font-weight="900" font-size="10">${TONEC.map((c, i) => `<circle cx="${40 + i * 50}" cy="126" r="5" fill="${c}"/><text x="${50 + i * 50}" y="130" fill="#3D3C34">${i < 4 ? 'tone ' + (i + 1) : 'neutral'}</text>`).join('')}</g></svg></div>`
   }
   if (k === 'sp1') return '<div class="cart" style="background:radial-gradient(120% 120% at 30% 30%,#4C6145,#26331F)"><div style="display:flex;align-items:center;gap:14px"><img src="assets/sticker-bella.png" alt="Bella sticker" style="width:104px;height:104px;transform:rotate(-6deg)"><span class="stk" style="width:62px;height:62px;font-size:22px;transform:rotate(8deg)">贝拉<small>Bèilā</small></span><span class="stk" style="width:54px;height:54px;font-size:13px;transform:rotate(-4deg);font-family:Nunito,sans-serif;font-weight:900;color:#C24837">YAP!</span></div></div>'
-  if (k === 'sp2') return `<div class="cart" style="background:linear-gradient(160deg,#3A2C26,#1E1A15)"><div style="display:flex;align-items:center;gap:12px">${[['饺子', 'jiǎozi', 74, -8], ['茶', 'chá', 58, 6], ['菜单', 'càidān', 68, -3], ['面条', 'miàntiáo', 62, 9]].map(([z, p, w, r]) => `<span class="stk" style="width:${w}px;height:${w}px;font-size:${w / 3.4}px;transform:rotate(${r}deg)">${z}<small>${p}</small></span>`).join('')}</div></div>`
-  if (k === 'sp3') return `<div class="cart" style="background:linear-gradient(160deg,#1D2430,#121410)"><div style="display:flex;align-items:center;gap:10px">${['ā', 'á', 'ǎ', 'à', 'a'].map((t, i) => `<span class="stk" style="width:52px;height:52px;font-family:Noto Sans SC,sans-serif;font-size:24px;background:${TONEC[i]};color:#1A1310;transform:rotate(${[-8, 5, -3, 7, -5][i]}deg)">${t}</span>`).join('')}</div></div>`
+  if (k === 'sp2' || k === 'sp3') return kidArt('sp1')
   return ''
 }
 
@@ -244,11 +244,12 @@ function slotButton(s, slot, label) {
 }
 
 const KIDBOOKS = [['cb1', 'Bella &amp; LiANN colouring book: Flight', '12 pages from the comic', 'Colour Bella’s flight, then print it at home.', 'kids/colouring/flight'],
-  ['cb2', 'Colour the characters', 'Big outlined characters with pinyin', '山 水 火 and 27 more.'],
-  ['cb3', 'Colour by tone', 'Each tone has its own colour', 'Read a word, colour its tone.']]
-const KIDSTICK = [['sp1', 'Bella sticker pack', '12 stickers', 'Print them on sticker paper.', 'kids/stickers/bella-print'],
-  ['sp2', 'Food word stickers', '10 stickers', '饺子, 茶, 菜单, 面条 and more, with pinyin.'],
-  ['sp3', 'Tone stars', '5 stickers', 'One for each tone.']]
+  ['cb2', 'Colour the characters', '24 A4 pages', 'Colour Bella and the characters from Issue 1.', 'kids/colouring/characters'],
+  ['cb3', 'Colour by tone', '20 A4 pages', 'Read a word, then colour its tone.', 'kids/colouring/by-tone'],
+  ['cb4', 'Issue 1 colouring pages', '22 A4 pages', 'Colour scenes from Bella & LiANN Issue 1.', 'kids/colouring/issue1']]
+const KIDSTICK = [['sp1', 'Bella &amp; LiANN sticker pack', '4 A4 sheets', 'Print them on sticker paper.', 'kids/stickers/bella-print'],
+  ['sp2', 'Specular sticker sheets', '2 A4 sheets', 'Colour character stickers to print.', 'kids/stickers/specular'],
+  ['sp3', 'Kinetic Shield sticker pack', '2 A4 sheets', 'Black-and-white and colour character stickers.', 'kids/stickers/kinetic-shield']]
 
 function kidCard(s, [k, t, sub, d, slot], label) {
   return `<div class="c"${slot ? ` data-slot="${slot}"` : ''}>${art('kid:' + k)}<div class="t">${t}</div><div class="s">${esc(sub)}</div><div class="d">${esc(d)}</div><div class="acts">${slot ? slotButton(s, slot, label) : '<button class="btn ghost" disabled>Coming soon</button>'}</div></div>`
@@ -257,7 +258,8 @@ function kidCard(s, [k, t, sub, d, slot], label) {
 function pKids(s) {
   return `<div class="kidhead"><img src="assets/sticker-bella.png" alt=""><div><h2 style="margin:0;font-size:1.5rem">Kids</h2><div class="muted">Colouring books and sticker packs to print at home with a grown-up.</div></div></div>
   <section class="sec"><div class="sechead"><h2>Colouring books</h2></div><div class="grid">${KIDBOOKS.map(x => kidCard(s, x, 'Download PDF')).join('')}</div></section>
-  <section class="sec"><div class="sechead"><h2>Sticker packs</h2></div><div class="grid">${KIDSTICK.map(x => kidCard(s, x, 'Download artwork')).join('')}</div></section>`
+  <section class="sec"><div class="sechead"><h2>Sticker packs</h2></div><div class="grid">${KIDSTICK.map(x => kidCard(s, x, 'Download PDF')).join('')}</div></section>
+  <section class="sec"><div class="sechead"><h2>Individual sticker artwork</h2></div>${downloadsFor(s, d => d.product === 'kids' && d.platform === 'PNG')}</section>`
 }
 
 function pDiscover(s) {
