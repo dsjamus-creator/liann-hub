@@ -80,13 +80,12 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     await page.locator('#pick').waitFor()
     assert.match(await page.locator('.who').innerText(), /Ann Mingen/)
   })
-  await step(`${tag}: hub home lists games; Game 3 is the Unity app`, async () => {
+  await step(`${tag}: hub home opens web Mahjong Tones`, async () => {
     await page.click('#pick')
     await page.locator('.hello').waitFor()
     const tones = page.locator('[data-app="tones"]').first()
-    assert.match(await tones.innerText(), /Unity app/)
-    assert.match(await tones.innerText(), /Unity build on its way/)
-    assert.equal(await tones.locator('a[href*="/tones"]').count(), 0)
+    assert.match(await tones.innerText(), /web and Windows/)
+    assert.equal(await tones.locator('a[href*="/playtest/Tones"]').getAttribute('href'), 'https://playtest.lwliann.com/playtest/Tones')
     assert.equal(await page.locator('[data-app="tiles"] a').first().getAttribute('href'), 'https://playtest.lwliann.com/playtest/game/')
     await noOverflow(page); await shot(page, `${tag}-home`)
   })
