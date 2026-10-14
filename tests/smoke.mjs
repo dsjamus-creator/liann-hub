@@ -30,7 +30,8 @@ async function mock(context, { student = true, tour = false } = {}) {
   await context.route('https://lwl-backend-mhgo.onrender.com/learning/**', r => {
     assert.equal(r.request().headers().authorization, 'Bearer at')
     const p = new URL(r.request().url()).pathname
-    if (!student) return r.fulfill({ status: 403, json: { error: 'not_a_student' } })
+    if (!student && p === '/learning/session-pass') { seen.pass = r.request().postDataJSON(); return r.fulfill({ json: { url: 'https://lwl-backend-mhgo.onrender.com/auth/liann/continue#pass=test-pass', expiresInSeconds: 60 } }) }
+    if (!student) return r.fulfill({ status: 403, json: { error: 'not_a_student', profile: { url: 'https://lwl-backend-mhgo.onrender.com/student#profile', sessionPass: { url: 'https://lwl-backend-mhgo.onrender.com/learning/session-pass', next: '/student#profile' } } } })
     if (p === '/learning/setlists') return r.fulfill({ json: { ok: true, setlists: [{ id: LIST, name: 'Tone pairs I miss', words: 2, source_product: 'liann-mahjong-tones' }] } })
     if (p === `/learning/setlists/${LIST}/words`) return r.fulfill({ json: { ok: true, name: 'Tone pairs I miss', words: [{ hz: '一般', py: 'yìbān', gl: 'ordinary', source_product: 'liann-mahjong-tones' }, { hz: '一半', py: 'yíbàn', gl: 'half' }] } })
     return r.fulfill({ status: 404, json: {} })
@@ -172,12 +173,17 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
 
 {
   const context = await browser.newContext()
-  await mock(context, { student: false })
   await context.addInitScript(() => localStorage.setItem('liann-hub-session-v1', JSON.stringify({ access_token: 'at', refresh_token: 'rt', expires_at: 9999999999 })))
   const page = await context.newPage()
-  await step('returning user without a learner profile sees a helpful Library message', async () => {
+  const seen = await mock(context, { student: false })
+  await context.route('https://lwl-backend-mhgo.onrender.com/auth/liann/continue', r => r.fulfill({ contentType: 'text/html', body: '<title>AlongSide</title>' }))
+  await step('returning user without a learner profile is asked to finish it, and AlongSide opens signed in', async () => {
     await page.goto(url + '#library')
-    await page.getByText('Your Library starts when you save your first words').waitFor()
+    await page.getByRole('heading', { name: 'Finish your learner profile' }).waitFor()
+    const [tab] = await Promise.all([context.waitForEvent('page'), page.click('#finishprofile')])
+    await tab.waitForURL(/\/auth\/liann\/continue#pass=test-pass$/)
+    assert.deepEqual(seen.pass, { next: '/student#profile' })
+    await page.locator('#retrylib').waitFor()
   })
   await context.close()
 }

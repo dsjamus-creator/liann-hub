@@ -51,7 +51,7 @@ async function loadLibrary() {
   try { S.setlists = { status: 'ok', items: await account.setlists() } }
   catch (error) {
     if (error.code === 'signed_out') return signedOut()
-    S.setlists = { status: 'error', error: error.message }
+    S.setlists = error.code === 'not_a_student' ? { status: 'needs_profile', profile: error.profile } : { status: 'error', error: error.message }
   }
   if (S.view === 'hub') render()
 }
@@ -61,6 +61,22 @@ async function openList(id) {
   S.openList = { id, name, status: 'loading' }; render()
   try { const r = await account.setlistWords(id); if (S.openList?.id === id) S.openList = { id, name: r.name || name, status: 'ok', words: r.words } }
   catch (error) { if (S.openList?.id === id) S.openList = { id, name, status: 'error', error: error.message } }
+  render()
+}
+
+// The tab is opened during the click, so pop-up blockers allow it; the address follows once the pass arrives.
+async function finishProfile() {
+  const tab = window.open('', '_blank')
+  S.setlists = { ...S.setlists, opening: true, error: null }; render()
+  try {
+    const link = await account.profileLink(S.setlists.profile)
+    if (tab) { tab.opener = null; tab.location.href = link } else location.assign(link)
+    S.setlists = { ...S.setlists, opening: false, opened: true }
+  } catch (error) {
+    if (tab) tab.close()
+    if (error.code === 'signed_out') return signedOut()
+    S.setlists = { ...S.setlists, opening: false, error: error.message }
+  }
   render()
 }
 
@@ -112,6 +128,7 @@ function bind() {
   document.querySelectorAll('[data-list]').forEach(b => { b.onclick = () => { S.page = 'library'; openList(b.dataset.list) } })
   const cl = $('#closelist'); if (cl) cl.onclick = () => { S.openList = null; render() }
   const rl = $('#retrylib'); if (rl) rl.onclick = loadLibrary
+  const fp = $('#finishprofile'); if (fp) fp.onclick = finishProfile
   for (const id of ['q', 'ts']) { const el = $('#' + id); if (el) el.oninput = () => { S.query = el.value; if (id === 'ts' && S.page !== 'home') S.page = 'home'; render() } }
   for (const id of ['ask', 'topsearch']) { const f = $('#' + id); if (f) f.onsubmit = e => { e.preventDefault(); S.page = 'home'; render() } }
   const sl = $('#slim'); if (sl) sl.onclick = () => { S.slim = !S.slim; render() }
