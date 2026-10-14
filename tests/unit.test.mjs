@@ -35,11 +35,11 @@ test('a complete entry is downloadable; unsafe or incomplete ones are not', () =
   assert.equal(formatBytes(65252918), '65 MB')
 })
 
-test('Game 3 on the hub is the Unity app, not the web edition', () => {
+test('Game 3 on the hub opens the web game and links to its Windows download', () => {
   const tones = APPS.find(a => a.id === 'tones')
-  assert.equal(tones.st, 'native'); assert.equal(appUrl(tones), null)
-  assert.equal(statusOf(tones, []).text, 'Unity build on its way')
-  assert.match(statusOf(tones, [{ slot: tones.slot, available: true, version: '0.2.0' }]).text, /0\.2\.0/)
+  assert.equal(tones.st, 'ok')
+  assert.equal(appUrl(tones), 'https://playtest.lwliann.com/playtest/Tones')
+  assert.equal(statusOf(tones, []).text, 'Ready')
 })
 
 test('web games open on the games origin', () => {
