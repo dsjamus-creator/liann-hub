@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises'
 import { parseManifest, safeFileUrl, formatBytes } from '../src/downloads.js'
 import { createAccount } from '../src/account.js'
 import { APPS, appUrl, config } from '../src/config.js'
-import { esc, vHub, statusOf, profileOf, sourceName } from '../src/views.js'
+import { esc, vHub, vWho, statusOf, profileOf, sourceName } from '../src/views.js'
 
 const BASE = 'https://app.lwliann.com/data/downloads.json'
 const SHA = 'a'.repeat(64)
@@ -124,6 +124,32 @@ test('the Library asks for the learner profile instead of showing an error', () 
   assert.doesNotMatch(html, /id="retrylib"/)
   const after = vHub({ user: { email: 'x@y.z' }, page: 'library', theme: { ds: 'liann', t: 'dark' }, setlists: { status: 'needs_profile', opened: true } })
   assert.match(after, /id="retrylib"/)
+})
+
+test('households: switched-off AlongSide hides them; profile SetLists use profileId', async () => {
+  const f = fakeServer(), seen = []
+  const acct = createAccount({ pinyinApi: 'https://api.test', backend: 'https://be.test', fetchImpl: (u, o = {}) => { seen.push(`${o.method || 'GET'} ${u}`); return f.fetchImpl(u, o) }, storage: f.storage })
+  await acct.verifyCode('a@b.c', '123456')
+  assert.equal(await acct.household(), null, 'a 404 means households are switched off')
+  await acct.setlists('11111111-2222-4333-8444-555555555555').catch(() => {})
+  assert.ok(seen.includes('GET https://be.test/learning/setlists?profileId=11111111-2222-4333-8444-555555555555'))
+  await assert.rejects(acct.setlists('../../admin'), /Unknown profile/)
+})
+
+test('the picker lists child profiles and the Plan page shows the household only when switched on', () => {
+  const base = { user: { email: 'ann@example.com' }, theme: { ds: 'liann', t: 'dark' } }
+  const family = { household: { id: 'h', plan: 'family', role: 'owner', limits: { adults: 2, children: 4 } },
+    members: [{ email: 'ann@example.com', role: 'owner', me: true, accountId: 'a' }], children: [{ id: '11111111-2222-4333-8444-555555555555', name: '<Mei>' }], invites: [], invitations: [] }
+  const who = vWho({ ...base, household: family })
+  assert.match(who, /data-pickchild="11111111-2222-4333-8444-555555555555"/)
+  assert.ok(!who.includes('<Mei>'), 'names are escaped')
+  assert.match(who, /id="addprofile"/)
+  assert.doesNotMatch(vWho({ ...base, household: null }), /addprofile|pickchild/)
+  const plan = vHub({ ...base, page: 'plan', household: family, policies: [{ slug: 'terms', title: 'Terms', version: 2, body_text: 'T' }] })
+  assert.match(plan, /<h2>Household<\/h2>/); assert.match(plan, /id="hhchild"/); assert.match(plan, /id="hhinvite"/); assert.match(plan, /Terms \(version 2\)/)
+  assert.doesNotMatch(vHub({ ...base, page: 'plan', household: null }), /<h2>Household<\/h2>/)
+  const couple = { ...family, household: { ...family.household, plan: 'couple', limits: { adults: 2, children: 0 } }, children: [] }
+  assert.doesNotMatch(vHub({ ...base, page: 'plan', household: couple }), /id="hhchild"/, 'Couple plans have no child profiles')
 })
 
 test('config holds public addresses only', async () => {

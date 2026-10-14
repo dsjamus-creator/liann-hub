@@ -16,12 +16,35 @@ const S = {
   view: 'loading', email: '', user: null, page: pageFromHash(), appf: 'All', slim: false, appear: false,
   theme: theme && DS.some(d => d[0] === theme.ds) && /^(light|dark)$/.test(theme.t) ? theme : { ds: 'liann', t: 'dark' },
   recent: store.get('liann-hub-recent', []), downloads: null, setlists: null, openList: null, query: '', busy: false, error: '', fix: '',
+  household: undefined, learner: null, hhError: '', hhBusy: false,
 }
 
 function pageFromHash() { const k = location.hash.slice(1); return NAV.some(([n]) => n === k) ? k : 'home' }
 function applyTheme() { document.documentElement.dataset.ds = S.theme.ds; document.documentElement.dataset.t = S.theme.t; store.set('liann-hub-theme', S.theme) }
 function toast(text) { const el = $('#toast'); el.textContent = text; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => { el.hidden = true }, 2200) }
-function go(view, extra = {}) { Object.assign(S, { error: '', busy: false }, extra, { view }); render() }
+function go(view, extra = {}) { Object.assign(S, { error: '', busy: false }, extra, { view }); render(); if (view === 'who' || view === 'hub') loadHousehold() }
+
+// Couple and Family plans (One LiANN account C3). null = AlongSide has households switched off; nothing is shown.
+async function loadHousehold() {
+  try { S.household = await account.household() } catch (error) { if (error.code === 'signed_out') return signedOut(); S.household = null }
+  if (S.household?.household?.plan === 'family' && !S.policies)
+    S.policies = (await account.householdAction('GET', '/policies').catch(() => ({}))).policies || null
+  if (S.learner && !S.household?.children?.some(c => c.id === S.learner.id)) { S.learner = null; if (S.view === 'hub') loadLibrary() }
+  if (S.view === 'who' || S.view === 'hub') render()
+}
+
+const HH_ERRORS = { plan_required: 'Starting a household needs a Couple or Family plan.', already_in_household: 'This account is already in a household.',
+  valid_email_required: 'Enter one email address.', cannot_invite_yourself: 'That is your own email.', adult_limit_reached: 'This plan has no room for another adult.',
+  already_invited: 'That email already has an invitation.', owner_only: 'Only the plan holder can do that.', owner_cannot_leave: 'The plan holder cannot leave their own household.',
+  name_required: 'Enter the child\u2019s first name.', valid_date_of_birth_required: 'Enter the child\u2019s date of birth.', child_must_be_under_13: 'Child profiles are for children under 13. Learners 13 and over sign in with their own LiANN account.',
+  guardian_name_required: 'Enter your name as their parent or guardian.', guardian_agreement_required: 'Tick the box to agree for your child.', family_plan_required: 'Child profiles come with the Family plan.',
+  child_limit_reached: 'The Family plan has room for four children.', household_required: 'Start or join a household first.' }
+async function householdDo(method, path, body, done) {
+  S.hhBusy = true; S.hhError = ''; render()
+  try { await account.householdAction(method, path, body); if (done) toast(done) }
+  catch (error) { if (error.code === 'signed_out') return signedOut(); S.hhError = HH_ERRORS[error.code] || HH_ERRORS[error.message] || error.message }
+  S.hhBusy = false; await loadHousehold()
+}
 
 function render() {
   const view = { loading: vLoading, email: vEmail, code: vCode, who: vWho, hub: vHub }[S.view]
@@ -48,7 +71,7 @@ async function enterHub(user) {
 async function loadLibrary() {
   S.setlists = { status: 'loading' }
   if (S.view === 'hub') render()
-  try { S.setlists = { status: 'ok', items: await account.setlists() } }
+  try { S.setlists = { status: 'ok', items: await account.setlists(S.learner?.id) } }
   catch (error) {
     if (error.code === 'signed_out') return signedOut()
     S.setlists = error.code === 'not_a_student' ? { status: 'needs_profile', profile: error.profile } : { status: 'error', error: error.message }
@@ -116,7 +139,23 @@ function bind() {
     $('#back').onclick = () => go('email')
     $('#resend').onclick = async () => { try { await account.requestCode(S.email); toast('New code sent') } catch (error) { S.error = error.message; render() } }
   }
-  const pick = $('#pick'); if (pick) pick.onclick = () => enterHub(S.user)
+  const pick = $('#pick'); if (pick) pick.onclick = () => { S.learner = null; enterHub(S.user) }
+  document.querySelectorAll('[data-pickchild]').forEach(b => { b.onclick = () => {
+    const c = S.household?.children?.find(x => x.id === b.dataset.pickchild); if (!c) return
+    S.learner = { id: c.id, name: c.name }; S.page = 'library'; history.replaceState(null, '', '#library'); enterHub(S.user)
+  } })
+  const addp = $('#addprofile'); if (addp) addp.onclick = () => { S.page = 'plan'; history.replaceState(null, '', '#plan'); enterHub(S.user) }
+  const hhc = $('#hhcreate'); if (hhc) hhc.onclick = () => householdDo('POST', '', undefined, 'Household started')
+  document.querySelectorAll('[data-hhaccept]').forEach(b => { b.onclick = () => householdDo('POST', `/invites/${b.dataset.hhaccept}/accept`, undefined, 'You joined the household') })
+  document.querySelectorAll('[data-hhrevoke]').forEach(b => { b.onclick = () => householdDo('DELETE', `/invites/${b.dataset.hhrevoke}`, undefined, 'Invitation withdrawn') })
+  document.querySelectorAll('[data-hhremove]').forEach(b => { b.onclick = () => { if (confirm('Remove this adult from your household?')) householdDo('DELETE', `/members/${b.dataset.hhremove}`, undefined, 'Removed') } })
+  const hhl = $('#hhleave'); if (hhl) hhl.onclick = () => { if (confirm('Leave this household? Your own account and SetLists stay yours.')) householdDo('DELETE', '/members/me', undefined, 'You left the household') }
+  document.querySelectorAll('[data-hharchive]').forEach(b => { b.onclick = () => { if (confirm('Remove this child profile from your household? Their SetLists are kept.')) householdDo('DELETE', `/children/${b.dataset.hharchive}`, undefined, 'Child profile removed') } })
+  const hhi = $('#hhinvite'); if (hhi) hhi.onsubmit = e => { e.preventDefault(); householdDo('POST', '/invites', { email: $('#hhemail').value.trim() }, 'Invitation sent') }
+  const hhk = $('#hhchild'); if (hhk) hhk.onsubmit = e => { e.preventDefault()
+    const ok = $('#hhagree').checked
+    householdDo('POST', '/children', { name: $('#hhcname').value, dateOfBirth: $('#hhcdob').value, guardianName: $('#hhgname').value,
+      agreements: { terms: ok, privacy: ok } }, 'Child profile added') }
   document.querySelectorAll('#signout').forEach(b => { b.onclick = async () => { await account.signOut(); toast('Signed out'); signedOut() } })
 
   document.querySelectorAll('[data-nav]').forEach(b => { b.onclick = () => {
