@@ -14,7 +14,7 @@ export const config = {
 // st: 'ok' opens a web app (url, or path on the games origin; a slot adds a Downloads button for its installer); 'native' is a store or desktop build listed in Downloads;
 // 'desk' is a desktop browser extension; 'soon' is announced but not available.
 export const APPS = [
-  { id: 'tones', g: '声', name: 'LiANN Pinyin Mahjong Tones', kind: 'Game · Unity app', desc: 'Match word and meaning, then enter the tones.', st: 'native', slot: 'mahjong-tones/test-build' },
+  { id: 'tones', g: '声', name: 'LiANN Pinyin Mahjong Tones', kind: 'Game · web and Windows', desc: 'Match word and meaning, then enter the tones.', st: 'ok', path: '/playtest/Tones', slot: 'mahjong-tones/test-build' },
   { id: 'tiles', g: '拼', name: 'Pinyin Tiles', kind: 'Game · web', desc: 'Build connected words.', st: 'ok', path: '/playtest/game/' },
   { id: 'puzzle', g: '谜', name: 'Pinyin Puzzle', kind: 'Game · web', desc: 'Solve across and down.', st: 'ok', path: '/playtest/puzzle/' },
   { id: 'dash', g: '伴', name: 'AlongSide', kind: 'App · Android test build', desc: 'Classes, whiteboards, SetLists and progress.', st: 'native', slot: 'alongside/android-test' },
