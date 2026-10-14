@@ -119,6 +119,23 @@
     "producer": "codex"
   },
   {
+    "file": "https://downloads.lwliann.com/alongside-dashboard/windows/0.1.0/AlongSide-Dashboard-Setup-0.1.0.exe",
+    "bytes": 110447937,
+    "sha256": "356d462f9a085d580ba6bbe19b3b1792107be62d3c425ec0f32d6e547be3b0e1",
+    "builtAt": "2026-10-14T17:31:02Z",
+    "product": "alongside-dashboard",
+    "name": "AlongSide Dashboard for Windows",
+    "version": "0.1.0",
+    "platform": "Unsigned Windows x64 installer",
+    "hubSlot": "alongside/windows",
+    "sourceRepo": "dsjamus-creator/lwl-backend",
+    "sourceCommit": "0801a0b73589c72e5832b9c7d9cc63929b8485fa",
+    "buildCommand": "GitHub Actions AlongSide Windows installer: npm run dist:win",
+    "licenceNotes": "Electron runtime; no bundled third-party fonts, audio, word data or models; installer is unsigned.",
+    "notes": "Public installer and SHA256SUMS.txt match the successful release workflow run 38606957799; the installer is unsigned.",
+    "producer": "codex"
+  },
+  {
     "file": null,
     "bytes": null,
     "sha256": null,

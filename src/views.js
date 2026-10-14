@@ -203,9 +203,9 @@ function pLibrary(s) {
   return `<section class="sec"><div class="sechead"><h2>Library</h2><span class="muted">${whose}</span></div>${body}</section>`
 }
 
-const PRODUCT_GLYPH = { 'dual-subs': '字', lyricsync: '歌', polyflow: '琴', 'mahjong-tones': '声', 'alongside-mobile': '伴', 'pinyin-tiles': '拼', 'pinyin-puzzle': '谜', 'bella-liann': '漫', kids: '小', figures: '偶' }
+const PRODUCT_GLYPH = { 'dual-subs': '字', lyricsync: '歌', polyflow: '琴', 'mahjong-tones': '声', 'alongside-mobile': '伴', 'alongside-dashboard': '伴', 'pinyin-tiles': '拼', 'pinyin-puzzle': '谜', 'bella-liann': '漫', kids: '小', figures: '偶' }
 
-const DOWNLOAD_ART = { 'dual-subs': 'dual', lyricsync: 'lyric', polyflow: 'poly', 'mahjong-tones': 'tones', 'alongside-mobile': 'dash', 'pinyin-tiles': 'tiles', 'pinyin-puzzle': 'puzzle', 'bella-liann': 'read', 'kids/colouring/flight': 'kid:cb1', kids: 'kid:sp1' }
+const DOWNLOAD_ART = { 'dual-subs': 'dual', lyricsync: 'lyric', polyflow: 'poly', 'mahjong-tones': 'tones', 'alongside-mobile': 'dash', 'alongside-dashboard': 'dash', 'pinyin-tiles': 'tiles', 'pinyin-puzzle': 'puzzle', 'bella-liann': 'read', 'kids/colouring/flight': 'kid:cb1', kids: 'kid:sp1' }
 
 // licenceNotes in the manifest are reviewer notes for whoever publishes the file; they are not shown to learners.
 function downloadCard(d) {
