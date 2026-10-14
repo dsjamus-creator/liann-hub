@@ -114,9 +114,22 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     return json(`${backend}${path}`, { headers: { Authorization: `Bearer ${token}` } })
   }
 
-  async function setlists() {
+  // Couple and Family plans (One LiANN account C3). A 404 means AlongSide has households switched off.
+  async function backendCall(method, path, body) {
+    const token = await accessToken()
+    if (!token) throw new AccountError('Sign in again to manage your household.', 'signed_out')
+    return json(`${backend}${path}`, { method, headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
+      body: body === undefined ? undefined : JSON.stringify(body) })
+  }
+  async function household() {
+    try { return await backendGet('/learning/household') } catch (error) { if (error.status === 404) return null; throw error }
+  }
+  const householdAction = (method, path, body) => backendCall(method, `/learning/household${path}`, body)
+
+  async function setlists(profileId) {
+    if (profileId !== undefined && !/^[0-9a-f-]{36}$/i.test(String(profileId))) throw new AccountError('Unknown profile.', 'bad_profile')
     try {
-      const result = await backendGet('/learning/setlists')
+      const result = await backendGet(profileId ? `/learning/setlists?profileId=${encodeURIComponent(profileId)}` : '/learning/setlists')
       return Array.isArray(result.setlists) ? result.setlists : []
     } catch (error) {
       if (error.code === 'not_a_student') throw Object.assign(new AccountError('Your Library needs a learner profile first.', 'not_a_student', error.status), { profile: error.body?.profile })
@@ -151,5 +164,5 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     }
   }
 
-  return { requestCode, verifyCode, accessToken, user, signOut, setlists, setlistWords, profileLink, hasSession: () => Boolean(read()?.access_token) }
+  return { requestCode, verifyCode, accessToken, user, signOut, setlists, setlistWords, profileLink, household, householdAction, hasSession: () => Boolean(read()?.access_token) }
 }

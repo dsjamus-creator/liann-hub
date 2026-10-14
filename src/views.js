@@ -114,7 +114,10 @@ export function vWho(s) {
   const p = profileOf(s.user)
   return `<div class="who fade">${decor()}<div class="whohead">${LOCKUP}</div><h1>Who's learning?</h1><div class="profiles">
   <button class="prof" id="pick"><div class="tile" style="font-size:inherit"><span>${esc(p.g)}</span></div><span style="display:grid;gap:2px">${esc(p.name)}<span style="font-size:.75em;font-weight:700">${esc(s.user.email)}</span></span></button>
-  <div class="prof" aria-disabled="true" title="Family profiles arrive with Family plans"><div class="add">+</div>Add profile<span class="lock muted">With Family plans</span></div></div>
+  ${(s.household?.children || []).map(c => `<button class="prof" data-pickchild="${esc(c.id)}"><div class="tile" style="font-size:inherit"><span>${esc(c.name.slice(0, 1).toUpperCase())}</span></div><span style="display:grid;gap:2px">${esc(c.name)}<span style="font-size:.75em;font-weight:700">Child profile</span></span></button>`).join('')}
+  ${s.household?.household?.plan === 'family' && s.household.children.length < s.household.household.limits.children
+    ? '<button class="prof" id="addprofile"><div class="add">+</div>Add profile<span class="lock muted">A child under 13</span></button>'
+    : '<div class="prof" aria-disabled="true" title="Family profiles arrive with Family plans"><div class="add">+</div>Add profile<span class="lock muted">With Family plans</span></div>'}</div>
   <div><button class="btn ghost" id="signout">Sign out</button></div></div>`
 }
 
@@ -196,7 +199,8 @@ function pLibrary(s) {
   const body = L.status === 'ok' ? (L.items.length ? `<div class="grid">${L.items.map(setlistCard).join('')}</div>` : '<div class="empty">No SetLists yet. Save words in Pinyin Tiles, Pinyin Puzzle or Mahjong Tones while signed in, and they appear here.</div>')
     : L.status === 'needs_profile' ? profileCard(L)
     : L.status === 'error' ? `<div class="empty"><p style="margin:0 0 10px">${esc(L.error)}</p><button class="btn ghost" id="retrylib">Try again</button></div>` : '<div class="empty">Loading your SetLists…</div>'
-  return `<section class="sec"><div class="sechead"><h2>Library</h2><span class="muted">Your SetLists from every game, kept in AlongSide</span></div>${body}</section>`
+  const whose = s.learner ? `${esc(s.learner.name)}\u2019s SetLists from every game, kept in AlongSide` : 'Your SetLists from every game, kept in AlongSide'
+  return `<section class="sec"><div class="sechead"><h2>Library</h2><span class="muted">${whose}</span></div>${body}</section>`
 }
 
 const PRODUCT_GLYPH = { 'dual-subs': '字', lyricsync: '歌', polyflow: '琴', 'mahjong-tones': '声', 'alongside-mobile': '伴', 'pinyin-tiles': '拼', 'pinyin-puzzle': '谜', 'bella-liann': '漫', kids: '小', figures: '偶' }
@@ -316,13 +320,48 @@ const planCard = x => `<div class="c" style="${x.cur ? 'border-color:var(--accen
   <ul style="margin:0;padding-left:1.1rem;display:grid;gap:4px;color:var(--muted);font-size:.9rem">${x.f.map(i => `<li>${i}</li>`).join('')}</ul>
   <div class="acts">${x.cur ? '<span class="status">Current plan</span>' : '<button class="btn ghost" disabled>Coming soon</button>'}</div></div>`
 
+// Couple and Family plans (One LiANN account C3). Shown only when AlongSide has households switched on.
+function householdSection(s) {
+  const H = s.household, h = H.household, busy = s.hhBusy ? ' disabled' : ''
+  const err = s.hhError ? `<p class="err" role="alert" style="margin:0">${esc(s.hhError)}</p>` : ''
+  const invitations = (H.invitations || []).map(i => `<div class="c"><div class="t">Invitation</div><div class="s">${esc(i.owner_email)} invited you to their ${esc(i.plan === 'family' ? 'Family' : 'Couple')} plan.</div>
+    <div class="d">You keep your own LiANN account and SetLists.</div><div class="acts"><button class="btn" data-hhaccept="${esc(i.id)}"${busy}>Join</button></div></div>`).join('')
+  if (!h) return `<section class="sec"><div class="sechead"><h2>Household</h2></div>${err}<div class="grid">${invitations}
+    <div class="c"><div class="t">Couple or Family</div>${H.canCreate
+      ? `<div class="s">Your ${H.canCreate === 'family' ? 'Family' : 'Couple'} plan is active.</div><div class="d">Start your household, then invite the other adult${H.canCreate === 'family' ? ' and add children under 13' : ''}.</div><div class="acts"><button class="btn" id="hhcreate"${busy}>Start household</button></div>`
+      : '<div class="s">Not on a household plan</div><div class="d">With a Couple or Family plan, two adults learn on one bill, each with their own LiANN account. Family adds up to four children under 13.</div>'}</div></div></section>`
+  const owner = h.role === 'owner', adults = H.members.length + (H.invites || []).length
+  const members = H.members.map(m => `<li>${esc(m.email)} <span class="muted">· ${m.role === 'owner' ? 'plan holder' : 'adult'}${m.me ? ' (you)' : ''}</span></li>`).join('')
+  const invites = (H.invites || []).map(i => `<li>${esc(i.email)} <span class="muted">· invited</span> <button class="link" data-hhrevoke="${esc(i.id)}">Withdraw</button></li>`).join('')
+  const children = (H.children || []).map(c => `<li>${esc(c.name)} <span class="muted">· child profile</span> <button class="link" data-hharchive="${esc(c.id)}">Remove</button></li>`).join('')
+  const inviteForm = owner && adults < h.limits.adults ? `<form id="hhinvite" class="c" novalidate><div class="t">Invite the other adult</div>
+    <div class="d">They sign in with their own LiANN account and accept on this page. Nothing is emailed.</div>
+    <div class="field"><label for="hhemail">Their email</label><input id="hhemail" type="email" autocomplete="off" placeholder="name@example.com" required></div>
+    <div class="acts"><button class="btn" type="submit"${busy}>Invite</button></div></form>` : ''
+  const childForm = h.plan === 'family' && (H.children || []).length < h.limits.children ? `<form id="hhchild" class="c" novalidate><div class="t">Add a child under 13</div>
+    <div class="d">Children under 13 have no sign-in of their own: they learn on a parent's device and choose their name on "Who's learning?". You are their parent or guardian on record.</div>
+    <div class="field"><label for="hhcname">Child's first name</label><input id="hhcname" maxlength="40" required></div>
+    <div class="field"><label for="hhcdob">Date of birth</label><input id="hhcdob" type="date" required></div>
+    <div class="field"><label for="hhgname">Your name (parent or guardian)</label><input id="hhgname" maxlength="160" autocomplete="name" required></div>
+    ${(s.policies || []).map(p => `<details class="policy"><summary>${esc(p.title)} (version ${esc(p.version)})</summary><div style="max-height:220px;overflow:auto;white-space:pre-wrap;font-size:.85rem;padding:8px 0">${esc(p.body_text || 'The full text is not available here yet.')}</div>${p.source_url ? `<a href="${esc(p.source_url)}" target="_blank" rel="noopener noreferrer">Open the full document</a>` : ''}</details>`).join('')}
+    <label style="display:flex;gap:8px;align-items:flex-start;font-size:.9rem"><input id="hhagree" type="checkbox"> <span>I am this child's parent or guardian, and I have read and agree to the Terms and Privacy Promise above on their behalf.</span></label>
+    <div class="acts"><button class="btn" type="submit"${busy}>Add child</button></div></form>` : ''
+  return `<section class="sec"><div class="sechead"><h2>Household</h2><span class="muted">${h.plan === 'family' ? 'Family' : 'Couple'} plan</span></div>${err}<div class="grid">${invitations}
+    <div class="c"><div class="t">People</div><ul style="margin:0;padding-left:1.1rem;display:grid;gap:6px">${members}${invites}${children}</ul>
+    ${owner ? H.members.filter(m => m.role === 'adult' && m.accountId).map(m => `<div class="acts"><button class="btn ghost" data-hhremove="${esc(m.accountId)}">Remove ${esc(m.email)}</button></div>`).join('') : '<div class="acts"><button class="btn ghost" id="hhleave">Leave household</button></div>'}</div>
+    ${inviteForm}${childForm}</div></section>`
+}
+
 function pPlan(s) {
   const th = s.theme, pf = s.planf || 'Learners'
   return `<section class="sec"><div class="sechead"><h2>Plan</h2></div><div class="grid">
-  <div class="c"><div class="t">Free</div><div class="s">Learner · no charge</div><div class="d">Pinyin games, Bella &amp; LiANN and your SetLists from every game.</div></div>
+  ${s.household?.household
+    ? `<div class="c"><div class="t">${s.household.household.plan === 'family' ? 'Family' : 'Couple'} plan</div><div class="s">${s.household.household.role === 'owner' ? 'Plan holder' : 'Member of a household'}</div><div class="d">Every adult keeps their own LiANN account and SetLists.${s.household.household.plan === 'family' ? ' Children under 13 learn on their own profile.' : ''}</div></div>`
+    : '<div class="c"><div class="t">Free</div><div class="s">Learner · no charge</div><div class="d">Pinyin games, Bella &amp; LiANN and your SetLists from every game.</div></div>'}
   <div class="c"><div class="t">LiANN account</div><div class="s">${esc(s.user.email)}</div><div class="d">You sign in with a code sent to this email. The same account works in every game and in AlongSide.</div><div class="acts"><button class="btn ghost" id="signout">Sign out</button></div></div>
-  <div class="c"><div class="t">Profiles</div><div class="s">1 profile</div><div class="d">Separate profiles for each learner arrive with Couple and Family plans.</div></div>
+  ${s.household ? '' : '<div class="c"><div class="t">Profiles</div><div class="s">1 profile</div><div class="d">Separate profiles for each learner arrive with Couple and Family plans.</div></div>'}
   <div class="c"><div class="t">Appearance</div><div class="s">${esc(DS.find(d => d[0] === th.ds)[1])} · ${th.t === 'dark' ? 'Dark' : 'Light'}</div><div class="d">LiANN, Amberline, Steelline, Cadence or Ivoryline, in light or dark.</div><div class="acts"><button class="btn ghost" id="apbtn2">Change</button></div></div></div></section>
+  ${s.household ? householdSection(s) : ''}
   <section class="sec"><div class="sechead"><h2>Plans</h2><span class="muted" style="font-size:.85rem">Prices to be set</span></div>
   <div class="chips" style="justify-content:flex-start">${['Learners', 'Tutors', 'Organisations'].map(c => `<button class="chip" data-planf="${c}" aria-pressed="${pf === c}">${c}</button>`).join('')}</div>
   <div class="grid">${PLANS.filter(x => x.g === pf).map(planCard).join('')}</div>

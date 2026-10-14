@@ -55,7 +55,9 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
   const page = await context.newPage(), errors = []
   page.on('pageerror', e => errors.push(e.message))
   // The wrong-code step deliberately gets a 403 from /verify; Chromium logs that as a console error.
-  page.on('console', m => { if (m.type() === 'error' && !(/status of 403/.test(m.text()) && m.location().url.endsWith('/auth/v1/verify'))) errors.push(m.text()) })
+  // Households switched off: AlongSide answers /learning/household with 404, which the hub reads as "no households".
+  page.on('console', m => { if (m.type() === 'error' && !(/status of 403/.test(m.text()) && m.location().url.endsWith('/auth/v1/verify'))
+    && !(/status of 404/.test(m.text()) && m.location().url.includes('/learning/household'))) errors.push(m.text()) })
   await page.goto(url)
 
   await step(`${tag}: email typo is caught, then a code is sent`, async () => {
@@ -185,6 +187,54 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     assert.deepEqual(seen.pass, { next: '/student#profile' })
     await page.locator('#retrylib').waitFor()
   })
+  await context.close()
+}
+
+{
+  // One LiANN account C3: a Family household with a child profile (AlongSide has households switched on).
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } })
+  await context.addInitScript(() => localStorage.setItem('liann-hub-session-v1', JSON.stringify({ access_token: 'at', refresh_token: 'rt', expires_at: 9999999999 })))
+  await mock(context)
+  const CHILD = '99999999-8888-4777-8666-555555555555', posts = []
+  const state = { household: { id: 'h1', plan: 'family', role: 'owner', limits: { adults: 2, children: 4 } },
+    members: [{ email: 'ann.mingen@example.com', role: 'owner', me: true, accountId: 'acc-1' }],
+    children: [{ id: CHILD, name: 'Mei' }], invites: [], invitations: [] }
+  await context.route('https://lwl-backend-mhgo.onrender.com/learning/household**', async r => {
+    const u = new URL(r.request().url()), m = r.request().method()
+    assert.equal(r.request().headers().authorization, 'Bearer at')
+    if (u.pathname === '/learning/household/policies') return r.fulfill({ json: { policies: [{ slug: 'terms', title: 'Terms', version: 2, body_text: 'Terms text' }, { slug: 'privacy', title: 'Privacy Promise', version: 1, body_text: 'Privacy text' }] } })
+    if (u.pathname === '/learning/household' && m === 'GET') return r.fulfill({ json: state })
+    if (u.pathname === '/learning/household/children' && m === 'POST') {
+      const body = r.request().postDataJSON(); posts.push(body)
+      state.children = [...state.children, { id: '77777777-6666-4555-8444-333333333333', name: body.name }]
+      return r.fulfill({ status: 201, json: { child: { id: 'x', name: body.name } } })
+    }
+    return r.fulfill({ status: 404, json: {} })
+  })
+  let profileQuery = null
+  await context.route('https://lwl-backend-mhgo.onrender.com/learning/setlists?profileId=*', r => {
+    profileQuery = new URL(r.request().url()).searchParams.get('profileId')
+    return r.fulfill({ json: { ok: true, setlists: [{ id: LIST, name: 'Mei tones', words: 1, source_product: 'liann-mahjong-tones' }] } })
+  })
+  const page = await context.newPage()
+  await step('Family: "Who\'s learning?" lists the child and opens their own Library', async () => {
+    await page.goto(url)
+    await page.locator('#me').first().click()
+    await page.locator(`[data-pickchild="${CHILD}"]`).click()
+    await page.getByText('Mei\u2019s SetLists from every game').waitFor()
+    await page.getByText('Mei tones').waitFor()
+    assert.equal(profileQuery, CHILD)
+  })
+  await step('Family: the Plan page adds a child with guardian consent', async () => {
+    await page.goto(url + '#plan'); await page.reload()
+    await page.getByRole('heading', { name: 'Household' }).waitFor()
+    await page.getByText('Terms (version 2)').waitFor()
+    await page.fill('#hhcname', 'Lin'); await page.fill('#hhcdob', '2019-03-04'); await page.fill('#hhgname', 'Ann Mingen')
+    await page.check('#hhagree'); await page.click('#hhchild [type=submit]')
+    await page.locator('li', { hasText: /^Lin · child profile/ }).waitFor()
+    assert.deepEqual(posts[0], { name: 'Lin', dateOfBirth: '2019-03-04', guardianName: 'Ann Mingen', agreements: { terms: true, privacy: true } })
+  })
+  await shot(page, 'household-plan')
   await context.close()
 }
 
