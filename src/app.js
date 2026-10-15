@@ -1,7 +1,7 @@
 import { config, NAV, CODE_LENGTH } from './config.js'
 import { createAccount } from './account.js'
 import { loadDownloads } from './downloads.js'
-import { loadComics, clampPage } from './comics.js'
+import { loadComics, clampPage, spreadsOf, spreadIndexOf, firstPageOf, visiblePages, lensGeometry } from './comics.js'
 import { DS, vLoading, vEmail, vCode, vWho, vHub } from './views.js'
 import { mountViewer, stopViewer } from './figures.js'
 
@@ -106,43 +106,104 @@ async function finishProfile() {
 
 function signedOut() { go('email', { user: null, setlists: null, openList: null }) }
 
-// Comic reader. Progress (last page seen per episode) stays on this device.
+// Comic reader. Progress (last page seen per episode), the one/two-page choice and the magnifier switch stay on this device.
+const LENS_ZOOM = 2.5, LENS_SIZE = 190
+const prefs = store.get('liann-hub-reader-prefs', {})
+const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 function readerEp() { return S.comics?.find(e => e.id === S.reader?.id) }
+// Two pages side by side on a wide landscape screen (unless the reader chose otherwise); one page elsewhere.
+function wantSpread(r, n) {
+  if (n < 2) return false
+  if (r.mode === 'spread') return true
+  if (r.mode === 'single') return false
+  return innerWidth >= 900 && innerWidth > innerHeight * 1.15
+}
 function openReader(id) {
   const ep = S.comics?.find(e => e.id === id); if (!ep) return
   const saved = S.progress[id]
-  S.reader = { id, i: Number.isInteger(saved) && saved < ep.pages.length - 1 ? clampPage(saved, ep.pages.length) : 0, zoom: false }
+  S.reader = { id, i: Number.isInteger(saved) && saved < ep.pages.length - 1 ? clampPage(saved, ep.pages.length) : 0, zoom: false, mode: prefs.mode || 'auto', lens: prefs.lens !== false, flip: null }
+  S.reader.spread = wantSpread(S.reader, ep.pages.length)
   S.more = false; S.notif = false; S.appear = false; render()
 }
-function closeReader() { S.reader = null; render() }
-function turnTo(i) {
+function closeReader() { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); S.reader = null; render() }
+// Go to page `to`; dir (+1 / -1) plays the page-turn when it is a single step.
+function showPage(to, dir) {
   const ep = readerEp(); if (!ep) return
-  S.reader.i = clampPage(i, ep.pages.length)
-  S.progress = { ...S.progress, [ep.id]: S.reader.i }; store.set('liann-hub-reader', S.progress)
+  const r = S.reader, n = ep.pages.length, from = visiblePages(r.i, n, r.spread)
+  r.i = clampPage(to, n)
+  r.flip = dir && !r.zoom && !reduceMotion() ? { dir, from } : null
+  S.progress = { ...S.progress, [ep.id]: r.i }; store.set('liann-hub-reader', S.progress)
   render()
+}
+// Turn one page (single view) or one spread (two-page view).
+function stepReader(d) {
+  const ep = readerEp(); if (!ep) return
+  const r = S.reader, n = ep.pages.length
+  if (!r.spread) { if (r.i + d >= 0 && r.i + d < n) showPage(r.i + d, d); return }
+  const sp = spreadsOf(n), k = spreadIndexOf(r.i, n) + d
+  if (k >= 0 && k < sp.length) showPage(firstPageOf(sp[k]), d)
+}
+// Full page: the browser's Fullscreen API on the whole document (the reader is a fixed overlay inside it, so re-rendering
+// never drops fullscreen). Where that is missing (iPhone Safari) the top bar is hidden instead. Esc or the button leaves it.
+function setFull(on) {
+  S.reader.full = on
+  if (on && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {})
+  if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {})
+  render()
+}
+document.addEventListener('fullscreenchange', () => { if (S.reader && S.reader.full && !document.fullscreenElement && document.documentElement.requestFullscreen) { S.reader.full = false; render() } })
+function savePrefs() { prefs.mode = S.reader.mode; prefs.lens = S.reader.lens; store.set('liann-hub-reader-prefs', prefs) }
+// Hover magnifier: a circle that follows the mouse and shows the page under it enlarged.
+function moveLens(e) {
+  const lens = $('#rlens'); if (!lens) return
+  if (!S.reader.lens || S.reader.zoom || e.pointerType !== 'mouse' || $('.flip')) { lens.hidden = true; return }
+  const pg = document.elementsFromPoint(e.clientX, e.clientY).find(el => el.matches?.('.pg:not(.old)'))
+  const img = pg?.querySelector('img')
+  const g = img && img.naturalWidth && lensGeometry({ box: img.getBoundingClientRect(), natural: { w: img.naturalWidth, h: img.naturalHeight }, align: pg.classList.contains('l') ? 'right' : pg.classList.contains('r') ? 'left' : 'center', x: e.clientX, y: e.clientY, zoom: LENS_ZOOM, size: LENS_SIZE })
+  if (!g) { lens.hidden = true; return }
+  Object.assign(lens.style, { width: LENS_SIZE + 'px', height: LENS_SIZE + 'px', left: e.clientX - LENS_SIZE / 2 + 'px', top: e.clientY - LENS_SIZE / 2 + 'px',
+    backgroundImage: `url("${img.src}")`, backgroundSize: `${g.bgSize[0]}px ${g.bgSize[1]}px`, backgroundPosition: `${g.bgPos[0]}px ${g.bgPos[1]}px` })
+  lens.hidden = false
 }
 function bindReader() {
   const ep = readerEp(); if (!ep) return
   $('#rclose').onclick = closeReader
-  $('#rprev').onclick = () => turnTo(S.reader.i - 1)
-  $('#rnext').onclick = () => turnTo(S.reader.i + 1)
-  $('#rzoom').onclick = () => { S.reader.zoom = !S.reader.zoom; render() }
-  $('#rseek').onchange = e => turnTo(Number(e.target.value) - 1)
+  $('#rprev').onclick = () => stepReader(-1)
+  $('#rnext').onclick = () => stepReader(1)
+  $('#rzoom').onclick = () => { S.reader.zoom = !S.reader.zoom; S.reader.flip = null; render() }
+  $('#rfull').onclick = () => setFull(!S.reader.full)
+  const rexit = $('#rexit'); if (rexit) rexit.onclick = () => setFull(false)
+  $('#rlensbtn').onclick = () => { S.reader.lens = !S.reader.lens; savePrefs(); render() }
+  const mode = $('#rmode'); if (mode) mode.onclick = () => { S.reader.mode = S.reader.spread ? 'single' : 'spread'; S.reader.spread = wantSpread(S.reader, ep.pages.length); S.reader.flip = null; savePrefs(); render() }
+  $('#rseek').onchange = e => showPage(Number(e.target.value) - 1, 0)
   const stage = $('#rstage'); let x0 = null, y0 = 0
   stage.ontouchstart = e => { if (e.touches.length === 1 && !S.reader.zoom) { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY } else x0 = null }
   stage.ontouchend = e => {
     if (x0 === null) return
     const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; x0 = null
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) turnTo(S.reader.i + (dx < 0 ? 1 : -1))
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) stepReader(dx < 0 ? 1 : -1)
   }
-  for (const d of [-1, 1]) { const j = clampPage(S.reader.i + d, ep.pages.length); if (j !== S.reader.i) new Image().src = ep.pages[j] }
+  stage.onpointermove = moveLens
+  stage.onpointerleave = () => { $('#rlens').hidden = true }
+  const flip = $('.flip')
+  if (flip) {
+    const done = () => { if (!flip.isConnected) return; if (S.reader) S.reader.flip = null; document.querySelectorAll('.flip,.pg.old').forEach(x => x.remove()) }
+    flip.addEventListener('animationend', done, { once: true }); setTimeout(done, 1200)
+  }
+  const near = [...visiblePages(S.reader.i, ep.pages.length, S.reader.spread), S.reader.i - 1, S.reader.i + 2, S.reader.i + 3].filter(j => j != null && j >= 0 && j < ep.pages.length)
+  for (const j of near) new Image().src = ep.pages[j]
   stage.focus({ preventScroll: true })
 }
 document.addEventListener('keydown', e => {
   if (!S.reader) return
-  if (e.key === 'Escape') closeReader()
-  else if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); turnTo(S.reader.i + 1) }
-  else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); turnTo(S.reader.i - 1) }
+  if (e.key === 'Escape') { if (S.reader.full && !document.fullscreenElement) setFull(false); else if (!document.fullscreenElement) closeReader() }
+  else if (e.key === 'f' || e.key === 'F') setFull(!S.reader.full)
+  else if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); stepReader(1) }
+  else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); stepReader(-1) }
+})
+window.addEventListener('resize', () => {
+  const ep = readerEp(); if (!ep || S.reader.mode !== 'auto') return
+  const want = wantSpread(S.reader, ep.pages.length); if (want !== S.reader.spread) { S.reader.spread = want; S.reader.flip = null; render() }
 })
 
 function bind() {

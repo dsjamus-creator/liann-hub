@@ -1,7 +1,7 @@
 // Pure render functions: state in, HTML string out. Markup and art follow the approved mockup.
 import { APPS, NAV, CODE_LENGTH, appUrl } from './config.js'
 import { formatBytes } from './downloads.js'
-import { clampPage } from './comics.js'
+import { clampPage, visiblePages } from './comics.js'
 
 const I = {
   home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h5v-6h4v6h5V9.5"/>',
@@ -245,18 +245,45 @@ function pRead(s) {
   ${downloadsFor(s, d => d.product === 'bella-liann')}</section>`
 }
 
-// Full-screen comic reader: one page at a time, swipe / arrow keys / buttons / slider, Zoom for detail.
+// Full-screen comic reader: one page or a two-page spread, a page-turn animation, a hover magnifier, swipe / arrow
+// keys / buttons / slider, and Zoom for detail. The flip is pure CSS: the new pages are drawn at once, and the old
+// page turns over them (r.flip = { dir, from } holds the pages that were showing).
+// Broad block arrow (points right; CSS mirrors it for Back). Back = white outline, red fill; Forward = white outline, green fill.
+const ARROW = '<svg viewBox="0 0 64 48" aria-hidden="true"><path d="M3 15H34V4L61 24 34 44V33H3Z"/></svg>'
+
 export function readerHTML(s) {
   const ep = (s.comics || []).find(e => e.id === s.reader?.id)
   if (!ep) return ''
-  const n = ep.pages.length, i = clampPage(s.reader.i, n), zoom = !!s.reader.zoom
-  return `<div class="reader" role="dialog" aria-modal="true" aria-label="${esc(ep.title)}">
-  <div class="rbar"><button class="iconbtn" id="rclose" aria-label="Close reader">✕</button><div class="rtitle">${esc(ep.title)}</div><span class="muted rcount" aria-live="polite">${i + 1} / ${n}</span><button class="btn ghost" id="rzoom" aria-pressed="${zoom}">${zoom ? 'Fit page' : 'Zoom'}</button></div>
+  const r = s.reader, n = ep.pages.length, i = clampPage(r.i, n), zoom = !!r.zoom, spread = !!r.spread && n > 1
+  const img = j => (j == null ? '' : `<img src="${esc(ep.pages[j])}" alt="${esc(ep.alts[j] || `${ep.title}, page ${j + 1} of ${n}`)}" draggable="false">`)
+  const face = (cls, j) => `<div class="face ${cls}">${img(j)}</div>`
+  const now = visiblePages(i, n, spread), from = r.flip?.from, dir = r.flip?.dir
+  let flip = ''
+  if (from && dir && !zoom) {
+    if (spread && from.length === 2) {
+      flip = dir > 0
+        ? `<div class="pg l old">${img(from[0])}</div><div class="flip fwd">${face('front', from[1])}${face('back', now[0])}</div>`
+        : `<div class="pg r old">${img(from[1])}</div><div class="flip back">${face('front', from[0])}${face('back', now[1])}</div>`
+    } else if (!spread) flip = `<div class="flip ${dir > 0 ? 'sfwd' : 'sback'}">${face('front', from[0])}</div>`
+  }
+  const label = spread ? now.filter(j => j != null).map(j => j + 1).join('–') : String(i + 1)
+  return `<div class="reader${r.full ? ' full' : ''}" role="dialog" aria-modal="true" aria-label="${esc(ep.title)}">
+  <div class="rbar"><button class="iconbtn" id="rclose" aria-label="Close reader">✕</button><div class="rtitle">${esc(ep.title)}</div>
+   ${n > 1 ? `<button class="btn ghost" id="rmode" aria-pressed="${spread}">${spread ? 'One page' : 'Two pages'}</button>` : ''}
+   <button class="btn ghost" id="rlensbtn" aria-pressed="${r.lens !== false}" title="Hover over a page to magnify it">Magnifier</button>
+   <button class="btn ghost" id="rfull" aria-pressed="${!!r.full}">${r.full ? 'Exit full page' : 'Full page'}</button>
+   <button class="btn ghost" id="rzoom" aria-pressed="${zoom}">${zoom ? 'Fit page' : 'Zoom'}</button></div>
+  ${r.full ? '<button class="btn ghost rexit" id="rexit">Exit full page</button>' : ''}
   <div class="rstage${zoom ? ' zoom' : ''}" id="rstage" tabindex="-1">
-   <img id="rpage" src="${esc(ep.pages[i])}" alt="${esc(ep.alts[i] || `${ep.title}, page ${i + 1} of ${n}`)}" draggable="false">
-   <button class="rnav prev" id="rprev" aria-label="Previous page"${i === 0 ? ' disabled' : ''}>‹</button>
-   <button class="rnav next" id="rnext" aria-label="Next page"${i === n - 1 ? ' disabled' : ''}>›</button></div>
-  <div class="rfoot"><input type="range" id="rseek" min="1" max="${n}" value="${i + 1}" aria-label="Page"></div></div>`
+   <div class="rbook ${spread ? 'spread' : 'single'}">
+    ${spread ? `<div class="pg l">${img(now[0])}</div><div class="pg r">${img(now[1])}</div>` : `<div class="pg one">${img(now[0])}</div>`}${flip}</div>
+   <div class="lens" id="rlens" hidden></div></div>
+  <div class="rfoot">
+   <div class="rctl">
+    <button class="rarrow back" id="rprev" aria-label="Previous page"${i === 0 ? ' disabled' : ''}>${ARROW}</button>
+    <span class="rcount" aria-live="polite"><b>${label}</b> / ${n}</span>
+    <button class="rarrow fwd" id="rnext" aria-label="Next page"${(spread ? visiblePages(i, n, true).includes(n - 1) : i === n - 1) ? ' disabled' : ''}>${ARROW}</button></div>
+   <input type="range" id="rseek" min="1" max="${n}" value="${i + 1}" aria-label="Page"></div></div></div>`
 }
 
 // A download button for a manifest slot: live when the checked file is in the manifest, otherwise "Coming soon".

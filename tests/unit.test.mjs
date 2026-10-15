@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { parseManifest, safeFileUrl, formatBytes } from '../src/downloads.js'
-import { parseComics, clampPage } from '../src/comics.js'
+import { parseComics, clampPage, spreadsOf, spreadIndexOf, firstPageOf, visiblePages, lensGeometry } from '../src/comics.js'
 import { createAccount } from '../src/account.js'
 import { APPS, appUrl, config } from '../src/config.js'
 import { esc, vHub, vWho, statusOf, profileOf, sourceName } from '../src/views.js'
@@ -190,4 +190,26 @@ test('comic manifest: only episodes with a usable page, https or relative URLs o
 test('comic reader clamps page numbers', () => {
   assert.equal(clampPage(-3, 5), 0); assert.equal(clampPage(9, 5), 4); assert.equal(clampPage(2, 5), 2)
   assert.equal(clampPage(NaN, 5), 0); assert.equal(clampPage(0, 0), 0)
+})
+
+test('comic spreads: cover alone on the right, then pairs, an odd last page alone on the left', () => {
+  assert.deepEqual(spreadsOf(6), [[null, 0], [1, 2], [3, 4], [5, null]])
+  assert.deepEqual(spreadsOf(5), [[null, 0], [1, 2], [3, 4]])
+  assert.deepEqual(spreadsOf(1), [[null, 0]]); assert.deepEqual(spreadsOf(0), [])
+  assert.deepEqual([0, 1, 2, 3, 4, 5].map(i => spreadIndexOf(i, 6)), [0, 1, 1, 2, 2, 3])
+  assert.deepEqual(spreadsOf(6).map(firstPageOf), [0, 1, 3, 5])
+  assert.deepEqual(visiblePages(2, 6, true), [1, 2]); assert.deepEqual(visiblePages(2, 6, false), [2])
+})
+
+test('magnifier lens: maps the cursor onto the page inside its box and ignores the letterbox', () => {
+  const box = { left: 100, top: 50, width: 400, height: 600 }
+  // page fills the box: cursor 100px right and 150px down from the top-left corner, 2x lens of 100px
+  assert.deepEqual(lensGeometry({ box, natural: { w: 800, h: 1200 }, align: 'left', x: 200, y: 200, zoom: 2, size: 100 }),
+    { bgSize: [800, 1200], bgPos: [-150, -250] })
+  // a wide page in a tall box is centred vertically: the bands above and below are not the page
+  assert.equal(lensGeometry({ box, natural: { w: 800, h: 400 }, align: 'left', x: 200, y: 100, zoom: 2, size: 100 }), null)
+  assert.notEqual(lensGeometry({ box, natural: { w: 800, h: 400 }, align: 'left', x: 200, y: 350, zoom: 2, size: 100 }), null)
+  // a page pushed against the right edge (left page of a spread) starts partway across its box
+  assert.equal(lensGeometry({ box, natural: { w: 400, h: 1200 }, align: 'right', x: 110, y: 200, zoom: 2, size: 100 }), null)
+  assert.equal(lensGeometry({ box, natural: { w: 0, h: 0 }, align: 'left', x: 200, y: 200, zoom: 2, size: 100 }), null)
 })

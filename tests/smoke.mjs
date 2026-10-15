@@ -124,21 +124,52 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
       await shot(page, 'phone-downloads-last')
     }
   })
-  await step(`${tag}: comic reader opens, turns pages, remembers the place and closes`, async () => {
+  await step(`${tag}: comic reader: spreads, page turn, arrows, magnifier, place remembered`, async () => {
+   try {
+    const wide = tag === 'desktop', count = () => page.locator('.rcount').innerText()
     await page.goto(url + '#read'); await page.locator('[data-readep="ep1"]').click()
     await page.locator('.reader').waitFor()
-    assert.match(await page.locator('.rcount').innerText(), /1 \/ 3/)
-    assert.equal(await page.locator('#rprev').isDisabled(), true)
+    assert.equal(await page.locator(wide ? '.rbook.spread' : '.rbook.single').count(), 1, wide ? 'wide screens open as a two-page book' : 'phones open one page')
+    assert.equal(await count(), '1 / 3'); assert.equal(await page.locator('#rprev').isDisabled(), true)
+    assert.equal(await page.locator('#rctl, .rctl').locator('#rprev, #rnext').count(), 2, 'arrows sit together at the bottom centre')
+    const [b0, f0] = await Promise.all([page.locator('#rprev').boundingBox(), page.locator('#rnext').boundingBox()])
+    const stageBox = await page.locator('#rstage').boundingBox()
+    assert.ok(b0.x < f0.x && b0.y > stageBox.y + stageBox.height - 4, 'Back arrow is left of Forward and both are below the page')
+    assert.ok(Math.abs((b0.x + f0.x + f0.width) / 2 - page.viewportSize().width / 2) < 40, 'arrows are centred')
     await noOverflow(page); await shot(page, `${tag}-reader`)
-    await page.keyboard.press('ArrowRight'); assert.match(await page.locator('.rcount').innerText(), /2 \/ 3/)
-    await page.locator('#rnext').click({ force: true }); assert.match(await page.locator('.rcount').innerText(), /3 \/ 3/)
-    assert.equal(await page.locator('#rnext').isDisabled(), true)
-    await page.keyboard.press('ArrowLeft'); assert.match(await page.locator('.rcount').innerText(), /2 \/ 3/)
+    await page.keyboard.press('ArrowRight')
+    assert.equal(await page.locator(wide ? '.flip.fwd' : '.flip.sfwd').count(), 1, 'the page turns')
+    assert.equal(await count(), wide ? '2–3 / 3' : '2 / 3')
+    await page.locator('.flip').waitFor({ state: 'detached', timeout: 4000 })
+    if (wide) {
+      assert.equal(await page.locator('#rnext').isDisabled(), true, 'the last spread is the end')
+      const box = await page.locator('.pg.r img').boundingBox()
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+      await page.locator('#rlens:not([hidden])').waitFor()
+      assert.match(await page.locator('#rlens').evaluate(el => el.style.backgroundImage), /downloads\.lwliann\.com\/comics\//)
+      await shot(page, `${tag}-reader-lens`)
+      await page.mouse.move(box.x + box.width / 2, 20)
+      await page.locator('#rlens[hidden]').waitFor({ state: 'attached' })
+      await page.keyboard.press('ArrowLeft'); assert.equal(await page.locator('.flip.back').count(), 1); assert.equal(await count(), '1 / 3')
+      await page.locator('.flip').waitFor({ state: 'detached', timeout: 4000 })
+      await page.locator('#rnext').click(); assert.equal(await count(), '2–3 / 3')
+      await page.locator('#rmode').click(); assert.equal(await page.locator('.rbook.single').count(), 1); assert.equal(await count(), '2 / 3')
+    } else {
+      await page.locator('#rnext').click(); assert.equal(await count(), '3 / 3'); assert.equal(await page.locator('#rnext').isDisabled(), true)
+      await page.keyboard.press('ArrowLeft'); assert.equal(await count(), '2 / 3')
+    }
+    await page.locator('.flip').waitFor({ state: 'detached', timeout: 4000 })
+    await page.locator('#rfull').click(); assert.equal(await page.locator('.reader.full').count(), 1, 'full page hides the top bar')
+    assert.equal(await page.locator('.rbar').isVisible(), false); await page.locator('#rexit').click()
+    assert.equal(await page.locator('.reader.full').count(), 0); assert.equal(await page.locator('.rbar').isVisible(), true)
     await page.locator('#rzoom').click(); assert.equal(await page.locator('.rstage.zoom').count(), 1)
     await page.keyboard.press('Escape'); assert.equal(await page.locator('.reader').count(), 0)
     assert.match(await page.locator('[data-readep="ep1"]').innerText(), /Continue from page 2/)
-    await page.locator('[data-readep="ep1"]').click(); assert.match(await page.locator('.rcount').innerText(), /2 \/ 3/)
+    await page.locator('[data-readep="ep1"]').click(); assert.equal(await count(), '2 / 3')
+    if (!wide) { await page.locator('#rmode').click(); assert.equal(await page.locator('.rbook.spread').count(), 1); assert.equal(await count(), '2–3 / 3') }
     await page.locator('#rclose').click(); assert.equal(await page.locator('.reader').count(), 0)
+   } catch (e) { if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/FAIL-${tag}-reader.png` }); throw e }
+   finally { if (await page.locator('.reader').count()) await page.keyboard.press('Escape') }
   })
   await step(`${tag}: Read and Kids pages render their manifest slots`, async () => {
     await page.goto(url + '#read'); await page.locator('[data-slot="read/episodes"]').waitFor()
