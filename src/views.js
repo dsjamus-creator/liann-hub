@@ -370,11 +370,25 @@ function pPlan(s) {
   <p class="muted" style="margin:0;font-size:.85rem">Learners use the hub free, or choose a Couple or Family plan. Tutors subscribe monthly or yearly. Schools, institutions and education departments buy licences.</p></section>`
 }
 
+// Notification menu: pending household invitations are the only live items today; everything else is "all caught up".
+export function notificationsOf(s) {
+  return (s.household?.invitations || []).map(i => ({ id: i.id, text: `${i.owner_email} invited you to their ${i.plan === 'family' ? 'Family' : 'Couple'} plan.`, page: 'plan', cta: 'View' }))
+}
+
+export function notifsHTML(s) {
+  const list = notificationsOf(s)
+  const body = list.length
+    ? `<ul class="notifs">${list.map(n => `<li><span>${esc(n.text)}</span><button class="btn ghost" data-nav="${n.page}">${esc(n.cta)}</button></li>`).join('')}</ul>`
+    : '<p class="muted" style="margin:0">You are all caught up.</p>'
+  return `<div class="appear" id="notifpanel" role="dialog" aria-label="Notifications"><h3>Notifications<button class="iconbtn" id="notifclose" aria-label="Close">✕</button></h3>${body}
+ <p class="note muted" style="margin:0">Plan invitations and new Bella &amp; LiANN episodes appear here.</p></div>`
+}
+
 export function appearHTML(th) {
   return `<div class="appear" role="dialog" aria-label="Appearance"><h3>Appearance<button class="iconbtn" id="apclose" aria-label="Close">✕</button></h3>
  <div class="ds">${DS.map(([k, n, d, c]) => `<button class="dsopt" data-ds="${k}" aria-pressed="${th.ds === k}"><span class="sw">${c.map(x => `<i style="background:${x}"></i>`).join('')}</span><span><b>${n}</b><small>${d}</small></span></button>`).join('')}</div>
  <div class="modes">${['light', 'dark'].map(m => `<button class="chip" data-mode="${m}" aria-pressed="${th.t === m}">${m === 'light' ? 'Light' : 'Dark'}</button>`).join('')}</div>
- <p class="note muted" style="margin:0">Same design systems as Pinyin Tiles. Saved on this device.</p></div>`
+ <p class="note muted" style="margin:0">Same design systems as Pinyin Games. Saved on this device.</p></div>`
 }
 
 // Phone tab bar: four pages, then More for the rest of the menu.
@@ -387,10 +401,10 @@ export function vHub(s) {
   return `<div class="app ${s.slim ? 'slim' : ''}">
   <header class="top"><button class="iconbtn menu" id="slim" aria-label="${s.slim ? 'Expand' : 'Collapse'} menu">${ico('menu')}</button>${LOCKUP}
    <form class="search" id="topsearch" role="search">${ico('search', 18)}<input id="ts" value="${esc(s.query || '')}" placeholder="Search Learning with LiANN" aria-label="Search"></form>
-   <button class="iconbtn" id="apbtn" aria-label="Appearance">${ico('palette')}</button><button class="iconbtn help" aria-label="Help and account" data-nav="plan">${ico('help')}</button><button class="iconbtn" id="bell" aria-label="Notifications">${ico('bell')}</button>
+   <button class="iconbtn" id="apbtn" aria-label="Appearance">${ico('palette')}</button><button class="iconbtn help" aria-label="Help and account" data-nav="plan">${ico('help')}</button><button class="iconbtn${notificationsOf(s).length ? ' has-new' : ''}" id="bell" aria-label="Notifications" aria-expanded="${!!s.notif}">${ico('bell')}</button>
    <button class="tile avatar" id="me" aria-label="Profile (${esc(p.name)})">${esc(p.g)}</button></header>
   <nav class="rail" aria-label="Main">${NAV.map(rItem(page)).join('')}</nav>
   <main id="main"><div class="wrap fade">${PAGES[page](s)}</div></main>
   <nav class="tabs" aria-label="Main">${NAV.filter(([k]) => TAB_PAGES.includes(k)).map(rItem(page)).join('')}<button class="ritem" id="morebtn" aria-expanded="${!!s.more}" ${TAB_PAGES.includes(page) ? '' : 'aria-current="page"'}><span class="ic">${ico('menu')}</span><span class="lbl">More</span></button></nav>
-  ${s.more ? `<nav class="moresheet" aria-label="More">${NAV.filter(([k]) => !TAB_PAGES.includes(k)).map(rItem(page)).join('')}</nav>` : ''}</div>${s.appear ? appearHTML(s.theme) : ''}`
+  ${s.more ? `<nav class="moresheet" aria-label="More">${NAV.filter(([k]) => !TAB_PAGES.includes(k)).map(rItem(page)).join('')}</nav>` : ''}</div>${s.appear ? appearHTML(s.theme) : ''}${s.notif ? notifsHTML(s) : ''}`
 }
