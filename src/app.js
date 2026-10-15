@@ -13,7 +13,7 @@ const store = {
 
 const theme = store.get('liann-hub-theme', null)
 const S = {
-  view: 'loading', email: '', user: null, page: pageFromHash(), appf: 'All', slim: false, appear: false,
+  view: 'loading', email: '', user: null, page: pageFromHash(), appf: 'All', slim: false, appear: false, notif: false,
   theme: theme && DS.some(d => d[0] === theme.ds) && /^(light|dark)$/.test(theme.t) ? theme : { ds: 'liann', t: 'dark' },
   recent: store.get('liann-hub-recent', []), downloads: null, setlists: null, openList: null, query: '', busy: false, error: '', fix: '',
   household: undefined, learner: null, hhError: '', hhBusy: false,
@@ -159,7 +159,7 @@ function bind() {
   document.querySelectorAll('#signout').forEach(b => { b.onclick = async () => { await account.signOut(); toast('Signed out'); signedOut() } })
 
   document.querySelectorAll('[data-nav]').forEach(b => { b.onclick = () => {
-    S.page = b.dataset.nav; S.openList = null; S.appf = b.dataset.f || 'All'; S.more = false
+    S.page = b.dataset.nav; S.openList = null; S.appf = b.dataset.f || 'All'; S.more = false; S.notif = false
     history.replaceState(null, '', '#' + S.page); render(); const m = $('#main'); if (m) m.scrollTop = 0
   } })
   document.querySelectorAll('[data-appf]').forEach(b => { b.onclick = () => { S.appf = b.dataset.appf; render() } })
@@ -171,13 +171,14 @@ function bind() {
   for (const id of ['q', 'ts']) { const el = $('#' + id); if (el) el.oninput = () => { S.query = el.value; if (id === 'ts' && S.page !== 'home') S.page = 'home'; render() } }
   for (const id of ['ask', 'topsearch']) { const f = $('#' + id); if (f) f.onsubmit = e => { e.preventDefault(); S.page = 'home'; render() } }
   const sl = $('#slim'); if (sl) sl.onclick = () => { S.slim = !S.slim; render() }
-  for (const id of ['apbtn', 'apbtn2']) { const b = $('#' + id); if (b) b.onclick = () => { S.appear = !S.appear; render() } }
+  for (const id of ['apbtn', 'apbtn2']) { const b = $('#' + id); if (b) b.onclick = () => { S.appear = !S.appear; if (S.appear) S.notif = false; render() } }
   const apc = $('#apclose'); if (apc) apc.onclick = () => { S.appear = false; render() }
   document.querySelectorAll('.dsopt').forEach(b => { b.onclick = () => { S.theme = { ...S.theme, ds: b.dataset.ds }; applyTheme(); render() } })
   document.querySelectorAll('[data-mode]').forEach(b => { b.onclick = () => { S.theme = { ...S.theme, t: b.dataset.mode }; applyTheme(); render() } })
   const me = $('#me'); if (me) me.onclick = () => go('who')
   const more = $('#morebtn'); if (more) more.onclick = () => { S.more = !S.more; render() }
-  const bell = $('#bell'); if (bell) bell.onclick = () => toast('No new notifications')
+  const bell = $('#bell'); if (bell) bell.onclick = () => { S.notif = !S.notif; if (S.notif) S.appear = false; render() }
+  const nc = $('#notifclose'); if (nc) nc.onclick = () => { S.notif = false; render() }
   for (const [attr, key] of [['dchip', 'dchip'], ['shopf', 'shopf'], ['planf', 'planf'], ['figmode', 'figmode']]) {
     document.querySelectorAll(`[data-${attr}]`).forEach(b => { b.onclick = () => { S[key] = b.dataset[attr]; render() } })
   }

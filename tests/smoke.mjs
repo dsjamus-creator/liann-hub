@@ -162,6 +162,14 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     await page.reload(); await page.locator('.hello, .sec').first().waitFor()
     assert.deepEqual(await page.evaluate(() => [document.documentElement.dataset.ds, document.documentElement.dataset.t]), ['steelline', 'light'])
   })
+  await step(`${tag}: the bell opens a notification menu`, async () => {
+    await page.goto(url + '#home'); await page.locator('#bell').click()
+    await page.locator('#notifpanel').waitFor()
+    assert.match(await page.locator('#notifpanel').innerText(), /Notifications[\s\S]*caught up/)
+    await noOverflow(page); await shot(page, `${tag}-notifications`)
+    await page.locator('#notifclose').click()
+    assert.equal(await page.locator('#notifpanel').count(), 0)
+  })
   await step(`${tag}: sign out clears the session`, async () => {
     await page.goto(url + '#plan'); await page.locator('#signout').click()
     await page.locator('#f1').waitFor()
