@@ -374,7 +374,7 @@ export function appearHTML(th) {
   return `<div class="appear" role="dialog" aria-label="Appearance"><h3>Appearance<button class="iconbtn" id="apclose" aria-label="Close">✕</button></h3>
  <div class="ds">${DS.map(([k, n, d, c]) => `<button class="dsopt" data-ds="${k}" aria-pressed="${th.ds === k}"><span class="sw">${c.map(x => `<i style="background:${x}"></i>`).join('')}</span><span><b>${n}</b><small>${d}</small></span></button>`).join('')}</div>
  <div class="modes">${['light', 'dark'].map(m => `<button class="chip" data-mode="${m}" aria-pressed="${th.t === m}">${m === 'light' ? 'Light' : 'Dark'}</button>`).join('')}</div>
- <p class="note muted" style="margin:0">Same design systems as Pinyin Tiles. Saved on this device.</p></div>`
+ <p class="note muted" style="margin:0">Same design systems as Pinyin Games. Saved on this device.</p></div>`
 }
 
 // Phone tab bar: four pages, then More for the rest of the menu.
