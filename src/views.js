@@ -1,6 +1,7 @@
 // Pure render functions: state in, HTML string out. Markup and art follow the approved mockup.
 import { APPS, NAV, CODE_LENGTH, appUrl } from './config.js'
 import { formatBytes } from './downloads.js'
+import { clampPage } from './comics.js'
 
 const I = {
   home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h5v-6h4v6h5V9.5"/>',
@@ -231,10 +232,31 @@ function pDownloads(s) {
 }
 
 function pRead(s) {
-  return `<section class="sec"><div class="sechead"><h2>Bella &amp; LiANN</h2><span class="muted">Episodes appear here when they are published</span></div>
-  <div class="feature"><div class="art" style="background:#ddd url(assets/comic-2.jpg) center/cover" role="img" aria-label="Bella flying over the city, from Bella & LiANN"></div>
-  <div class="txt"><div class="eyebrow">Coming soon</div><h3>Bella &amp; LiANN</h3><p class="muted" style="margin:0">Read the comic with pinyin and English, and save words to your SetLists.</p></div></div>
+  const eps = Array.isArray(s.comics) ? s.comics : []
+  const lead = eps.length
+    ? `<div class="grid">${eps.map(e => {
+      const saved = s.progress?.[e.id], resume = Number.isInteger(saved) && saved > 0 && saved < e.pages.length - 1
+      return `<div class="c" data-ep="${esc(e.id)}"><img class="cover" src="${esc(e.cover)}" alt="" loading="lazy"><div class="t">${esc(e.title)}</div><div class="s">${e.pages.length} page${e.pages.length === 1 ? '' : 's'}</div>${e.summary ? `<div class="d">${esc(e.summary)}</div>` : ''}<div class="acts"><button class="btn" data-readep="${esc(e.id)}">${resume ? `Continue from page ${saved + 1}` : 'Read'}</button></div></div>`
+    }).join('')}</div>`
+    : `<div class="feature"><div class="art" style="background:#ddd url(assets/comic-2.jpg) center/cover" role="img" aria-label="Bella flying over the city, from Bella & LiANN"></div>
+  <div class="txt"><div class="eyebrow">Coming soon</div><h3>Bella &amp; LiANN</h3><p class="muted" style="margin:0">Read the comic with pinyin and English, and save words to your SetLists.</p></div></div>`
+  return `<section class="sec"><div class="sechead"><h2>Bella &amp; LiANN</h2><span class="muted">${eps.length ? 'Read it here, or download the PDFs below' : 'Episodes appear here when they are published'}</span></div>
+  ${lead}
   ${downloadsFor(s, d => d.product === 'bella-liann')}</section>`
+}
+
+// Full-screen comic reader: one page at a time, swipe / arrow keys / buttons / slider, Zoom for detail.
+export function readerHTML(s) {
+  const ep = (s.comics || []).find(e => e.id === s.reader?.id)
+  if (!ep) return ''
+  const n = ep.pages.length, i = clampPage(s.reader.i, n), zoom = !!s.reader.zoom
+  return `<div class="reader" role="dialog" aria-modal="true" aria-label="${esc(ep.title)}">
+  <div class="rbar"><button class="iconbtn" id="rclose" aria-label="Close reader">✕</button><div class="rtitle">${esc(ep.title)}</div><span class="muted rcount" aria-live="polite">${i + 1} / ${n}</span><button class="btn ghost" id="rzoom" aria-pressed="${zoom}">${zoom ? 'Fit page' : 'Zoom'}</button></div>
+  <div class="rstage${zoom ? ' zoom' : ''}" id="rstage" tabindex="-1">
+   <img id="rpage" src="${esc(ep.pages[i])}" alt="${esc(ep.alts[i] || `${ep.title}, page ${i + 1} of ${n}`)}" draggable="false">
+   <button class="rnav prev" id="rprev" aria-label="Previous page"${i === 0 ? ' disabled' : ''}>‹</button>
+   <button class="rnav next" id="rnext" aria-label="Next page"${i === n - 1 ? ' disabled' : ''}>›</button></div>
+  <div class="rfoot"><input type="range" id="rseek" min="1" max="${n}" value="${i + 1}" aria-label="Page"></div></div>`
 }
 
 // A download button for a manifest slot: live when the checked file is in the manifest, otherwise "Coming soon".
@@ -406,5 +428,5 @@ export function vHub(s) {
   <nav class="rail" aria-label="Main">${NAV.map(rItem(page)).join('')}</nav>
   <main id="main"><div class="wrap fade">${PAGES[page](s)}</div></main>
   <nav class="tabs" aria-label="Main">${NAV.filter(([k]) => TAB_PAGES.includes(k)).map(rItem(page)).join('')}<button class="ritem" id="morebtn" aria-expanded="${!!s.more}" ${TAB_PAGES.includes(page) ? '' : 'aria-current="page"'}><span class="ic">${ico('menu')}</span><span class="lbl">More</span></button></nav>
-  ${s.more ? `<nav class="moresheet" aria-label="More">${NAV.filter(([k]) => !TAB_PAGES.includes(k)).map(rItem(page)).join('')}</nav>` : ''}</div>${s.appear ? appearHTML(s.theme) : ''}${s.notif ? notifsHTML(s) : ''}`
+  ${s.more ? `<nav class="moresheet" aria-label="More">${NAV.filter(([k]) => !TAB_PAGES.includes(k)).map(rItem(page)).join('')}</nav>` : ''}</div>${s.appear ? appearHTML(s.theme) : ''}${s.notif ? notifsHTML(s) : ''}${s.reader ? readerHTML(s) : ''}`
 }

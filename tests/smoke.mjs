@@ -2,6 +2,7 @@
 // CHROME_PATH defaults to the Chromium preinstalled in Claude Code cloud sessions.
 import assert from 'node:assert/strict'
 import { chromium } from 'playwright-core'
+import { fileURLToPath } from 'node:url'
 import { serve } from '../scripts/serve.mjs'
 
 const server = await serve(0)
@@ -14,6 +15,9 @@ const shot = async (page, name) => { if (process.env.SHOTS) await page.waitForTi
 async function mock(context, { student = true, tour = false } = {}) {
   const seen = { auth: [] }
   if (!tour) await context.addInitScript(() => localStorage.setItem('liann-hub-tour-done', 'true'))
+  const PAGE = n => `https://downloads.lwliann.com/comics/ep1/page-${n}.jpg`
+  await context.route('**/data/comics.json', r => r.fulfill({ json: { episodes: [{ id: 'ep1', title: 'Episode 1: Flight', number: 1, summary: 'Bella takes off.', cover: PAGE(1), pages: [PAGE(1), PAGE(2), PAGE(3)] }] } }))
+  await context.route(/downloads\.lwliann\.com\/comics\//, r => r.fulfill({ path: fileURLToPath(new URL('../assets/comic-1.jpg', import.meta.url)), contentType: 'image/jpeg' }))
   await context.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ status: 200, contentType: 'text/css', body: '' }))
   await context.route('https://pinyin-tiles-api-staging.onrender.com/v1/auth/config', r => r.fulfill({ json: { authentication: { enabled: true, supabaseUrl: 'https://demo.supabase.co', publishableKey: 'pk-test' } } }))
   await context.route('https://demo.supabase.co/auth/v1/**', async r => {
@@ -119,6 +123,22 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
       await page.locator('[data-slot="kids/stickers/kinetic-shield-specular"]').scrollIntoViewIfNeeded()
       await shot(page, 'phone-downloads-last')
     }
+  })
+  await step(`${tag}: comic reader opens, turns pages, remembers the place and closes`, async () => {
+    await page.goto(url + '#read'); await page.locator('[data-readep="ep1"]').click()
+    await page.locator('.reader').waitFor()
+    assert.match(await page.locator('.rcount').innerText(), /1 \/ 3/)
+    assert.equal(await page.locator('#rprev').isDisabled(), true)
+    await noOverflow(page); await shot(page, `${tag}-reader`)
+    await page.keyboard.press('ArrowRight'); assert.match(await page.locator('.rcount').innerText(), /2 \/ 3/)
+    await page.locator('#rnext').click({ force: true }); assert.match(await page.locator('.rcount').innerText(), /3 \/ 3/)
+    assert.equal(await page.locator('#rnext').isDisabled(), true)
+    await page.keyboard.press('ArrowLeft'); assert.match(await page.locator('.rcount').innerText(), /2 \/ 3/)
+    await page.locator('#rzoom').click(); assert.equal(await page.locator('.rstage.zoom').count(), 1)
+    await page.keyboard.press('Escape'); assert.equal(await page.locator('.reader').count(), 0)
+    assert.match(await page.locator('[data-readep="ep1"]').innerText(), /Continue from page 2/)
+    await page.locator('[data-readep="ep1"]').click(); assert.match(await page.locator('.rcount').innerText(), /2 \/ 3/)
+    await page.locator('#rclose').click(); assert.equal(await page.locator('.reader').count(), 0)
   })
   await step(`${tag}: Read and Kids pages render their manifest slots`, async () => {
     await page.goto(url + '#read'); await page.locator('[data-slot="read/episodes"]').waitFor()

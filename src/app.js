@@ -1,6 +1,7 @@
 import { config, NAV, CODE_LENGTH } from './config.js'
 import { createAccount } from './account.js'
 import { loadDownloads } from './downloads.js'
+import { loadComics, clampPage } from './comics.js'
 import { DS, vLoading, vEmail, vCode, vWho, vHub } from './views.js'
 import { mountViewer, stopViewer } from './figures.js'
 
@@ -15,7 +16,7 @@ const theme = store.get('liann-hub-theme', null)
 const S = {
   view: 'loading', email: '', user: null, page: pageFromHash(), appf: 'All', slim: false, appear: false, notif: false,
   theme: theme && DS.some(d => d[0] === theme.ds) && /^(light|dark)$/.test(theme.t) ? theme : { ds: 'liann', t: 'dark' },
-  recent: store.get('liann-hub-recent', []), downloads: null, setlists: null, openList: null, query: '', busy: false, error: '', fix: '',
+  recent: store.get('liann-hub-recent', []), downloads: null, comics: null, reader: null, progress: store.get('liann-hub-reader', {}), setlists: null, openList: null, query: '', busy: false, error: '', fix: '',
   household: undefined, learner: null, hhError: '', hhBusy: false,
 }
 
@@ -105,7 +106,48 @@ async function finishProfile() {
 
 function signedOut() { go('email', { user: null, setlists: null, openList: null }) }
 
+// Comic reader. Progress (last page seen per episode) stays on this device.
+function readerEp() { return S.comics?.find(e => e.id === S.reader?.id) }
+function openReader(id) {
+  const ep = S.comics?.find(e => e.id === id); if (!ep) return
+  const saved = S.progress[id]
+  S.reader = { id, i: Number.isInteger(saved) && saved < ep.pages.length - 1 ? clampPage(saved, ep.pages.length) : 0, zoom: false }
+  S.more = false; S.notif = false; S.appear = false; render()
+}
+function closeReader() { S.reader = null; render() }
+function turnTo(i) {
+  const ep = readerEp(); if (!ep) return
+  S.reader.i = clampPage(i, ep.pages.length)
+  S.progress = { ...S.progress, [ep.id]: S.reader.i }; store.set('liann-hub-reader', S.progress)
+  render()
+}
+function bindReader() {
+  const ep = readerEp(); if (!ep) return
+  $('#rclose').onclick = closeReader
+  $('#rprev').onclick = () => turnTo(S.reader.i - 1)
+  $('#rnext').onclick = () => turnTo(S.reader.i + 1)
+  $('#rzoom').onclick = () => { S.reader.zoom = !S.reader.zoom; render() }
+  $('#rseek').onchange = e => turnTo(Number(e.target.value) - 1)
+  const stage = $('#rstage'); let x0 = null, y0 = 0
+  stage.ontouchstart = e => { if (e.touches.length === 1 && !S.reader.zoom) { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY } else x0 = null }
+  stage.ontouchend = e => {
+    if (x0 === null) return
+    const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; x0 = null
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) turnTo(S.reader.i + (dx < 0 ? 1 : -1))
+  }
+  for (const d of [-1, 1]) { const j = clampPage(S.reader.i + d, ep.pages.length); if (j !== S.reader.i) new Image().src = ep.pages[j] }
+  stage.focus({ preventScroll: true })
+}
+document.addEventListener('keydown', e => {
+  if (!S.reader) return
+  if (e.key === 'Escape') closeReader()
+  else if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); turnTo(S.reader.i + 1) }
+  else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); turnTo(S.reader.i - 1) }
+})
+
 function bind() {
+  document.querySelectorAll('[data-readep]').forEach(b => { b.onclick = () => openReader(b.dataset.readep) })
+  bindReader()
   const f1 = $('#f1')
   if (f1) {
     const em = $('#em'); em.focus()
@@ -217,6 +259,7 @@ window.addEventListener('hashchange', () => { if (S.view === 'hub') { S.page = p
 
 async function start() {
   applyTheme(); render()
+  loadComics(config.comicsManifest).then(c => { S.comics = c }, () => { S.comics = [] }).finally(() => { if (S.view === 'hub') render() })
   loadDownloads(config.downloadsManifest).then(d => { S.downloads = d }, e => { S.downloads = e }).finally(() => { if (S.view === 'hub') render() })
   if (!account.hasSession()) return go('email')
   try { const user = await account.user(); user ? enterHub(user) : go('email') }
