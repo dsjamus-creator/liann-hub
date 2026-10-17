@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { parseManifest, safeFileUrl, formatBytes } from '../src/downloads.js'
+import { parseComics, clampPage, spreadsOf, spreadIndexOf, firstPageOf, visiblePages, lensGeometry } from '../src/comics.js'
 import { createAccount } from '../src/account.js'
 import { APPS, appUrl, config } from '../src/config.js'
 import { esc, vHub, vWho, statusOf, profileOf, sourceName } from '../src/views.js'
@@ -167,4 +168,48 @@ test('SetList sources show product names, and unknown ones pass through', () => 
   assert.equal(sourceName('lyricsync'), 'LyricSync')
   assert.equal(sourceName('liann-mahjong-tones'), 'Mahjong Tones')
   assert.equal(sourceName('something-new'), 'something-new')
+})
+
+test('comic manifest: only episodes with a usable page, https or relative URLs only, in episode order', () => {
+  const base = 'https://app.lwliann.com/'
+  const eps = parseComics({ episodes: [
+    { id: 'ep2', title: 'Two', number: 2, pages: ['https://downloads.lwliann.com/c/2/1.webp'] },
+    { id: 'ep1', title: 'One', number: 1, summary: 'Start', cover: 'assets/comic-1.jpg', pages: [{ src: 'assets/comic-1.jpg', alt: 'Bella in the cockpit' }, 'javascript:alert(1)', 'http://evil.example/x.jpg', { src: '../escape.jpg' }, 42] },
+    { id: 'empty', title: 'No pages', pages: [] },
+    { id: 'bad', pages: ['assets/a.jpg'] },
+  ] }, base)
+  assert.deepEqual(eps.map(e => e.id), ['ep1', 'ep2'])
+  assert.deepEqual(eps[0].pages, ['https://app.lwliann.com/assets/comic-1.jpg'])
+  assert.deepEqual(eps[0].alts, ['Bella in the cockpit'])
+  assert.equal(eps[0].cover, 'https://app.lwliann.com/assets/comic-1.jpg')
+  assert.equal(eps[1].cover, eps[1].pages[0])
+  assert.deepEqual(parseComics({ episodes: [] }, base), [])
+  assert.deepEqual(parseComics(null, base), [])
+})
+
+test('comic reader clamps page numbers', () => {
+  assert.equal(clampPage(-3, 5), 0); assert.equal(clampPage(9, 5), 4); assert.equal(clampPage(2, 5), 2)
+  assert.equal(clampPage(NaN, 5), 0); assert.equal(clampPage(0, 0), 0)
+})
+
+test('comic spreads: cover alone on the right, then pairs, an odd last page alone on the left', () => {
+  assert.deepEqual(spreadsOf(6), [[null, 0], [1, 2], [3, 4], [5, null]])
+  assert.deepEqual(spreadsOf(5), [[null, 0], [1, 2], [3, 4]])
+  assert.deepEqual(spreadsOf(1), [[null, 0]]); assert.deepEqual(spreadsOf(0), [])
+  assert.deepEqual([0, 1, 2, 3, 4, 5].map(i => spreadIndexOf(i, 6)), [0, 1, 1, 2, 2, 3])
+  assert.deepEqual(spreadsOf(6).map(firstPageOf), [0, 1, 3, 5])
+  assert.deepEqual(visiblePages(2, 6, true), [1, 2]); assert.deepEqual(visiblePages(2, 6, false), [2])
+})
+
+test('magnifier lens: maps the cursor onto the page inside its box and ignores the letterbox', () => {
+  const box = { left: 100, top: 50, width: 400, height: 600 }
+  // page fills the box: cursor 100px right and 150px down from the top-left corner, 2x lens of 100px
+  assert.deepEqual(lensGeometry({ box, natural: { w: 800, h: 1200 }, align: 'left', x: 200, y: 200, zoom: 2, size: 100 }),
+    { bgSize: [800, 1200], bgPos: [-150, -250] })
+  // a wide page in a tall box is centred vertically: the bands above and below are not the page
+  assert.equal(lensGeometry({ box, natural: { w: 800, h: 400 }, align: 'left', x: 200, y: 100, zoom: 2, size: 100 }), null)
+  assert.notEqual(lensGeometry({ box, natural: { w: 800, h: 400 }, align: 'left', x: 200, y: 350, zoom: 2, size: 100 }), null)
+  // a page pushed against the right edge (left page of a spread) starts partway across its box
+  assert.equal(lensGeometry({ box, natural: { w: 400, h: 1200 }, align: 'right', x: 110, y: 200, zoom: 2, size: 100 }), null)
+  assert.equal(lensGeometry({ box, natural: { w: 0, h: 0 }, align: 'left', x: 200, y: 200, zoom: 2, size: 100 }), null)
 })

@@ -1,6 +1,7 @@
 // Pure render functions: state in, HTML string out. Markup and art follow the approved mockup.
 import { APPS, NAV, CODE_LENGTH, appUrl } from './config.js'
 import { formatBytes } from './downloads.js'
+import { clampPage, visiblePages } from './comics.js'
 
 const I = {
   home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h5v-6h4v6h5V9.5"/>',
@@ -231,10 +232,59 @@ function pDownloads(s) {
 }
 
 function pRead(s) {
-  return `<section class="sec"><div class="sechead"><h2>Bella &amp; LiANN</h2><span class="muted">Episodes appear here when they are published</span></div>
-  <div class="feature"><div class="art" style="background:#ddd url(assets/comic-2.jpg) center/cover" role="img" aria-label="Bella flying over the city, from Bella & LiANN"></div>
-  <div class="txt"><div class="eyebrow">Coming soon</div><h3>Bella &amp; LiANN</h3><p class="muted" style="margin:0">Read the comic with pinyin and English, and save words to your SetLists.</p></div></div>
+  const eps = Array.isArray(s.comics) ? s.comics : []
+  const lead = eps.length
+    ? `<div class="grid">${eps.map(e => {
+      const saved = s.progress?.[e.id], resume = Number.isInteger(saved) && saved > 0 && saved < e.pages.length - 1
+      return `<div class="c" data-ep="${esc(e.id)}"><img class="cover"${s.noCors ? '' : ' crossorigin="anonymous"'} src="${esc(e.cover)}" alt="" loading="lazy"><div class="t">${esc(e.title)}</div><div class="s">${e.pages.length} page${e.pages.length === 1 ? '' : 's'}</div>${e.summary ? `<div class="d">${esc(e.summary)}</div>` : ''}<div class="acts"><button class="btn" data-readep="${esc(e.id)}">${resume ? `Continue from page ${saved + 1}` : 'Read'}</button></div></div>`
+    }).join('')}</div>`
+    : `<div class="feature"><div class="art" style="background:#ddd url(assets/comic-2.jpg) center/cover" role="img" aria-label="Bella flying over the city, from Bella & LiANN"></div>
+  <div class="txt"><div class="eyebrow">Coming soon</div><h3>Bella &amp; LiANN</h3><p class="muted" style="margin:0">Read the comic with pinyin and English, and save words to your SetLists.</p></div></div>`
+  return `<section class="sec"><div class="sechead"><h2>Bella &amp; LiANN</h2><span class="muted">${eps.length ? 'Read it here, or download the PDFs below' : 'Episodes appear here when they are published'}</span></div>
+  ${lead}
   ${downloadsFor(s, d => d.product === 'bella-liann')}</section>`
+}
+
+// Full-screen comic reader: one page or a two-page spread, a page-turn animation, a hover magnifier, swipe / arrow
+// keys / buttons / slider, and Zoom for detail. The flip is pure CSS: the new pages are drawn at once, and the old
+// page turns over them (r.flip = { dir, from } holds the pages that were showing).
+// Broad block arrow (points right; CSS mirrors it for Back). Back = white outline, red fill; Forward = white outline, green fill.
+const ARROW = '<svg viewBox="0 0 64 48" aria-hidden="true"><path d="M3 15H34V4L61 24 34 44V33H3Z"/></svg>'
+
+export function readerHTML(s) {
+  const ep = (s.comics || []).find(e => e.id === s.reader?.id)
+  if (!ep) return ''
+  const r = s.reader, n = ep.pages.length, i = clampPage(r.i, n), zoom = !!r.zoom && !r.d3, d3 = !!r.d3, spread = (d3 || !!r.spread) && n > 1
+  const img = j => (j == null ? '' : `<img${s.noCors ? '' : ' crossorigin="anonymous"'} src="${esc(ep.pages[j])}" alt="${esc(ep.alts[j] || `${ep.title}, page ${j + 1} of ${n}`)}" draggable="false">`)
+  const face = (cls, j) => `<div class="face ${cls}">${img(j)}</div>`
+  const now = visiblePages(i, n, spread), from = r.flip?.from, dir = r.flip?.dir
+  let flip = ''
+  if (from && dir && !zoom && !d3) {
+    if (spread && from.length === 2) {
+      flip = dir > 0
+        ? `<div class="pg l old">${img(from[0])}</div><div class="flip fwd">${face('front', from[1])}${face('back', now[0])}</div>`
+        : `<div class="pg r old">${img(from[1])}</div><div class="flip back">${face('front', from[0])}${face('back', now[1])}</div>`
+    } else if (!spread) flip = `<div class="flip ${dir > 0 ? 'sfwd' : 'sback'}">${face('front', from[0])}</div>`
+  }
+  const label = spread ? now.filter(j => j != null).map(j => j + 1).join('–') : String(i + 1)
+  return `<div class="reader${r.full ? ' full' : ''}" role="dialog" aria-modal="true" aria-label="${esc(ep.title)}">
+  <div class="rbar"><button class="iconbtn" id="rclose" aria-label="Close reader">✕</button><div class="rtitle">${esc(ep.title)}</div>
+   ${r.can3d && !s.noCors ? `<button class="btn ghost" id="r3d" aria-pressed="${d3}" title="A 3D book with bending pages and a draggable magnifying glass">${d3 ? 'Flat pages' : '3D book'}</button>` : ''}
+   ${n > 1 && !d3 ? `<button class="btn ghost" id="rmode" aria-pressed="${spread}">${spread ? 'One page' : 'Two pages'}</button>` : ''}
+   <button class="btn ghost" id="rlensbtn" aria-pressed="${r.lens !== false}" title="Hover over a page to magnify it">Magnifier</button>
+   <button class="btn ghost" id="rfull" aria-pressed="${!!r.full}">${r.full ? 'Exit full page' : 'Full page'}</button>
+   ${d3 ? '' : `<button class="btn ghost" id="rzoom" aria-pressed="${zoom}">${zoom ? 'Fit page' : 'Zoom'}</button>`}</div>
+  ${r.full ? '<button class="btn ghost rexit" id="rexit">Exit full page</button>' : ''}
+  <div class="rstage${zoom ? ' zoom' : ''}" id="rstage" tabindex="-1">
+   ${d3 ? (r.d3state === 'loading' ? '<div class="r3dslot">Loading the 3D book…</div>' : '') : `<div class="rbook ${spread ? 'spread' : 'single'}">
+    ${spread ? `<div class="pg l">${img(now[0])}</div><div class="pg r">${img(now[1])}</div>` : `<div class="pg one">${img(now[0])}</div>`}${flip}</div>`}
+   <div class="lens" id="rlens" hidden></div></div>
+  <div class="rfoot">
+   <div class="rctl">
+    <button class="rarrow back" id="rprev" aria-label="Previous page"${i === 0 ? ' disabled' : ''}>${ARROW}</button>
+    <span class="rcount" aria-live="polite"><b>${label}</b> / ${n}</span>
+    <button class="rarrow fwd" id="rnext" aria-label="Next page"${(spread ? visiblePages(i, n, true).includes(n - 1) : i === n - 1) ? ' disabled' : ''}>${ARROW}</button></div>
+   <input type="range" id="rseek" min="1" max="${n}" value="${i + 1}" aria-label="Page"></div></div></div>`
 }
 
 // A download button for a manifest slot: live when the checked file is in the manifest, otherwise "Coming soon".
@@ -406,5 +456,5 @@ export function vHub(s) {
   <nav class="rail" aria-label="Main">${NAV.map(rItem(page)).join('')}</nav>
   <main id="main"><div class="wrap fade">${PAGES[page](s)}</div></main>
   <nav class="tabs" aria-label="Main">${NAV.filter(([k]) => TAB_PAGES.includes(k)).map(rItem(page)).join('')}<button class="ritem" id="morebtn" aria-expanded="${!!s.more}" ${TAB_PAGES.includes(page) ? '' : 'aria-current="page"'}><span class="ic">${ico('menu')}</span><span class="lbl">More</span></button></nav>
-  ${s.more ? `<nav class="moresheet" aria-label="More">${NAV.filter(([k]) => !TAB_PAGES.includes(k)).map(rItem(page)).join('')}</nav>` : ''}</div>${s.appear ? appearHTML(s.theme) : ''}${s.notif ? notifsHTML(s) : ''}`
+  ${s.more ? `<nav class="moresheet" aria-label="More">${NAV.filter(([k]) => !TAB_PAGES.includes(k)).map(rItem(page)).join('')}</nav>` : ''}</div>${s.appear ? appearHTML(s.theme) : ''}${s.notif ? notifsHTML(s) : ''}${s.reader ? readerHTML(s) : ''}`
 }

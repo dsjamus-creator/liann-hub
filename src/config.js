@@ -8,6 +8,7 @@ export const config = {
   pinyinApi: 'https://pinyin-tiles-api-staging.onrender.com',
   backend: 'https://lwl-backend-mhgo.onrender.com',
   downloadsManifest: 'data/downloads.json',
+  comicsManifest: 'data/comics.json',
   ...override,
 }
 

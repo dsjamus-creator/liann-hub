@@ -2,6 +2,7 @@
 // CHROME_PATH defaults to the Chromium preinstalled in Claude Code cloud sessions.
 import assert from 'node:assert/strict'
 import { chromium } from 'playwright-core'
+import { fileURLToPath } from 'node:url'
 import { serve } from '../scripts/serve.mjs'
 
 const server = await serve(0)
@@ -14,6 +15,9 @@ const shot = async (page, name) => { if (process.env.SHOTS) await page.waitForTi
 async function mock(context, { student = true, tour = false } = {}) {
   const seen = { auth: [] }
   if (!tour) await context.addInitScript(() => localStorage.setItem('liann-hub-tour-done', 'true'))
+  const PAGE = n => `https://downloads.lwliann.com/comics/ep1/page-${n}.jpg`
+  await context.route('**/data/comics.json', r => r.fulfill({ json: { episodes: [{ id: 'ep1', title: 'Episode 1: Flight', number: 1, summary: 'Bella takes off.', cover: PAGE(1), pages: [PAGE(1), PAGE(2), PAGE(3)] }] } }))
+  await context.route(/downloads\.lwliann\.com\/comics\/ep1\/page-(\d)\.jpg/, r => r.fulfill({ path: fileURLToPath(new URL(`./fixtures/page-${r.request().url().match(/page-(\d)/)[1]}.jpg`, import.meta.url)), contentType: 'image/jpeg', headers: { 'access-control-allow-origin': '*' } }))
   await context.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ status: 200, contentType: 'text/css', body: '' }))
   await context.route('https://pinyin-tiles-api-staging.onrender.com/v1/auth/config', r => r.fulfill({ json: { authentication: { enabled: true, supabaseUrl: 'https://demo.supabase.co', publishableKey: 'pk-test' } } }))
   await context.route('https://demo.supabase.co/auth/v1/**', async r => {
@@ -120,6 +124,83 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
       await shot(page, 'phone-downloads-last')
     }
   })
+  await step(`${tag}: comic reader: spreads, page turn, arrows, magnifier, place remembered`, async () => {
+   try {
+    const wide = tag === 'desktop', count = () => page.locator('.rcount').innerText()
+    await page.goto(url + '#read'); await page.locator('[data-readep="ep1"]').click()
+    await page.locator('.reader').waitFor()
+    assert.equal(await page.locator(wide ? '.rbook.spread' : '.rbook.single').count(), 1, wide ? 'wide screens open as a two-page book' : 'phones open one page')
+    assert.equal(await count(), '1 / 3'); assert.equal(await page.locator('#rprev').isDisabled(), true)
+    assert.equal(await page.locator('#rctl, .rctl').locator('#rprev, #rnext').count(), 2, 'arrows sit together at the bottom centre')
+    const [b0, f0] = await Promise.all([page.locator('#rprev').boundingBox(), page.locator('#rnext').boundingBox()])
+    const stageBox = await page.locator('#rstage').boundingBox()
+    assert.ok(b0.x < f0.x && b0.y > stageBox.y + stageBox.height - 4, 'Back arrow is left of Forward and both are below the page')
+    assert.ok(Math.abs((b0.x + f0.x + f0.width) / 2 - page.viewportSize().width / 2) < 40, 'arrows are centred')
+    await noOverflow(page); await shot(page, `${tag}-reader`)
+    await page.keyboard.press('ArrowRight')
+    assert.equal(await page.locator(wide ? '.flip.fwd' : '.flip.sfwd').count(), 1, 'the page turns')
+    assert.equal(await count(), wide ? '2–3 / 3' : '2 / 3')
+    await page.locator('.flip').waitFor({ state: 'detached', timeout: 4000 })
+    if (wide) {
+      assert.equal(await page.locator('#rnext').isDisabled(), true, 'the last spread is the end')
+      const box = await page.locator('.pg.r img').boundingBox()
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+      await page.locator('#rlens:not([hidden])').waitFor()
+      assert.match(await page.locator('#rlens').evaluate(el => el.style.backgroundImage), /downloads\.lwliann\.com\/comics\//)
+      await shot(page, `${tag}-reader-lens`)
+      await page.mouse.move(box.x + box.width / 2, 20)
+      await page.locator('#rlens[hidden]').waitFor({ state: 'attached' })
+      await page.keyboard.press('ArrowLeft'); assert.equal(await page.locator('.flip.back').count(), 1); assert.equal(await count(), '1 / 3')
+      await page.locator('.flip').waitFor({ state: 'detached', timeout: 4000 })
+      await page.locator('#rnext').click(); assert.equal(await count(), '2–3 / 3')
+      await page.locator('#rmode').click(); assert.equal(await page.locator('.rbook.single').count(), 1); assert.equal(await count(), '2 / 3')
+    } else {
+      await page.locator('#rnext').click(); assert.equal(await count(), '3 / 3'); assert.equal(await page.locator('#rnext').isDisabled(), true)
+      await page.keyboard.press('ArrowLeft'); assert.equal(await count(), '2 / 3')
+    }
+    await page.locator('.flip').waitFor({ state: 'detached', timeout: 4000 })
+    await page.locator('#rfull').click(); assert.equal(await page.locator('.reader.full').count(), 1, 'full page hides the top bar')
+    assert.equal(await page.locator('.rbar').isVisible(), false); await page.locator('#rexit').click()
+    assert.equal(await page.locator('.reader.full').count(), 0); assert.equal(await page.locator('.rbar').isVisible(), true)
+    await page.locator('#rzoom').click(); assert.equal(await page.locator('.rstage.zoom').count(), 1)
+    await page.keyboard.press('Escape'); assert.equal(await page.locator('.reader').count(), 0)
+    assert.match(await page.locator('[data-readep="ep1"]').innerText(), /Continue from page 2/)
+    await page.locator('[data-readep="ep1"]').click(); assert.equal(await count(), '2 / 3')
+    if (!wide) { await page.locator('#rmode').click(); assert.equal(await page.locator('.rbook.spread').count(), 1); assert.equal(await count(), '2–3 / 3') }
+    await page.locator('#rclose').click(); assert.equal(await page.locator('.reader').count(), 0)
+   } catch (e) { if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/FAIL-${tag}-reader.png` }); throw e }
+   finally { if (await page.locator('.reader').count()) await page.keyboard.press('Escape') }
+  })
+  await step(`${tag}: 3D book: bending page turn, page stack, draggable magnifier (when WebGL exists)`, async () => {
+    try {
+      await page.goto(url + '#read'); await page.locator('[data-readep="ep1"]').click(); await page.locator('.reader').waitFor()
+      const hasGL = await page.locator('#r3d').count()
+      assert.equal(hasGL, await page.evaluate(() => { try { const c = document.createElement('canvas'); return c.getContext('webgl2') || c.getContext('webgl') ? 1 : 0 } catch { return 0 } }), 'the 3D book is offered exactly when WebGL exists')
+      if (!hasGL) return
+      await page.locator('#r3d').click()
+      await page.locator('.book3d canvas').waitFor({ timeout: 15000 })
+      const size = await page.locator('.book3d canvas').boundingBox(); assert.ok(size.width > 200 && size.height > 200, 'the canvas fills the stage')
+      assert.equal(await page.locator('#rzoom').count(), 0, 'Zoom is replaced by the magnifier in 3D')
+      await page.waitForTimeout(600); await shot(page, `${tag}-book3d-cover`)
+      await page.keyboard.press('ArrowRight'); await page.waitForTimeout(430); await shot(page, `${tag}-book3d-turn`)
+      assert.equal(await page.locator('.rcount').innerText(), '2–3 / 3'); await page.waitForTimeout(1300)
+      assert.equal(await page.locator('#rnext').isDisabled(), true)
+      await page.waitForTimeout(300); await shot(page, `${tag}-book3d-open`)
+      // the brass magnifier: drag it onto the right-hand page and the glass shows that page enlarged
+      const brass = page.locator('.brass'); await brass.waitFor()
+      const bb = await brass.boundingBox(), st = await page.locator('.book3d').boundingBox()
+      await page.mouse.move(bb.x + 100, bb.y + 100); await page.mouse.down(); await page.mouse.move(st.x + st.width * 0.62, st.y + st.height * 0.45, { steps: 8 }); await page.mouse.up()
+      await page.waitForTimeout(200)
+      assert.match(await page.locator('.brass .bglass').evaluate(el => el.style.backgroundImage), /downloads\.lwliann\.com\/comics\/ep1\/page-/, 'the glass shows the page under it')
+      await shot(page, `${tag}-book3d-lens`)
+      await page.keyboard.press('ArrowLeft'); await page.waitForTimeout(1500); assert.equal(await page.locator('.rcount').innerText(), '1 / 3')
+      await page.locator('#r3d').click(); assert.equal(await page.locator('.book3d').count(), 0, 'Flat pages brings back the flat reader')
+    } finally {
+      if (process.env.SHOTS && await page.locator('.reader').count()) await page.screenshot({ path: `${process.env.SHOTS}/${tag}-book3d-state.png` })
+      if (await page.locator('#r3d[aria-pressed="true"]').count()) await page.locator('#r3d').click()
+      if (await page.locator('.reader').count()) await page.keyboard.press('Escape')
+    }
+  })
   await step(`${tag}: Read and Kids pages render their manifest slots`, async () => {
     await page.goto(url + '#read'); await page.locator('[data-slot="read/episodes"]').waitFor()
     assert.equal(await page.locator('main a[download]').count(), 0, 'no episode PDF is in the source folder')
@@ -196,6 +277,23 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     await page.click('#tnext'); assert.match(await page.locator('.tour').innerText(), /2 of 4/)
     await page.click('#tskip'); assert.equal(await page.locator('.tour').count(), 0)
     await page.reload(); await page.locator('.hello').waitFor(); assert.equal(await page.locator('.tour').count(), 0)
+  })
+  await context.close()
+}
+
+{
+  // the page host sends no CORS headers: the flat reader must still show the pages, and the 3D option must not be offered
+  const context = await browser.newContext({ viewport: { width: 1280, height: 860 } })
+  await mock(context, { tour: false })
+  await context.addInitScript(() => localStorage.setItem('liann-hub-session-v1', JSON.stringify({ access_token: 'at', refresh_token: 'rt', expires_at: 9999999999 })))
+  // a host without CORS: plain image requests work, CORS-mode requests (they carry an Origin header) fail
+  await context.route(/downloads\.lwliann\.com\/comics\/ep1\/page-(\d)\.jpg/, r => r.request().headers().origin ? r.abort() : r.fulfill({ path: fileURLToPath(new URL(`./fixtures/page-${r.request().url().match(/page-(\d)/)[1]}.jpg`, import.meta.url)), contentType: 'image/jpeg' }))
+  const page = await context.newPage()
+  await step('comic reader without CORS headers: flat pages still load and the 3D book is not offered', async () => {
+    await page.goto(url + '#read'); await page.locator('[data-readep="ep1"]').click(); await page.locator('.reader').waitFor()
+    await page.waitForFunction(() => { const im = document.querySelector('.reader .pg img'); return im && im.complete && im.naturalWidth > 0 }, null, { timeout: 8000 })
+    assert.equal(await page.locator('#r3d').count(), 0)
+    assert.equal(await page.locator('.rbook').count(), 1)
   })
   await context.close()
 }
