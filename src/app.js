@@ -144,12 +144,29 @@ function wantSpread(r, n) {
 function openReader(id) {
   const ep = S.comics?.find(e => e.id === id); if (!ep) return
   const saved = S.progress[id]
-  S.reader = { id, i: Number.isInteger(saved) && saved < ep.pages.length - 1 ? clampPage(saved, ep.pages.length) : 0, zoom: false, mode: prefs.mode || 'auto', lens: prefs.lens !== false, flip: null, can3d: webglOK() && ep.pages.length > 1 }
+  S.reader = { id, i: Number.isInteger(saved) && saved < ep.pages.length - 1 ? clampPage(saved, ep.pages.length) : 0, z: 1, mode: prefs.mode || 'auto', lens: prefs.lens !== false, flip: null, can3d: webglOK() && ep.pages.length > 1 }
   S.reader.spread = wantSpread(S.reader, ep.pages.length)
   if (bookFor !== id) dropBook()
   S.reader.d3 = !!(prefs.d3 && S.reader.can3d && !S.noCors); if (S.reader.d3) { S.reader.spread = true; S.reader.d3state = book && bookFor === id ? 'ready' : 'loading' }
   S.more = false; S.notif = false; S.appear = false; history.replaceState(null, '', `#read/${encodeURIComponent(id)}`); render()
   if (S.reader.d3) startBook()
+}
+// Zoom the comic: mouse wheel or the Up / Down arrow keys. The point under the pointer stays put. Flat pages scroll inside the
+// stage (drag to pan); the 3D book moves its camera.
+const ZMAX = 4
+function zoomBy(factor, cx, cy) {
+  const r = S.reader; if (!r) return
+  if (r.d3) { if (book) { book.zoomAt(factor, cx, cy); r.z = book.zoom; const b = $('#rzoom'); if (b) b.textContent = r.z > 1 ? 'Fit page' : 'Zoom' } return }
+  const stage = $('#rstage'); if (!stage) return
+  const old = r.z, z = Math.min(Math.max(old * factor, 1), ZMAX); if (z === old) return
+  const box = stage.getBoundingClientRect()
+  const px = (cx ?? box.left + box.width / 2) - box.left, py = (cy ?? box.top + box.height / 2) - box.top
+  const fx = (stage.scrollLeft + px) / old, fy = (stage.scrollTop + py) / old
+  r.z = z; r.flip = null
+  stage.style.setProperty('--z', z); stage.classList.toggle('zoom', z > 1)
+  stage.scrollLeft = fx * z - px; stage.scrollTop = fy * z - py
+  $('#rlens').hidden = true; $('.flip')?.remove()
+  const b = $('#rzoom'); if (b) { b.textContent = z > 1 ? 'Fit page' : 'Zoom'; b.setAttribute('aria-pressed', z > 1) }
 }
 function closeReader() { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); S.reader = null; dropBook(); if (hashParts()[1]) history.replaceState(null, '', '#read'); render() }
 // Go to page `to`; dir (+1 / -1) plays the page-turn when it is a single step.
@@ -157,7 +174,7 @@ function showPage(to, dir) {
   const ep = readerEp(); if (!ep) return
   const r = S.reader, n = ep.pages.length, from = visiblePages(r.i, n, r.spread)
   r.i = clampPage(to, n)
-  r.flip = dir && !r.zoom && !r.d3 && !reduceMotion() ? { dir, from } : null
+  r.flip = dir && !(r.z > 1) && !r.d3 && !reduceMotion() ? { dir, from } : null
   if (r.d3 && book) book.goTo(spreadIndexOf(r.i, n))
   S.progress = { ...S.progress, [ep.id]: r.i }; store.set('liann-hub-reader', S.progress)
   render()
@@ -183,7 +200,7 @@ function savePrefs() { prefs.mode = S.reader.mode; prefs.lens = S.reader.lens; p
 // Hover magnifier: a circle that follows the mouse and shows the page under it enlarged.
 function moveLens(e) {
   const lens = $('#rlens'); if (!lens) return
-  if (!S.reader.lens || S.reader.zoom || e.pointerType !== 'mouse' || $('.flip')) { lens.hidden = true; return }
+  if (!S.reader.lens || S.reader.z > 1 || e.pointerType !== 'mouse' || $('.flip')) { lens.hidden = true; return }
   const pg = document.elementsFromPoint(e.clientX, e.clientY).find(el => el.matches?.('.pg:not(.old)'))
   const img = pg?.querySelector('img')
   const g = img && img.naturalWidth && lensGeometry({ box: img.getBoundingClientRect(), natural: { w: img.naturalWidth, h: img.naturalHeight }, align: pg.classList.contains('l') ? 'right' : pg.classList.contains('r') ? 'left' : 'center', x: e.clientX, y: e.clientY, zoom: LENS_ZOOM, size: LENS_SIZE })
@@ -197,25 +214,36 @@ function bindReader() {
   $('#rclose').onclick = closeReader
   $('#rprev').onclick = () => stepReader(-1)
   $('#rnext').onclick = () => stepReader(1)
-  const zoomBtn = $('#rzoom'); if (zoomBtn) zoomBtn.onclick = () => { S.reader.zoom = !S.reader.zoom; S.reader.flip = null; render() }
+  const zoomBtn = $('#rzoom'); if (zoomBtn) zoomBtn.onclick = () => zoomBy(S.reader.z > 1 ? 1 / S.reader.z : 2)
   $('#rfull').onclick = () => setFull(!S.reader.full)
   const rexit = $('#rexit'); if (rexit) rexit.onclick = () => setFull(false)
   $('#rlensbtn').onclick = () => { S.reader.lens = !S.reader.lens; savePrefs(); render() }
   const b3 = $('#r3d'); if (b3) b3.onclick = () => {
-    const r = S.reader; r.d3 = !r.d3; prefs.d3 = r.d3; savePrefs(); r.flip = null; r.zoom = false
+    const r = S.reader; r.d3 = !r.d3; prefs.d3 = r.d3; savePrefs(); r.flip = null; r.z = 1; if (book && book.zoom > 1) book.zoomAt(1 / book.zoom)
     if (r.d3) { r.spread = true; r.d3state = book && bookFor === r.id ? 'ready' : 'loading'; render(); startBook() } else { r.spread = wantSpread(r, ep.pages.length); render() }
   }
   const mode = $('#rmode'); if (mode) mode.onclick = () => { S.reader.mode = S.reader.spread ? 'single' : 'spread'; S.reader.spread = wantSpread(S.reader, ep.pages.length); S.reader.flip = null; savePrefs(); render() }
   $('#rseek').onchange = e => showPage(Number(e.target.value) - 1, 0)
   const stage = $('#rstage'); let x0 = null, y0 = 0
   if (S.reader.d3 && S.reader.d3state === 'ready' && book) { stage.append(book.el); book.setLens(S.reader.lens !== false); book.resize() }
-  stage.ontouchstart = e => { if (e.touches.length === 1 && !S.reader.zoom) { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY } else x0 = null }
+  stage.ontouchstart = e => { if (e.touches.length === 1 && !(S.reader.z > 1)) { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY } else x0 = null }
   stage.ontouchend = e => {
     if (x0 === null) return
     const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; x0 = null
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) stepReader(dx < 0 ? 1 : -1)
   }
-  stage.onpointermove = moveLens
+  stage.onwheel = e => {
+    e.preventDefault()
+    const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * 100 : e.deltaY
+    zoomBy(Math.exp(-dy * 0.0015), e.clientX, e.clientY)
+  }
+  let pan = null
+  stage.onpointerdown = e => { if (S.reader.z > 1 && !S.reader.d3 && e.pointerType === 'mouse' && e.button === 0) { pan = { x: e.clientX, y: e.clientY }; stage.setPointerCapture(e.pointerId); stage.classList.add('panning') } }
+  stage.onpointerup = stage.onpointercancel = () => { pan = null; stage.classList.remove('panning') }
+  stage.onpointermove = e => {
+    if (pan) { stage.scrollLeft -= e.clientX - pan.x; stage.scrollTop -= e.clientY - pan.y; pan = { x: e.clientX, y: e.clientY }; return }
+    moveLens(e)
+  }
   stage.onpointerleave = () => { $('#rlens').hidden = true }
   const flip = $('.flip')
   if (flip) {
@@ -240,6 +268,7 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'f' || e.key === 'F') setFull(!S.reader.full)
   else if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); stepReader(1) }
   else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); stepReader(-1) }
+  else if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && !/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) { e.preventDefault(); zoomBy(e.key === 'ArrowUp' ? 1.25 : 0.8) }
 })
 window.addEventListener('resize', () => {
   const ep = readerEp(); if (!ep || S.reader.mode !== 'auto') return
