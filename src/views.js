@@ -236,7 +236,7 @@ function pRead(s) {
   const lead = eps.length
     ? `<div class="grid">${eps.map(e => {
       const saved = s.progress?.[e.id], resume = Number.isInteger(saved) && saved > 0 && saved < e.pages.length - 1
-      return `<div class="c" data-ep="${esc(e.id)}"><img class="cover" src="${esc(e.cover)}" alt="" loading="lazy"><div class="t">${esc(e.title)}</div><div class="s">${e.pages.length} page${e.pages.length === 1 ? '' : 's'}</div>${e.summary ? `<div class="d">${esc(e.summary)}</div>` : ''}<div class="acts"><button class="btn" data-readep="${esc(e.id)}">${resume ? `Continue from page ${saved + 1}` : 'Read'}</button></div></div>`
+      return `<div class="c" data-ep="${esc(e.id)}"><img class="cover"${s.noCors ? '' : ' crossorigin="anonymous"'} src="${esc(e.cover)}" alt="" loading="lazy"><div class="t">${esc(e.title)}</div><div class="s">${e.pages.length} page${e.pages.length === 1 ? '' : 's'}</div>${e.summary ? `<div class="d">${esc(e.summary)}</div>` : ''}<div class="acts"><button class="btn" data-readep="${esc(e.id)}">${resume ? `Continue from page ${saved + 1}` : 'Read'}</button></div></div>`
     }).join('')}</div>`
     : `<div class="feature"><div class="art" style="background:#ddd url(assets/comic-2.jpg) center/cover" role="img" aria-label="Bella flying over the city, from Bella & LiANN"></div>
   <div class="txt"><div class="eyebrow">Coming soon</div><h3>Bella &amp; LiANN</h3><p class="muted" style="margin:0">Read the comic with pinyin and English, and save words to your SetLists.</p></div></div>`
@@ -254,12 +254,12 @@ const ARROW = '<svg viewBox="0 0 64 48" aria-hidden="true"><path d="M3 15H34V4L6
 export function readerHTML(s) {
   const ep = (s.comics || []).find(e => e.id === s.reader?.id)
   if (!ep) return ''
-  const r = s.reader, n = ep.pages.length, i = clampPage(r.i, n), zoom = !!r.zoom, spread = !!r.spread && n > 1
-  const img = j => (j == null ? '' : `<img src="${esc(ep.pages[j])}" alt="${esc(ep.alts[j] || `${ep.title}, page ${j + 1} of ${n}`)}" draggable="false">`)
+  const r = s.reader, n = ep.pages.length, i = clampPage(r.i, n), zoom = !!r.zoom && !r.d3, d3 = !!r.d3, spread = (d3 || !!r.spread) && n > 1
+  const img = j => (j == null ? '' : `<img${s.noCors ? '' : ' crossorigin="anonymous"'} src="${esc(ep.pages[j])}" alt="${esc(ep.alts[j] || `${ep.title}, page ${j + 1} of ${n}`)}" draggable="false">`)
   const face = (cls, j) => `<div class="face ${cls}">${img(j)}</div>`
   const now = visiblePages(i, n, spread), from = r.flip?.from, dir = r.flip?.dir
   let flip = ''
-  if (from && dir && !zoom) {
+  if (from && dir && !zoom && !d3) {
     if (spread && from.length === 2) {
       flip = dir > 0
         ? `<div class="pg l old">${img(from[0])}</div><div class="flip fwd">${face('front', from[1])}${face('back', now[0])}</div>`
@@ -269,14 +269,15 @@ export function readerHTML(s) {
   const label = spread ? now.filter(j => j != null).map(j => j + 1).join('–') : String(i + 1)
   return `<div class="reader${r.full ? ' full' : ''}" role="dialog" aria-modal="true" aria-label="${esc(ep.title)}">
   <div class="rbar"><button class="iconbtn" id="rclose" aria-label="Close reader">✕</button><div class="rtitle">${esc(ep.title)}</div>
-   ${n > 1 ? `<button class="btn ghost" id="rmode" aria-pressed="${spread}">${spread ? 'One page' : 'Two pages'}</button>` : ''}
+   ${r.can3d && !s.noCors ? `<button class="btn ghost" id="r3d" aria-pressed="${d3}" title="A 3D book with bending pages and a draggable magnifying glass">${d3 ? 'Flat pages' : '3D book'}</button>` : ''}
+   ${n > 1 && !d3 ? `<button class="btn ghost" id="rmode" aria-pressed="${spread}">${spread ? 'One page' : 'Two pages'}</button>` : ''}
    <button class="btn ghost" id="rlensbtn" aria-pressed="${r.lens !== false}" title="Hover over a page to magnify it">Magnifier</button>
    <button class="btn ghost" id="rfull" aria-pressed="${!!r.full}">${r.full ? 'Exit full page' : 'Full page'}</button>
-   <button class="btn ghost" id="rzoom" aria-pressed="${zoom}">${zoom ? 'Fit page' : 'Zoom'}</button></div>
+   ${d3 ? '' : `<button class="btn ghost" id="rzoom" aria-pressed="${zoom}">${zoom ? 'Fit page' : 'Zoom'}</button>`}</div>
   ${r.full ? '<button class="btn ghost rexit" id="rexit">Exit full page</button>' : ''}
   <div class="rstage${zoom ? ' zoom' : ''}" id="rstage" tabindex="-1">
-   <div class="rbook ${spread ? 'spread' : 'single'}">
-    ${spread ? `<div class="pg l">${img(now[0])}</div><div class="pg r">${img(now[1])}</div>` : `<div class="pg one">${img(now[0])}</div>`}${flip}</div>
+   ${d3 ? (r.d3state === 'loading' ? '<div class="r3dslot">Loading the 3D book…</div>' : '') : `<div class="rbook ${spread ? 'spread' : 'single'}">
+    ${spread ? `<div class="pg l">${img(now[0])}</div><div class="pg r">${img(now[1])}</div>` : `<div class="pg one">${img(now[0])}</div>`}${flip}</div>`}
    <div class="lens" id="rlens" hidden></div></div>
   <div class="rfoot">
    <div class="rctl">

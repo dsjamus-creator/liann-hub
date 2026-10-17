@@ -1,6 +1,7 @@
 import { config, NAV, CODE_LENGTH } from './config.js'
 import { createAccount } from './account.js'
 import { loadDownloads } from './downloads.js'
+import { createBook, webglOK } from './book3d.js'
 import { loadComics, clampPage, spreadsOf, spreadIndexOf, firstPageOf, visiblePages, lensGeometry } from './comics.js'
 import { DS, vLoading, vEmail, vCode, vWho, vHub } from './views.js'
 import { mountViewer, stopViewer } from './figures.js'
@@ -110,6 +111,21 @@ function signedOut() { go('email', { user: null, setlists: null, openList: null 
 const LENS_ZOOM = 2.5, LENS_SIZE = 190
 const prefs = store.get('liann-hub-reader-prefs', {})
 const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches
+let book = null, bookFor = ''
+function dropBook() { if (book) { book.destroy(); book = null; bookFor = '' } }
+// 3D book: the WebGL scene lives outside the re-rendered markup and is moved into each new stage by bindReader.
+async function startBook() {
+  const r = S.reader, ep = readerEp(); if (!r || !ep || !r.d3) return
+  if (book && bookFor === ep.id) { r.d3state = 'ready'; return }
+  dropBook(); r.d3state = 'loading'
+  const id = ep.id
+  try {
+    const b = await createBook({ pages: ep.pages, alts: ep.alts, onFail: () => { if (S.reader?.d3) { S.reader.d3 = false; dropBook(); toast('3D book is not available for these pages'); S.reader.spread = wantSpread(S.reader, ep.pages.length); render() } } })
+    if (!S.reader || !S.reader.d3 || S.reader.id !== id) { b.destroy(); return }
+    book = b; bookFor = id; b.goTo(spreadIndexOf(S.reader.i, ep.pages.length), false)
+    S.reader.d3state = 'ready'; render()
+  } catch { if (S.reader?.id === id) { S.reader.d3 = false; S.reader.spread = wantSpread(S.reader, ep.pages.length); prefs.d3 = false; store.set('liann-hub-reader-prefs', prefs); toast('3D book is not available here'); render() } }
+}
 function readerEp() { return S.comics?.find(e => e.id === S.reader?.id) }
 // Two pages side by side on a wide landscape screen (unless the reader chose otherwise); one page elsewhere.
 function wantSpread(r, n) {
@@ -121,17 +137,21 @@ function wantSpread(r, n) {
 function openReader(id) {
   const ep = S.comics?.find(e => e.id === id); if (!ep) return
   const saved = S.progress[id]
-  S.reader = { id, i: Number.isInteger(saved) && saved < ep.pages.length - 1 ? clampPage(saved, ep.pages.length) : 0, zoom: false, mode: prefs.mode || 'auto', lens: prefs.lens !== false, flip: null }
+  S.reader = { id, i: Number.isInteger(saved) && saved < ep.pages.length - 1 ? clampPage(saved, ep.pages.length) : 0, zoom: false, mode: prefs.mode || 'auto', lens: prefs.lens !== false, flip: null, can3d: webglOK() && ep.pages.length > 1 }
   S.reader.spread = wantSpread(S.reader, ep.pages.length)
+  if (bookFor !== id) dropBook()
+  S.reader.d3 = !!(prefs.d3 && S.reader.can3d && !S.noCors); if (S.reader.d3) { S.reader.spread = true; S.reader.d3state = book && bookFor === id ? 'ready' : 'loading' }
   S.more = false; S.notif = false; S.appear = false; render()
+  if (S.reader.d3) startBook()
 }
-function closeReader() { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); S.reader = null; render() }
+function closeReader() { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); S.reader = null; dropBook(); render() }
 // Go to page `to`; dir (+1 / -1) plays the page-turn when it is a single step.
 function showPage(to, dir) {
   const ep = readerEp(); if (!ep) return
   const r = S.reader, n = ep.pages.length, from = visiblePages(r.i, n, r.spread)
   r.i = clampPage(to, n)
-  r.flip = dir && !r.zoom && !reduceMotion() ? { dir, from } : null
+  r.flip = dir && !r.zoom && !r.d3 && !reduceMotion() ? { dir, from } : null
+  if (r.d3 && book) book.goTo(spreadIndexOf(r.i, n))
   S.progress = { ...S.progress, [ep.id]: r.i }; store.set('liann-hub-reader', S.progress)
   render()
 }
@@ -152,7 +172,7 @@ function setFull(on) {
   render()
 }
 document.addEventListener('fullscreenchange', () => { if (S.reader && S.reader.full && !document.fullscreenElement && document.documentElement.requestFullscreen) { S.reader.full = false; render() } })
-function savePrefs() { prefs.mode = S.reader.mode; prefs.lens = S.reader.lens; store.set('liann-hub-reader-prefs', prefs) }
+function savePrefs() { prefs.mode = S.reader.mode; prefs.lens = S.reader.lens; prefs.d3 = !!S.reader.d3; store.set('liann-hub-reader-prefs', prefs) }
 // Hover magnifier: a circle that follows the mouse and shows the page under it enlarged.
 function moveLens(e) {
   const lens = $('#rlens'); if (!lens) return
@@ -170,13 +190,18 @@ function bindReader() {
   $('#rclose').onclick = closeReader
   $('#rprev').onclick = () => stepReader(-1)
   $('#rnext').onclick = () => stepReader(1)
-  $('#rzoom').onclick = () => { S.reader.zoom = !S.reader.zoom; S.reader.flip = null; render() }
+  const zoomBtn = $('#rzoom'); if (zoomBtn) zoomBtn.onclick = () => { S.reader.zoom = !S.reader.zoom; S.reader.flip = null; render() }
   $('#rfull').onclick = () => setFull(!S.reader.full)
   const rexit = $('#rexit'); if (rexit) rexit.onclick = () => setFull(false)
   $('#rlensbtn').onclick = () => { S.reader.lens = !S.reader.lens; savePrefs(); render() }
+  const b3 = $('#r3d'); if (b3) b3.onclick = () => {
+    const r = S.reader; r.d3 = !r.d3; prefs.d3 = r.d3; savePrefs(); r.flip = null; r.zoom = false
+    if (r.d3) { r.spread = true; r.d3state = book && bookFor === r.id ? 'ready' : 'loading'; render(); startBook() } else { r.spread = wantSpread(r, ep.pages.length); render() }
+  }
   const mode = $('#rmode'); if (mode) mode.onclick = () => { S.reader.mode = S.reader.spread ? 'single' : 'spread'; S.reader.spread = wantSpread(S.reader, ep.pages.length); S.reader.flip = null; savePrefs(); render() }
   $('#rseek').onchange = e => showPage(Number(e.target.value) - 1, 0)
   const stage = $('#rstage'); let x0 = null, y0 = 0
+  if (S.reader.d3 && S.reader.d3state === 'ready' && book) { stage.append(book.el); book.setLens(S.reader.lens !== false); book.resize() }
   stage.ontouchstart = e => { if (e.touches.length === 1 && !S.reader.zoom) { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY } else x0 = null }
   stage.ontouchend = e => {
     if (x0 === null) return
@@ -191,9 +216,17 @@ function bindReader() {
     flip.addEventListener('animationend', done, { once: true }); setTimeout(done, 1200)
   }
   const near = [...visiblePages(S.reader.i, ep.pages.length, S.reader.spread), S.reader.i - 1, S.reader.i + 2, S.reader.i + 3].filter(j => j != null && j >= 0 && j < ep.pages.length)
-  for (const j of near) new Image().src = ep.pages[j]
+  for (const j of near) { const im = new Image(); im.crossOrigin = 'anonymous'; im.src = ep.pages[j] } // CORS mode, so the browser's cached copy can also feed the 3D book's textures
   stage.focus({ preventScroll: true })
 }
+// Pages are requested in CORS mode so the 3D book can use them as textures. If the image host does not allow that, fall back to
+// plain image requests: the flat reader keeps working and the 3D option is hidden.
+document.addEventListener('error', e => {
+  const im = e.target
+  if (!(im instanceof HTMLImageElement) || !im.hasAttribute('crossorigin') || S.noCors) return
+  S.noCors = true; dropBook(); if (S.reader) { S.reader.d3 = false; S.reader.spread = wantSpread(S.reader, readerEp()?.pages.length || 0) }
+  render()
+}, true)
 document.addEventListener('keydown', e => {
   if (!S.reader) return
   if (e.key === 'Escape') { if (S.reader.full && !document.fullscreenElement) setFull(false); else if (!document.fullscreenElement) closeReader() }

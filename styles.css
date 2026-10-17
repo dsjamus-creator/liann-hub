@@ -293,3 +293,14 @@ a.btn{display:inline-block;text-decoration:none;text-align:center}
 .rexit{position:fixed;top:max(10px,env(safe-area-inset-top));right:12px;z-index:5;opacity:.75}
 .rexit:hover{opacity:1}
 @media (max-width:520px){.rbar{gap:8px;padding:8px 10px}.rbar .btn{padding:7px 11px;font-size:.85rem}.rtitle{display:none}.rbar .rcount{display:none}}
+
+/* 3D book */
+.r3dslot{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-weight:700}
+.book3d{position:absolute;inset:0;overflow:hidden}
+.book3d canvas{display:block;width:100%;height:100%}
+.brass{position:absolute;width:200px;height:200px;cursor:grab;touch-action:none;z-index:2;filter:drop-shadow(0 12px 16px rgba(0,0,0,.5))}
+.brass:active{cursor:grabbing}
+.brass .bglass{position:absolute;inset:9px;border-radius:50%;background-color:rgba(245,238,220,.12);background-repeat:no-repeat;box-shadow:inset 0 0 26px rgba(0,0,0,.4)}
+.brass .bglass::after{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(110% 70% at 28% 18%,rgba(255,255,255,.38),transparent 46%)}
+.brass .brim{position:absolute;inset:0;border-radius:50%;pointer-events:none;background:conic-gradient(from 200deg,#8a6b2e,#ecd48c,#b58e3c,#f8e8b0,#8a6b2e,#d9b766,#8a6b2e);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 14px),#000 calc(100% - 13px));mask:radial-gradient(farthest-side,transparent calc(100% - 14px),#000 calc(100% - 13px))}
+.brass .bgrip{position:absolute;left:166px;top:166px;width:96px;height:22px;margin-top:-11px;border-radius:0 12px 12px 0;transform-origin:0 50%;transform:rotate(45deg);background:linear-gradient(90deg,#d9b766 0 16%,#a07a30 16% 20%,#6b4a2a 20%,#3a2615);box-shadow:inset 0 2px 0 rgba(255,255,255,.2)}
