@@ -21,7 +21,13 @@ const S = {
   household: undefined, learner: null, hhError: '', hhBusy: false,
 }
 
-function pageFromHash() { const k = location.hash.slice(1); return NAV.some(([n]) => n === k) ? k : 'home' }
+function hashParts() { const [k, arg] = location.hash.slice(1).split('/'); try { return [k, arg ? decodeURIComponent(arg) : ''] } catch { return [k, ''] } }
+function pageFromHash() { const [k] = hashParts(); return NAV.some(([n]) => n === k) ? k : 'home' }
+// A reader link: #read/<episode id> opens that comic as soon as the hub and the episodes are ready.
+function openFromHash() {
+  const [k, arg] = hashParts()
+  if (k === 'read' && arg && S.view === 'hub' && S.page === 'read' && S.comics && !S.reader) openReader(arg)
+}
 function applyTheme() { document.documentElement.dataset.ds = S.theme.ds; document.documentElement.dataset.t = S.theme.t; store.set('liann-hub-theme', S.theme) }
 function toast(text) { const el = $('#toast'); el.textContent = text; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => { el.hidden = true }, 2200) }
 function go(view, extra = {}) { Object.assign(S, { error: '', busy: false }, extra, { view }); render(); if (view === 'who' || view === 'hub') loadHousehold() }
@@ -67,6 +73,7 @@ async function sendCode(email) {
 async function enterHub(user) {
   S.user = user
   go('hub')
+  openFromHash()
   loadLibrary()
 }
 
@@ -141,10 +148,10 @@ function openReader(id) {
   S.reader.spread = wantSpread(S.reader, ep.pages.length)
   if (bookFor !== id) dropBook()
   S.reader.d3 = !!(prefs.d3 && S.reader.can3d && !S.noCors); if (S.reader.d3) { S.reader.spread = true; S.reader.d3state = book && bookFor === id ? 'ready' : 'loading' }
-  S.more = false; S.notif = false; S.appear = false; render()
+  S.more = false; S.notif = false; S.appear = false; history.replaceState(null, '', `#read/${encodeURIComponent(id)}`); render()
   if (S.reader.d3) startBook()
 }
-function closeReader() { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); S.reader = null; dropBook(); render() }
+function closeReader() { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); S.reader = null; dropBook(); if (hashParts()[1]) history.replaceState(null, '', '#read'); render() }
 // Go to page `to`; dir (+1 / -1) plays the page-turn when it is a single step.
 function showPage(to, dir) {
   const ep = readerEp(); if (!ep) return
@@ -349,11 +356,11 @@ function showTour() {
   $('#tskip').onclick = () => { store.set('liann-hub-tour-done', true); showTour() }
 }
 
-window.addEventListener('hashchange', () => { if (S.view === 'hub') { S.page = pageFromHash(); S.openList = null; render() } })
+window.addEventListener('hashchange', () => { if (S.view === 'hub') { S.page = pageFromHash(); S.openList = null; render(); openFromHash() } })
 
 async function start() {
   applyTheme(); render()
-  loadComics(config.comicsManifest).then(c => { S.comics = c }, () => { S.comics = [] }).finally(() => { if (S.view === 'hub') render() })
+  loadComics(config.comicsManifest).then(c => { S.comics = c }, () => { S.comics = [] }).finally(() => { if (S.view === 'hub') { render(); openFromHash() } })
   loadDownloads(config.downloadsManifest).then(d => { S.downloads = d }, e => { S.downloads = e }).finally(() => { if (S.view === 'hub') render() })
   if (!account.hasSession()) return go('email')
   try { const user = await account.user(); user ? enterHub(user) : go('email') }
