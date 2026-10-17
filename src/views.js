@@ -318,7 +318,7 @@ function pDiscover(s) {
   return `<section class="sec"><h2 style="margin:0;font-size:clamp(1.5rem,3vw,2.1rem);font-weight:900">Discover</h2>
   <div class="chips" style="justify-content:flex-start">${['Featured', 'Games', 'Apps'].map(c => `<button class="chip" data-dchip="${c}" aria-pressed="${f === c}">${c}</button>`).join('')}</div>
   <div class="feature"><div class="art" style="background:#ddd url(assets/comic-2.jpg) center/cover" role="img" aria-label="Bella flying over the city, from Bella & LiANN"></div>
-  <div class="txt"><div class="eyebrow">Coming soon</div><h3>Bella &amp; LiANN</h3><p class="muted" style="margin:0">Read the comic with pinyin and English, and save words to your SetLists.</p><div><button class="btn" data-nav="read">See episodes</button></div></div></div></section>
+  <div class="txt"><div class="eyebrow">Read now</div><h3>Bella &amp; LiANN</h3><p class="muted" style="margin:0">Read the comic with pinyin and English, and save words to your SetLists.</p><div><button class="btn" data-nav="read">See episodes</button></div></div></div></section>
   <section class="sec"><div class="sechead"><h2>${f === 'Featured' ? 'Try something new' : f}</h2><button class="link" data-nav="apps">View all</button></div><div class="grid">${list.map(a => appCard(a, s)).join('')}</div></section>`
 }
 
