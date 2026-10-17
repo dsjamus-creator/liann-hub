@@ -170,21 +170,21 @@
     "producer": "codex"
   },
   {
-    "file": null,
-    "bytes": null,
-    "sha256": null,
-    "builtAt": null,
+    "file": "https://downloads.lwliann.com/bella-liann/issue-1/Bella_LiANN_Issue_One_BW.pdf?v=c38c05b16322",
+    "bytes": 25478138,
+    "sha256": "c38c05b16322aa5415eb28b22ec88820e987d9d9da471db952747db956072be1",
+    "builtAt": "2026-10-17T21:54:42Z",
     "product": "bella-liann",
-    "name": "Bella & LiANN episode PDFs",
-    "version": "episodes-1-4",
+    "name": "Bella & LiANN, Issue One B&W (PDF)",
+    "version": "issue-1",
     "platform": "PDF",
     "hubSlot": "read/episodes",
     "sourceRepo": null,
     "sourceCommit": null,
-    "buildCommand": null,
-    "licenceNotes": "Comic art ownership and PDF font embedding require verification.",
-    "notes": "No episode PDF repository or file found in inspected account/tree inventory.",
-    "producer": "codex"
+    "buildCommand": "Pillow Image.save(PDF), grayscale JPEG q85, 24 pages: front cover (Variant 1), inside front cover, story pages 1-22, from Bella_Issue1_v27_Final_Print_Files",
+    "licenceNotes": "Original artwork and writing by Learning with LiANN under direction by Davinder.",
+    "notes": "Reading copy of the B&W comic, not a print file.",
+    "producer": "claude"
   },
   {
     "file": null,

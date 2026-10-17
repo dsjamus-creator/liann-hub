@@ -159,9 +159,9 @@ test('config holds public addresses only', async () => {
   assert.equal(config.hubOrigin, 'https://app.lwliann.com')
 })
 
-test('Game 3 Unity files are Claude-produced; every other download is expected from Codex', async () => {
+test('Game 3 Unity files and the Issue One PDF are Claude-produced; every other download is expected from Codex', async () => {
   const raw = JSON.parse(await readFile(new URL('../data/downloads.json', import.meta.url), 'utf8'))
-  for (const e of raw) assert.equal(e.producer, e.product === 'mahjong-tones' ? 'claude' : 'codex', e.hubSlot)
+  for (const e of raw) assert.equal(e.producer, ['mahjong-tones', 'bella-liann'].includes(e.product) ? 'claude' : 'codex', e.hubSlot)
 })
 
 test('SetList sources show product names, and unknown ones pass through', () => {
