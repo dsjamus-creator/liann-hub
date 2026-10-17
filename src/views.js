@@ -266,6 +266,8 @@ export function readerHTML(s) {
         : `<div class="pg r old">${img(from[1])}</div><div class="flip back">${face('front', from[0])}${face('back', now[1])}</div>`
     } else if (!spread) flip = `<div class="flip ${dir > 0 ? 'sfwd' : 'sback'}">${face('front', from[0])}</div>`
   }
+  // A closed book sits centred: the front cover, or the last page when it is left on its own
+  const shut = spread && !d3 && !flip ? (now[0] == null ? ' shut r' : now[1] == null && i > 0 ? ' shut l' : '') : ''
   const label = spread ? now.filter(j => j != null).map(j => j + 1).join('–') : String(i + 1)
   return `<div class="reader${r.full ? ' full' : ''}" role="dialog" aria-modal="true" aria-label="${esc(ep.title)}">
   <div class="rbar"><button class="iconbtn" id="rclose" aria-label="Close reader">✕</button><div class="rtitle">${esc(ep.title)}</div>
@@ -276,7 +278,7 @@ export function readerHTML(s) {
    ${d3 ? '' : `<button class="btn ghost" id="rzoom" aria-pressed="${zoom}">${zoom ? 'Fit page' : 'Zoom'}</button>`}</div>
   ${r.full ? '<button class="btn ghost rexit" id="rexit">Exit full page</button>' : ''}
   <div class="rstage${zoom ? ' zoom' : ''}" id="rstage" tabindex="-1" style="--z:${z}">
-   ${d3 ? (r.d3state === 'loading' ? '<div class="r3dslot">Loading the 3D book…</div>' : '') : `<div class="rbook ${spread ? 'spread' : 'single'}">
+   ${d3 ? (r.d3state === 'loading' ? '<div class="r3dslot">Loading the 3D book…</div>' : '') : `<div class="rbook ${spread ? 'spread' : 'single'}${shut}">
     ${spread ? `<div class="pg l">${img(now[0])}</div><div class="pg r">${img(now[1])}</div>` : `<div class="pg one">${img(now[0])}</div>`}${flip}</div>`}
    <div class="lens" id="rlens" hidden></div></div>
   <div class="rfoot">

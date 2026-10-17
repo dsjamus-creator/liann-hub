@@ -144,7 +144,15 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     assert.ok(b0.x < f0.x && b0.y > stageBox.y + stageBox.height - 4, 'Back arrow is left of Forward and both are below the page')
     assert.ok(Math.abs((b0.x + f0.x + f0.width) / 2 - page.viewportSize().width / 2) < 40, 'arrows are centred')
     await noOverflow(page); await shot(page, `${tag}-reader`)
-    await page.keyboard.press('ArrowRight')
+    if (wide) {
+      await page.waitForTimeout(400)
+      const cv = await page.locator('.rbook.shut .pg.r img').boundingBox(), sbx = await page.locator('#rstage').boundingBox()
+      const iw = await page.locator('.rbook').evaluate(el => parseFloat(el.style.getPropertyValue('--iw'))) // the page is drawn against the spine, so its width is what the picture really takes
+      assert.ok(iw > 100 && Math.abs(cv.x + iw / 2 - (sbx.x + sbx.width / 2)) < 8, 'the closed book sits in the middle of the stage')
+      await page.locator('.rbook.shut .pg.r img').click() // clicking the cover opens the book: it slides right, then the page turns
+      await page.waitForFunction(() => !document.querySelector('.rbook.shut'), null, { timeout: 1000 })
+      await page.locator('.flip.fwd').waitFor({ timeout: 2000 })
+    } else await page.keyboard.press('ArrowRight')
     assert.equal(await page.locator(wide ? '.flip.fwd' : '.flip.sfwd').count(), 1, 'the page turns')
     assert.equal(await count(), wide ? '2–3 / 3' : '2 / 3')
     await page.locator('.flip').waitFor({ state: 'detached', timeout: 4000 })
@@ -159,7 +167,9 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
       await page.locator('#rlens[hidden]').waitFor({ state: 'attached' })
       await page.keyboard.press('ArrowLeft'); assert.equal(await page.locator('.flip.back').count(), 1); assert.equal(await count(), '1 / 3')
       await page.locator('.flip').waitFor({ state: 'detached', timeout: 4000 })
-      await page.locator('#rnext').click(); assert.equal(await count(), '2–3 / 3')
+      assert.equal(await page.locator('.rbook.shut.r').count(), 1, 'back on the cover the book closes: it slides back to the middle')
+      await page.locator('#rnext').click(); await page.locator('.flip.fwd').waitFor({ timeout: 2000 }); assert.equal(await count(), '2–3 / 3')
+      await page.locator('.flip').waitFor({ state: 'detached', timeout: 4000 })
       await page.locator('#rmode').click(); assert.equal(await page.locator('.rbook.single').count(), 1); assert.equal(await count(), '2 / 3')
     } else {
       await page.locator('#rnext').click(); assert.equal(await count(), '3 / 3'); assert.equal(await page.locator('#rnext').isDisabled(), true)
