@@ -232,7 +232,7 @@ a.btn{display:inline-block;text-decoration:none;text-align:center}
 @media (max-width:720px){.moresheet{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;position:fixed;left:8px;right:8px;bottom:calc(72px + env(safe-area-inset-bottom,0px));z-index:15;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:8px;box-shadow:var(--shadow)}.moresheet .ritem{width:auto}}
 
 /* Comic reader */
-.c .cover{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:12px;background:var(--main);display:block}
+.c .cover{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:12px;background:var(--main);display:block}
 .reader{position:fixed;inset:0;z-index:60;background:var(--bg,#121410);display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;color:var(--fg)}
 .rbar{display:flex;align-items:center;gap:12px;padding:10px 14px;padding-top:max(10px,env(safe-area-inset-top));border-bottom:1px solid var(--line)}
 .rtitle{flex:1;font-weight:900;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
