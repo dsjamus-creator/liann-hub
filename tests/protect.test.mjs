@@ -23,9 +23,7 @@ const fetchImpl = async (url, init = {}) => {
 const call = (path, init = {}, at = NOW) => worker.fetch(new Request(ORIGIN + path, init), env, {}, { fetchImpl, now: at })
 const sign = (paths, token = TOKEN, at = NOW) => call('/comic/sign', { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify({ paths }) }, at)
 
-test('signing needs a signed-in user and only covers comic page paths', async () => {
-  assert.equal((await call('/comic/sign', { method: 'POST', body: '{}' })).status, 401)
-  assert.equal((await sign(['/comic/ep-01/000.webp'], 'x.y.z')).status, 401)
+test('anyone can get links, signed-in or not, but only for comic page paths', async () => {
   assert.equal((await call('/comic/sign')).status, 405)
   for (const bad of [['/comic/../x.webp'], ['/data/downloads.json'], ['/comic/ep-01/000.png'], ['/comic/ep-01/000.webp?x=1'], []]) assert.equal((await sign(bad)).status, 400, JSON.stringify(bad))
   const ok = await sign(['/comic/ep-01/000.webp'])
@@ -33,6 +31,14 @@ test('signing needs a signed-in user and only covers comic page paths', async ()
   const body = await ok.json()
   assert.equal(body.expires, Math.floor((NOW + 30 * 60 * 1000) / 1000))
   assert.match(body.urls['/comic/ep-01/000.webp'], /^\/comic\/ep-01\/000\.webp\?e=\d+&u=[0-9a-f]{12}&s=[0-9a-f]{40}$/)
+  const anon = await call('/comic/sign', { method: 'POST', headers: { 'cf-connecting-ip': '203.0.113.7' }, body: JSON.stringify({ paths: ['/comic/ep-01/000.webp'] }) })
+  assert.equal(anon.status, 200, 'a visitor who is not signed in can read')
+  const stale = await sign(['/comic/ep-01/000.webp'], 'x.y.z')
+  assert.equal(stale.status, 200, 'an expired or bad token is just an anonymous visitor')
+  const a = (await anon.json()).urls['/comic/ep-01/000.webp'], b2 = (await (await sign(['/comic/ep-01/000.webp'])).json()).urls['/comic/ep-01/000.webp']
+  assert.notEqual(a.match(/u=([0-9a-f]+)/)[1], b2.match(/u=([0-9a-f]+)/)[1], 'visitors are told apart by address, signed-in users by account')
+  const link = a, img = { 'sec-fetch-dest': 'image', 'sec-fetch-site': 'same-origin' }
+  assert.equal((await call(link, { headers: img })).status, 200, 'an anonymous link serves the page')
 })
 
 test('a signed link serves the page privately, only as an image, only until it expires', async () => {
@@ -87,11 +93,12 @@ test('the shipped comic data uses protected pages, and the hub signs exactly tho
 })
 
 test('the page signer asks once, reuses links, refreshes near expiry, and explains failures', async () => {
-  let now = NOW, calls = 0, token = TOKEN, status = 200
+  let now = NOW, calls = 0, token = TOKEN, status = 200, seenAuth
   const f = async (url, init) => {
     calls++
     assert.equal(url, ORIGIN + '/comic/sign')
-    assert.equal(init.headers.authorization, `Bearer ${token}`)
+    seenAuth = init.headers.authorization
+    if (token) assert.equal(seenAuth, `Bearer ${token}`)
     if (status !== 200) return new Response('{}', { status })
     const paths = JSON.parse(init.body).paths
     return Response.json({ expires: Math.floor(now / 1000) + 1800, urls: Object.fromEntries(paths.map(p => [p, `${p}?e=1&u=2&s=3`])) })
@@ -102,11 +109,12 @@ test('the page signer asks once, reuses links, refreshes near expiry, and explai
   assert.deepEqual(a, [ORIGIN + '/comic/ep-01/000.webp?e=1&u=2&s=3', 'https://downloads.lwliann.com/other.webp', ORIGIN + '/comic/ep-01/001.webp?e=1&u=2&s=3'])
   await signer.pagesOf(ep); assert.equal(calls, 1, 'links are reused')
   now += 21 * 60 * 1000; await signer.pagesOf(ep); assert.equal(calls, 2, 'refreshed with less than 10 minutes left')
-  now += 21 * 60 * 1000; status = 401
-  await assert.rejects(signer.pagesOf(ep), { code: 'signed_out' })
-  status = 429; await assert.rejects(signer.pagesOf(ep), { code: 'slow_down' })
+  now += 21 * 60 * 1000; status = 429
+  await assert.rejects(signer.pagesOf(ep), { code: 'slow_down' })
   status = 500; await assert.rejects(signer.pagesOf(ep), { code: 'unavailable' })
-  token = null; await assert.rejects(signer.pagesOf(ep), { code: 'signed_out' })
+  status = 200; token = null; seenAuth = 'unset'
+  assert.equal((await signer.pagesOf(ep)).length, 3, 'a visitor who is not signed in still gets the pages')
+  assert.equal(seenAuth, undefined, 'and sends no Authorization header')
   const open = createPageSigner({ getToken: async () => token, fetchImpl: f, origin: ORIGIN, now: () => now })
   assert.deepEqual(await open.pagesOf({ raw: ['https://downloads.lwliann.com/a.webp'] }), ['https://downloads.lwliann.com/a.webp'], 'nothing to sign, no call, no token needed')
 })

@@ -1,7 +1,8 @@
 // Learning with LiANN hub Worker. The site itself is static assets; this code only runs for /comic/*, the comic pages.
 //
-//   POST /comic/sign   Authorization: Bearer <Supabase access token>   body { paths: ["/comic/ep-01/000.webp", ...] }
-//        -> { expires, urls: { "<path>": "<path>?e=..&u=..&s=.." } }   Only signed-in LiANN users get links. Links last 30 minutes.
+//   POST /comic/sign   body { paths: ["/comic/ep-01/000.webp", ...] }   optional Authorization: Bearer <Supabase access token>
+//        -> { expires, urls: { "<path>": "<path>?e=..&u=..&s=.." } }   Anyone can read (the comic links are public); a signed-in
+//        LiANN user's links are tied to their account, everyone else's to a hash of their address. Links last 30 minutes.
 //   GET  /comic/<episode>/<page>.webp?e=..&u=..&s=..                   One page image, read from the private R2 bucket (key reader/<episode>/<page>.webp).
 //
 // The page files are not public: they live in the liann-reader bucket, which has no public address (docs/COMIC-PROTECTION.md).
@@ -9,8 +10,8 @@
 
 const SIGN_MS = 30 * 60 * 1000
 const PAGE_PATH = /^\/comic\/([a-z0-9-]{1,40})\/([a-z0-9-]{1,40})\.webp$/
-const SIGN_LIMIT = [30, 10 * 60 * 1000]   // sign requests per user in 10 minutes
-const PAGE_LIMIT = [400, 10 * 60 * 1000]  // page images per user in 10 minutes
+const SIGN_LIMIT = [120, 10 * 60 * 1000]  // sign requests per reader (account, or address) in 10 minutes
+const PAGE_LIMIT = [1500, 10 * 60 * 1000] // page images per reader in 10 minutes (a classroom can share one address)
 const MAX_PATHS = 120
 
 const enc = new TextEncoder()
@@ -58,15 +59,16 @@ export async function userOf(request, env, fetchImpl = fetch) {
 
 async function sign(request, env, fetchImpl, now) {
   if (request.method !== 'POST') return json({ error: 'method_not_allowed' }, 405, { allow: 'POST' })
+  // A signed-in user is known by account; everyone else (the comic links are public) by a hash of their address.
   const user = await userOf(request, env, fetchImpl)
-  if (user === undefined) return json({ error: 'auth_unavailable' }, 503)
-  if (!user) return json({ error: 'signed_out' }, 401)
-  if (!allow(`sign:${user.id}`, SIGN_LIMIT, now)) return json({ error: 'slow_down' }, 429, { 'retry-after': '60' })
+  const who = user ? user.id : `ip:${request.headers.get('cf-connecting-ip') || 'unknown'}`
+  const uid = (await hmac(env.SIGNING_KEY, `reader|${who}`)).slice(0, 12)
+  if (!allow(`sign:${uid}`, SIGN_LIMIT, now)) return json({ error: 'slow_down' }, 429, { 'retry-after': '60' })
   let body
   try { body = await request.json() } catch { return json({ error: 'bad_request' }, 400) }
   const paths = Array.isArray(body?.paths) ? body.paths : null
   if (!paths || !paths.length || paths.length > MAX_PATHS || !paths.every(p => typeof p === 'string' && PAGE_PATH.test(p))) return json({ error: 'bad_request' }, 400)
-  const expires = Math.floor((now + SIGN_MS) / 1000), uid = user.id.replace(/-/g, '').slice(0, 12), urls = {}
+  const expires = Math.floor((now + SIGN_MS) / 1000), urls = {}
   for (const p of new Set(paths)) urls[p] = `${p}?e=${expires}&u=${uid}&s=${await hmac(env.SIGNING_KEY, `${p}|${expires}|${uid}`)}`
   return json({ expires, urls })
 }

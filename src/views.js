@@ -88,6 +88,7 @@ export const profileOf = user => {
 
 function greeting(hour) { return hour < 12 ? ['Good morning', '早上好'] : hour < 18 ? ['Good afternoon', '下午好'] : ['Good evening', '晚上好'] }
 
+export function vComic(s) { return `<div class="gate fade">${decor()}<div class="card">${LOCKUP}<p class="muted" style="margin:0">Opening the comic…</p></div></div>${s.reader ? readerHTML(s) : ''}` }
 export function vLoading() { return `<div class="gate fade">${decor()}<div class="card">${LOCKUP}<p class="muted" style="margin:0">Loading…</p></div></div>` }
 
 export function vEmail(s) {
@@ -288,7 +289,7 @@ export function readerHTML(s) {
     <span class="rcount" aria-live="polite"><b>${label}</b> / ${n}</span>
     <button class="rarrow fwd" id="rnext" aria-label="Next page"${(spread ? visiblePages(i, n, true).includes(n - 1) : i === n - 1) ? ' disabled' : ''}>${ARROW}</button></div>
    <input type="range" id="rseek" min="1" max="${n}" value="${i + 1}" aria-label="Page"></div>
-  <div class="wm" aria-hidden="true" style="${esc(watermarkStyle(s.user?.email))}"></div></div></div>`
+  <div class="wm" aria-hidden="true" style="${esc(watermarkStyle(s.user?.email || s.viewId))}"></div></div></div>`
 }
 
 // A download button for a manifest slot: live when the checked file is in the manifest, otherwise "Coming soon".

@@ -444,6 +444,35 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
   await context.close()
 }
 
+// A shared comic link opens for anyone: no sign-in, no account, the same protections.
+{
+  const context = await browser.newContext({ viewport: { width: 1280, height: 860 } })
+  const seen = await mock(context)
+  const page = await context.newPage()
+  await step('shared comic link (#read/<episode>) opens without signing in', async () => {
+    await page.goto(url + '#read/ep3')
+    await page.locator('.reader').waitFor()
+    await page.waitForFunction(() => document.querySelectorAll('.reader .pg img').length > 0)
+    assert.equal(await page.locator('#f1').count(), 0, 'no sign-in form in the way')
+    assert.equal(seen.signs.length, 1)
+    assert.equal(seen.signs[0].auth, undefined, 'asked for links without an account')
+    assert.match(await page.locator('.reader .pg img').first().getAttribute('src'), /\/comic\/ep-03\/p1\.webp\?e=1&u=abcdef012345&s=a{40}$/)
+    const mark = decodeURIComponent(await page.locator('.reader .wm').evaluate(el => getComputedStyle(el).backgroundImage))
+    assert.match(mark, /Learning with LiANN · [0-9A-F]{8}/, 'a visitor gets a viewing code in the watermark')
+    assert.equal(await page.locator('.reader').evaluate(el => { const e = new MouseEvent('contextmenu', { bubbles: true, cancelable: true }); el.dispatchEvent(e); return e.defaultPrevented }), true)
+    await page.keyboard.press('ArrowRight'); await page.waitForTimeout(500)
+    assert.match(await page.locator('.rcount').innerText(), /^2/)
+  })
+  await step('closing a shared comic leads to the hub sign-in; other links still ask for sign-in', async () => {
+    await page.keyboard.press('Escape')
+    await page.locator('#f1').waitFor()
+    await page.goto(url + '#library'); await page.reload()
+    await page.locator('#f1').waitFor()
+    assert.equal(await page.locator('.reader').count(), 0)
+  })
+  await context.close()
+}
+
 await browser.close(); server.close()
 if (failures) { console.log(`${failures} smoke step(s) failed`); process.exit(1) }
 console.log('Smoke test passed')

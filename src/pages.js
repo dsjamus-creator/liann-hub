@@ -22,13 +22,11 @@ export function createPageSigner({ getToken, fetchImpl = (...a) => fetch(...a), 
     const paths = ep.raw.map(h => comicPath(h, origin))
     const wanted = [...new Set(paths.filter(Boolean))]
     if (wanted.some(p => !links.has(p) || links.get(p).until - now() < REFRESH_BEFORE_MS)) {
-      const token = await getToken()
-      if (!token) throw new PagesError('Sign in to read the comic.', 'signed_out')
+      const token = await getToken().catch(() => null) // a visitor who is not signed in reads the comic too
       let response
       try { response = await fetchImpl(new URL('/comic/sign', origin).href, { method: 'POST', cache: 'no-store', referrerPolicy: 'no-referrer',
-        headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` }, body: JSON.stringify({ paths: wanted }) }) }
+        headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ paths: wanted }) }) }
       catch { throw new PagesError('Could not reach the server. Check your connection and try again.', 'network') }
-      if (response.status === 401) throw new PagesError('Sign in again to read the comic.', 'signed_out')
       if (response.status === 429) throw new PagesError('Too many pages opened at once. Wait a minute and try again.', 'slow_down')
       if (!response.ok) throw new PagesError('The comic is unavailable right now.', 'unavailable')
       const body = await response.json().catch(() => ({}))
@@ -46,8 +44,8 @@ export function createPageSigner({ getToken, fetchImpl = (...a) => fetch(...a), 
   return { pagesOf }
 }
 
-// A faint tiled mark carrying the reader's address, laid over the whole reader: it shows in a screenshot, so a leaked page
-// points back to the account that opened it.
+// A faint tiled mark laid over the whole reader: the signed-in address, or a viewing code for a visitor who is not signed in.
+// It shows in a screenshot, so a leaked page carries the mark of whoever opened it.
 export function watermarkStyle(email) {
   const text = String(email || 'LiANN').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]))
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180"><text x="160" y="90" transform="rotate(-24 160 90)" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="700" fill="#808080" fill-opacity="0.16">${text}</text></svg>`

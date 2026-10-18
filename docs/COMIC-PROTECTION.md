@@ -1,6 +1,6 @@
 # Comic page protection
 
-What stops the comic pages being saved or copied, and what does not. Nothing can stop a screenshot of something shown on a screen; these measures make casual saving hard, keep the files off the public internet, and mark any copy with the reader it came from.
+What stops the comic pages being saved or copied, and what does not. Nothing can stop a screenshot of something shown on a screen; these measures make casual saving hard, keep the files off the public internet, and mark every copy. The comic links stay public: anyone can read without signing in.
 
 ## What is in place
 
@@ -8,11 +8,11 @@ What stops the comic pages being saved or copied, and what does not. Nothing can
 |---|---|
 | No image menu | Page images take no clicks (`pointer-events: none`), so long-press / right-click offer no "Download / Copy / Share image". The reader also blocks the context menu, dragging, text selection, copy, and Ctrl/Cmd + S / P / C. Printing the page prints nothing. |
 | Pages are not public files | The pages live in the **private `liann-reader` bucket**, read only by the hub's Worker (`worker/index.js`). The hub's page addresses are `/comic/<episode>/<page>.webp`. |
-| Sign-in required | The reader asks the Worker (`POST /comic/sign`) for links. The Worker checks the visitor's Supabase token with Supabase itself, so only signed-in LiANN users get links. |
+| Public link, no sign-in | A shared comic link (`https://app.lwliann.com/#read/ep1a`) opens the comic for anyone, signed in or not. The reader asks the Worker (`POST /comic/sign`) for links; a signed-in user's links are tied to their account (checked with Supabase), everyone else's to a hash of their address. The rest of the hub still needs a sign-in, and closing a shared comic leads to it. |
 | Links expire | A link is signed (HMAC-SHA256) for one page and expires after 30 minutes. A copied link stops working; the reader quietly fetches new ones while it is open. The signing key is made fresh at every deploy and lives only in the Worker. |
 | Images only, from the hub only | The Worker serves a page only to an `<img>` or WebGL texture on app.lwliann.com (`Sec-Fetch-Dest: image`, same origin). "Open image in new tab", another site embedding it, or pasting the link into the address bar all get 403. |
-| Slowed bulk copying | Per user: 30 sign requests and 400 page images per 10 minutes. The counters sit in the Worker's memory, so this is a brake on scripts, not an exact limit. |
-| Traceable copies | A faint tiled mark with the signed-in address covers the whole reader, so a screenshot shows who opened it. |
+| Slowed bulk copying | Per reader (account, or address): 120 sign requests and 1,500 page images per 10 minutes (a classroom can share one address). The counters sit in the Worker's memory, so this is a brake on scripts, not an exact limit. |
+| Marked copies | A faint tiled mark covers the whole reader, so a screenshot carries it: the signed-in address, or a viewing code ("Learning with LiANN · 0125B90F") for a visitor who is not signed in. A code cannot be traced to a person, so it deters rather than identifies. |
 | Reader-size files | The reader files are 1067 × 1600 px WebP. The print-resolution files stay in Drive and are never served. |
 
 ## One-time step after the first deploy (owner or Claude)
