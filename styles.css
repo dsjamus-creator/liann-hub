@@ -277,7 +277,9 @@ a.btn{display:inline-block;text-decoration:none;text-align:center}
 @keyframes sflipfwd{to{transform:rotateY(-95deg);opacity:.2}}
 @keyframes sflipback{to{transform:rotateY(95deg);opacity:.2}}
 .rstage.zoom{display:block}
-.rstage.zoom .rbook{width:200%;height:200%}
+.rstage.zoom .rbook{width:calc(100% * var(--z,2));height:calc(100% * var(--z,2))}
+.rstage.zoom{cursor:grab}.rstage.zoom.panning{cursor:grabbing;user-select:none}
+.book3d.zoomed canvas{cursor:grab}
 @media (prefers-reduced-motion:reduce){.flip,.pg.old{display:none}}
 /* Hover magnifier */
 .lens{position:fixed;z-index:70;border-radius:50%;pointer-events:none;border:3px solid var(--fg);box-shadow:0 8px 28px rgba(0,0,0,.55);background-color:var(--bg);background-repeat:no-repeat}

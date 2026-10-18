@@ -11,7 +11,7 @@
 /* global THREE */
 import { clampPage, spreadsOf } from './comics.js'
 
-const SEG = 40, EPS = 0.012, BASE = 0.03, DUR = 950, KMAX = 1.7, LENS = 200, LENS_ZOOM = 2.6
+const MAXZOOM = 4, SEG = 40, EPS = 0.012, BASE = 0.03, DUR = 950, KMAX = 1.7, LENS = 200, LENS_ZOOM = 2.6
 const srgb = hex => new THREE.Color(hex).convertSRGBToLinear()
 const ease = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 
@@ -118,8 +118,41 @@ export async function createBook(opts) {
     blockR.visible = boardR.visible = right > 0; blockL.visible = boardL.visible = left > 0
   }
 
-  let spread = 0, raf = 0, camX = 0, camDist = 1
-  function placeCamera() { camera.position.set(camX, -camDist * 0.22, camDist * 0.975); camera.up.set(0, 1, 0); camera.lookAt(camX, 0, 0); camera.updateMatrixWorld() }
+  let spread = 0, raf = 0, camX = 0, camDist = 1, zoom = 1, panX = 0, panY = 0
+  function placeCamera() {
+    const d = camDist / zoom, cx = camX + panX
+    camera.position.set(cx, panY - d * 0.22, d * 0.975); camera.up.set(0, 1, 0); camera.lookAt(cx, panY, 0); camera.updateMatrixWorld()
+  }
+  // Zoom (mouse wheel, arrow keys): the book point under the pointer stays under the pointer; drag the background to pan.
+  const plane = new T.Plane(new T.Vector3(0, 0, 1), 0), ray = new T.Raycaster()
+  function worldAt(cx, cy) {
+    const r = host.getBoundingClientRect()
+    ray.setFromCamera(new T.Vector2(((cx - r.left) / r.width) * 2 - 1, -(((cy - r.top) / r.height) * 2 - 1)), camera)
+    return ray.ray.intersectPlane(plane, new T.Vector3())
+  }
+  function clampPan() {
+    const k = 1 - 1 / zoom
+    panX = Math.min(Math.max(panX, -w * 1.1 * k), w * 1.1 * k); panY = Math.min(Math.max(panY, -h * 0.6 * k), h * 0.6 * k)
+    if (zoom === 1) panX = panY = 0
+  }
+  function zoomAt(factor, cx, cy) {
+    const r = host.getBoundingClientRect(); if (cx == null) { cx = r.left + r.width / 2; cy = r.top + r.height / 2 }
+    const before = worldAt(cx, cy); zoom = Math.min(Math.max(zoom * factor, 1), MAXZOOM); placeCamera()
+    const after = worldAt(cx, cy)
+    if (before && after) { panX += before.x - after.x; panY += before.y - after.y }
+    clampPan(); placeCamera(); host.classList.toggle('zoomed', zoom > 1); invalidate()
+  }
+  let pan = null
+  const cv = renderer.domElement
+  cv.addEventListener('pointerdown', e => { if (zoom > 1 && e.button === 0) { pan = { x: e.clientX, y: e.clientY }; cv.setPointerCapture(e.pointerId) } })
+  cv.addEventListener('pointermove', e => {
+    if (!pan) return
+    const a = worldAt(pan.x, pan.y), b = worldAt(e.clientX, e.clientY)
+    if (a && b) { panX += a.x - b.x; panY += a.y - b.y; clampPan(); placeCamera() }
+    pan = { x: e.clientX, y: e.clientY }; invalidate()
+  })
+  const endPan = () => { pan = null }
+  cv.addEventListener('pointerup', endPan); cv.addEventListener('pointercancel', endPan)
   function fit() {
     const W = host.clientWidth, H = host.clientHeight; if (!W || !H) return false
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); renderer.setSize(W, H, false)
@@ -212,7 +245,7 @@ export async function createBook(opts) {
   return {
     el: host, leaves, spreads: spreadCount,
     get spread() { return spread }, get failed() { return failed },
-    goTo, step: d => goTo(spread + d),
+    goTo, step: d => goTo(spread + d), zoomAt, get zoom() { return zoom },
     // seek(): freeze one leaf part-way through its turn (tests and screenshots)
     seek(j, t) { const L = L_[j]; L.t = L.to = t; layout(L); blocks(); renderer.render(scene, camera) }, resize() { if (fit()) invalidate() },
     setLens(on) { lens.hidden = !on; if (on) { placeLens(); invalidate() } },
