@@ -276,9 +276,15 @@ a.btn{display:inline-block;text-decoration:none;text-align:center}
 @keyframes flipback{to{transform:rotateY(180deg)}}
 @keyframes sflipfwd{to{transform:rotateY(-95deg);opacity:.2}}
 @keyframes sflipback{to{transform:rotateY(95deg);opacity:.2}}
+.rbook.spread .pg{transition:transform .32s ease}
+.rbook.nofx .pg{transition:none}
+.rbook.shut.r .pg.r{transform:translateX(calc(var(--iw, 0px) / -2))}
+.rbook.shut.l .pg.l{transform:translateX(calc(var(--iw, 0px) / 2))}
+.rbook.shut.r .pg.r,.rbook.shut.r .pg.r img{cursor:pointer}
 .rstage.zoom{display:block}
 .rstage.zoom .rbook{width:calc(100% * var(--z,2));height:calc(100% * var(--z,2))}
 .rstage.zoom{cursor:grab}.rstage.zoom.panning{cursor:grabbing;user-select:none}
+.book3d.cover canvas{cursor:pointer}
 .book3d.zoomed canvas{cursor:grab}
 @media (prefers-reduced-motion:reduce){.flip,.pg.old{display:none}}
 /* Hover magnifier */

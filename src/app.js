@@ -180,12 +180,37 @@ function showPage(to, dir) {
   render()
 }
 // Turn one page (single view) or one spread (two-page view).
+// A closed book (the front cover, or a last page left on its own) sits in the middle. Opening it first slides it across to its side, then
+// the page turns; closing runs the other way round (see the end of the flip in bindReader).
+function shutSide(r, n) {
+  if (!r.spread || r.d3) return ''
+  const now = visiblePages(r.i, n, true)
+  return now[0] == null ? 'r' : now[1] == null && r.i > 0 ? 'l' : ''
+}
+// Centre the one visible page of a closed book: it is pushed against the spine, so slide it by half the width the page really takes up.
+function fitShut() {
+  const bk = $('.rbook.spread'); if (!bk) return
+  const im = bk.querySelector('.pg img'); if (!im || !im.naturalWidth) return
+  const box = im.getBoundingClientRect()
+  const first = !bk.dataset.fit; if (first) bk.classList.add('nofx') // the first fit is not animated
+  bk.style.setProperty('--iw', Math.min(box.width, box.height * im.naturalWidth / im.naturalHeight) + 'px')
+  if (first) { bk.dataset.fit = '1'; void bk.offsetWidth; requestAnimationFrame(() => bk.classList.remove('nofx')) }
+}
 function stepReader(d) {
   const ep = readerEp(); if (!ep) return
   const r = S.reader, n = ep.pages.length
-  if (!r.spread) { if (r.i + d >= 0 && r.i + d < n) showPage(r.i + d, d); return }
-  const sp = spreadsOf(n), k = spreadIndexOf(r.i, n) + d
-  if (k >= 0 && k < sp.length) showPage(firstPageOf(sp[k]), d)
+  let to
+  if (!r.spread) { if (r.i + d >= 0 && r.i + d < n) to = r.i + d }
+  else { const sp = spreadsOf(n), k = spreadIndexOf(r.i, n) + d; if (k >= 0 && k < sp.length) to = firstPageOf(sp[k]) }
+  if (to === undefined || r.sliding) return
+  const closed = $('.rbook.shut')
+  if (closed) {
+    if (reduceMotion()) return showPage(to, d)
+    r.sliding = true; closed.classList.remove('shut')
+    setTimeout(() => { r.sliding = false; if (S.reader === r) showPage(to, d) }, 330)
+    return
+  }
+  showPage(to, d)
 }
 // Full page: the browser's Fullscreen API on the whole document (the reader is a fixed overlay inside it, so re-rendering
 // never drops fullscreen). Where that is missing (iPhone Safari) the top bar is hidden instead. Esc or the button leaves it.
@@ -225,13 +250,15 @@ function bindReader() {
   const mode = $('#rmode'); if (mode) mode.onclick = () => { S.reader.mode = S.reader.spread ? 'single' : 'spread'; S.reader.spread = wantSpread(S.reader, ep.pages.length); S.reader.flip = null; savePrefs(); render() }
   $('#rseek').onchange = e => showPage(Number(e.target.value) - 1, 0)
   const stage = $('#rstage'); let x0 = null, y0 = 0
-  if (S.reader.d3 && S.reader.d3state === 'ready' && book) { stage.append(book.el); book.setLens(S.reader.lens !== false); book.resize() }
+  if (S.reader.d3 && S.reader.d3state === 'ready' && book) { stage.append(book.el); book.setLens(S.reader.lens !== false); book.resize(); book.el.onclick = e => { if (e.target.tagName === 'CANVAS' && book && book.spread === 0 && !(S.reader.z > 1)) stepReader(1) } }
   stage.ontouchstart = e => { if (e.touches.length === 1 && !(S.reader.z > 1)) { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY } else x0 = null }
   stage.ontouchend = e => {
     if (x0 === null) return
     const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; x0 = null
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) stepReader(dx < 0 ? 1 : -1)
   }
+  stage.onclick = e => { if (!(S.reader.z > 1) && e.target.closest('.rbook.shut.r .pg.r')) stepReader(1) }
+  fitShut(); stage.querySelectorAll('.pg img').forEach(im => { if (!im.complete) im.addEventListener('load', fitShut, { once: true }) })
   stage.onwheel = e => {
     e.preventDefault()
     const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * 100 : e.deltaY
@@ -247,7 +274,10 @@ function bindReader() {
   stage.onpointerleave = () => { $('#rlens').hidden = true }
   const flip = $('.flip')
   if (flip) {
-    const done = () => { if (!flip.isConnected) return; if (S.reader) S.reader.flip = null; document.querySelectorAll('.flip,.pg.old').forEach(x => x.remove()) }
+    const done = () => {
+      if (!flip.isConnected) return; if (S.reader) S.reader.flip = null; document.querySelectorAll('.flip,.pg.old').forEach(x => x.remove())
+      const side = S.reader && shutSide(S.reader, ep.pages.length); if (side) $('.rbook')?.classList.add('shut', side)
+    }
     flip.addEventListener('animationend', done, { once: true }); setTimeout(done, 1200)
   }
   const near = [...visiblePages(S.reader.i, ep.pages.length, S.reader.spread), S.reader.i - 1, S.reader.i + 2, S.reader.i + 3].filter(j => j != null && j >= 0 && j < ep.pages.length)
@@ -271,6 +301,7 @@ document.addEventListener('keydown', e => {
   else if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && !/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) { e.preventDefault(); zoomBy(e.key === 'ArrowUp' ? 1.25 : 0.8) }
 })
 window.addEventListener('resize', () => {
+  fitShut()
   const ep = readerEp(); if (!ep || S.reader.mode !== 'auto') return
   const want = wantSpread(S.reader, ep.pages.length); if (want !== S.reader.spread) { S.reader.spread = want; S.reader.flip = null; render() }
 })

@@ -118,7 +118,8 @@ export async function createBook(opts) {
     blockR.visible = boardR.visible = right > 0; blockL.visible = boardL.visible = left > 0
   }
 
-  let spread = 0, raf = 0, camX = 0, camDist = 1, zoom = 1, panX = 0, panY = 0
+  let spread = 0, raf = 0, camX = 0, camDist = 1, zoom = 1, panX = 0, panY = 0, camGoal = w / 2, camTimer = 0
+  const goalOf = sp => (sp === 0 ? w / 2 : sp === spreadCount - 1 && 2 * sp >= n ? -w / 2 : 0) // closed book: the cover, or a last page on its own
   function placeCamera() {
     const d = camDist / zoom, cx = camX + panX
     camera.position.set(cx, panY - d * 0.22, d * 0.975); camera.up.set(0, 1, 0); camera.lookAt(cx, panY, 0); camera.updateMatrixWorld()
@@ -172,8 +173,7 @@ export async function createBook(opts) {
       }
     }
     // the book centres itself on the cover, and on the last page when only the left page is left
-    const goal = spread === 0 ? w / 2 : spread === spreadCount - 1 && 2 * spread >= n ? -w / 2 : 0
-    if (Math.abs(goal - camX) > 0.002) { camX += (goal - camX) * 0.14; busy = true } else camX = goal
+    if (Math.abs(camGoal - camX) > 0.002) { camX += (camGoal - camX) * 0.14; busy = true } else camX = camGoal
     placeCamera(); blocks(); renderer.render(scene, camera)
     raf = busy ? requestAnimationFrame(tick) : 0
     if (!busy) { refreshLens(); opts.onSettled && opts.onSettled(spread) }
@@ -182,11 +182,17 @@ export async function createBook(opts) {
 
   function goTo(s, animate = true) {
     s = clampPage(s, spreadCount)
+    // Opening a closed book: it slides across first, then the page turns. Closing: the page turns, then the book slides to the middle.
+    const was = goalOf(spread), goal = goalOf(s), opening = animate && was !== 0 && goal === 0, closing = animate && was === 0 && goal !== 0
+    clearTimeout(camTimer)
+    if (closing) camTimer = setTimeout(() => { camGoal = goal; invalidate() }, DUR * 0.7); else camGoal = goal
+    if (!animate) camX = camGoal
+    host.classList.toggle('cover', s === 0)
     spread = s; keep(s)
     const now = performance.now(); let moved = 0
     for (const L of L_) {
       const to = L.j < s ? 1 : 0
-      if (to !== L.to) { L.from = L.t; L.to = to; L.start = now; L.delay = animate ? Math.min(moved++, 5) * 90 : 0; if (!animate) { L.t = to; layout(L) } }
+      if (to !== L.to) { L.from = L.t; L.to = to; L.start = now; L.delay = animate ? Math.min(moved++, 5) * 90 + (opening ? 320 : 0) : 0; if (!animate) { L.t = to; layout(L) } }
     }
     invalidate()
   }
@@ -249,6 +255,6 @@ export async function createBook(opts) {
     // seek(): freeze one leaf part-way through its turn (tests and screenshots)
     seek(j, t) { const L = L_[j]; L.t = L.to = t; layout(L); blocks(); renderer.render(scene, camera) }, resize() { if (fit()) invalidate() },
     setLens(on) { lens.hidden = !on; if (on) { placeLens(); invalidate() } },
-    destroy() { cancelAnimationFrame(raf); ro.disconnect(); for (const t of texs.values()) t.dispose(); for (const L of L_) L.geo.dispose(); renderer.dispose(); host.remove() },
+    destroy() { cancelAnimationFrame(raf); clearTimeout(camTimer); ro.disconnect(); for (const t of texs.values()) t.dispose(); for (const L of L_) L.geo.dispose(); renderer.dispose(); host.remove() },
   }
 }
