@@ -1,13 +1,23 @@
 {
-  // Learning with LiANN hub at https://app.lwliann.com: a static-assets-only Worker (no server code).
-  // `npx wrangler deploy` uploads the site and attaches app.lwliann.com as a Custom Domain, which creates
-  // the DNS record and HTTPS certificate in the lwliann.com zone. See docs/DEPLOY.md.
+  // Learning with LiANN hub at https://app.lwliann.com: static assets, plus a small Worker that runs only for /comic/*
+  // (the protected comic pages). `npx wrangler deploy` uploads the site and attaches app.lwliann.com as a Custom Domain,
+  // which creates the DNS record and HTTPS certificate in the lwliann.com zone. See docs/DEPLOY.md and docs/COMIC-PROTECTION.md.
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "liann-hub",
+  "main": "worker/index.js",
   "compatibility_date": "2026-09-01",
   "assets": {
     "directory": "./",
-    "not_found_handling": "404-page"
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/comic/*"]
+  },
+  // The comic page files, in the private reader/ folder of the downloads bucket.
+  "r2_buckets": [
+    { "binding": "PAGES", "bucket_name": "liann-downloads" }
+  ],
+  "vars": {
+    "PINYIN_API": "https://pinyin-tiles-api-staging.onrender.com"
   },
   "routes": [
     { "pattern": "app.lwliann.com", "custom_domain": true }

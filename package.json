@@ -6,11 +6,11 @@
   "type": "module",
   "scripts": {
     "start": "node scripts/serve.mjs",
-    "test": "node --test tests/unit.test.mjs",
+    "test": "node --test tests/unit.test.mjs tests/protect.test.mjs",
     "test:smoke": "node tests/smoke.mjs",
     "check": "npm test && npm run test:smoke",
-    "deploy": "wrangler deploy",
-    "deploy:check": "wrangler deploy --dry-run"
+    "deploy": "wrangler deploy --var \"SIGNING_KEY:$(openssl rand -hex 32)\"",
+    "deploy:check": "wrangler deploy --dry-run --var SIGNING_KEY:dry-run"
   },
   "devDependencies": {
     "playwright-core": "1.56.1",

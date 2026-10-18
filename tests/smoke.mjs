@@ -17,7 +17,14 @@ async function mock(context, { student = true, tour = false } = {}) {
   if (!tour) await context.addInitScript(() => localStorage.setItem('liann-hub-tour-done', 'true'))
   const PAGE = n => `https://downloads.lwliann.com/comics/ep1/page-${n}.jpg`
   await context.route('**/data/comics.json', r => r.fulfill({ json: { episodes: [{ id: 'ep1', title: 'Episode 1: Flight', number: 1, summary: 'Bella takes off.', cover: PAGE(1), pages: [PAGE(1), PAGE(2), PAGE(3)] },
-    { id: 'ep2', title: 'Episode 2: Long', number: 2, summary: 'A longer book.', cover: PAGE(1), pages: [PAGE(1), PAGE(2), PAGE(3), PAGE(1), PAGE(2), PAGE(3)] }] } }))
+    { id: 'ep2', title: 'Episode 2: Long', number: 2, summary: 'A longer book.', cover: PAGE(1), pages: [PAGE(1), PAGE(2), PAGE(3), PAGE(1), PAGE(2), PAGE(3)] },
+    { id: 'ep3', title: 'Episode 3: Private', number: 3, summary: 'Protected pages.', cover: PAGE(1), pages: ['comic/ep-03/p1.webp', 'comic/ep-03/p2.webp', 'comic/ep-03/p3.webp'] }] } }))
+  seen.signs = []
+  await context.route('**/comic/sign', r => {
+    const body = r.request().postDataJSON(); seen.signs.push({ auth: r.request().headers().authorization, paths: body.paths })
+    return r.fulfill({ json: { expires: Math.floor(Date.now() / 1000) + 1800, urls: Object.fromEntries(body.paths.map(p => [p, `${p}?e=1&u=abcdef012345&s=${'a'.repeat(40)}`])) } })
+  })
+  await context.route(/\/comic\/ep-03\/p\d\.webp\?/, r => r.fulfill({ path: fileURLToPath(new URL('./fixtures/page-1.jpg', import.meta.url)), contentType: 'image/jpeg' }))
   await context.route(/downloads\.lwliann\.com\/comics\/ep1\/page-(\d)\.jpg/, r => r.fulfill({ path: fileURLToPath(new URL(`./fixtures/page-${r.request().url().match(/page-(\d)/)[1]}.jpg`, import.meta.url)), contentType: 'image/jpeg', headers: { 'access-control-allow-origin': '*' } }))
   await context.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ status: 200, contentType: 'text/css', body: '' }))
   await context.route('https://pinyin-tiles-api-staging.onrender.com/v1/auth/config', r => r.fulfill({ json: { authentication: { enabled: true, supabaseUrl: 'https://demo.supabase.co', publishableKey: 'pk-test' } } }))
@@ -150,7 +157,7 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
       const cv = await page.locator('.rbook.shut .pg.r img').boundingBox(), sbx = await page.locator('#rstage').boundingBox()
       const iw = await page.locator('.rbook').evaluate(el => parseFloat(el.style.getPropertyValue('--iw'))) // the page is drawn against the spine, so its width is what the picture really takes
       assert.ok(iw > 100 && Math.abs(cv.x + iw / 2 - (sbx.x + sbx.width / 2)) < 8, 'the closed book sits in the middle of the stage')
-      await page.locator('.rbook.shut .pg.r img').click() // clicking the cover opens the book: it slides right, then the page turns
+      await page.locator('.rbook.shut .pg.r').click() // clicking the cover opens the book: it slides right, then the page turns
       await page.waitForFunction(() => !document.querySelector('.rbook.shut'), null, { timeout: 1000 })
       await page.locator('.flip.fwd').waitFor({ timeout: 2000 })
     } else await page.keyboard.press('ArrowRight')
@@ -255,6 +262,24 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
       if (await page.locator('#r3d[aria-pressed="true"]').count()) await page.locator('#r3d').click()
       if (await page.locator('.reader').count()) await page.keyboard.press('Escape')
     }
+  })
+  await step(`${tag}: protected comic pages: signed links, no image menu, a watermark with the reader's address`, async () => {
+    try {
+      seen.signs.length = 0
+      await page.goto(url + '#read'); await page.locator('[data-readep="ep3"]').click(); await page.locator('.reader').waitFor()
+      await page.waitForFunction(() => document.querySelectorAll('.reader .pg img').length > 0)
+      assert.equal(seen.signs.length, 1, 'one request for signed links')
+      assert.equal(seen.signs[0].auth, 'Bearer at', 'sent with the signed-in token')
+      assert.deepEqual(seen.signs[0].paths, ['/comic/ep-03/p1.webp', '/comic/ep-03/p2.webp', '/comic/ep-03/p3.webp'])
+      const src = await page.locator('.reader .pg img').first().getAttribute('src')
+      assert.match(src, /\/comic\/ep-03\/p1\.webp\?e=1&u=abcdef012345&s=a{40}$/, 'the page is a signed link')
+      assert.equal(await page.locator('.reader .pg img').first().evaluate(el => getComputedStyle(el).pointerEvents), 'none', 'the image takes no clicks, so it offers no image menu')
+      assert.equal(await page.locator('.reader').evaluate(el => { const e = new MouseEvent('contextmenu', { bubbles: true, cancelable: true }); el.dispatchEvent(e); return e.defaultPrevented }), true, 'right-click / long-press menu is off')
+      assert.equal(await page.locator('.reader').evaluate(el => getComputedStyle(el).userSelect), 'none')
+      const mark = await page.locator('.reader .wm').evaluate(el => ({ bg: decodeURIComponent(getComputedStyle(el).backgroundImage), pe: getComputedStyle(el).pointerEvents, pos: getComputedStyle(el).position }))
+      assert.ok(mark.bg.includes('ann.mingen@example.com'), 'the watermark carries the signed-in address')
+      assert.equal(mark.pe, 'none'); assert.equal(mark.pos, 'fixed')
+    } finally { if (await page.locator('.reader').count()) await page.keyboard.press('Escape') }
   })
   await step(`${tag}: Read and Kids pages render their manifest slots`, async () => {
     await page.goto(url + '#read'); await page.locator('[data-slot="read/episodes"]').waitFor()

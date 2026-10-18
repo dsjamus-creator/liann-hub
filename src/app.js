@@ -2,6 +2,7 @@ import { config, NAV, CODE_LENGTH } from './config.js'
 import { createAccount } from './account.js'
 import { loadDownloads } from './downloads.js'
 import { createBook, webglOK } from './book3d.js'
+import { createPageSigner } from './pages.js'
 import { loadComics, clampPage, spreadsOf, spreadIndexOf, firstPageOf, visiblePages, lensGeometry } from './comics.js'
 import { DS, vLoading, vEmail, vCode, vWho, vHub } from './views.js'
 import { mountViewer, stopViewer } from './figures.js'
@@ -141,8 +142,16 @@ function wantSpread(r, n) {
   if (r.mode === 'single') return false
   return innerWidth >= 900 && innerWidth > innerHeight * 1.15
 }
-function openReader(id) {
+// Protected pages: the hub's Worker hands out short-lived signed links to signed-in users (see src/pages.js).
+const signer = createPageSigner({ getToken: () => account.accessToken() })
+async function signPages(ep) {
+  try { ep.pages = await signer.pagesOf(ep); return true }
+  catch (error) { if (error.code === 'signed_out') signedOut(); else toast(error.message); return false }
+}
+setInterval(() => { const ep = S.reader && S.comics?.find(e => e.id === S.reader.id); if (ep) signer.pagesOf(ep).then(p => { ep.pages = p }, () => {}) }, 120000)
+async function openReader(id) {
   const ep = S.comics?.find(e => e.id === id); if (!ep) return
+  if (!await signPages(ep)) return
   const saved = S.progress[id]
   S.reader = { id, i: Number.isInteger(saved) && saved < ep.pages.length - 1 ? clampPage(saved, ep.pages.length) : 0, z: 1, mode: prefs.mode || 'auto', lens: prefs.lens !== false, flip: null, can3d: webglOK() && ep.pages.length > 1 }
   S.reader.spread = wantSpread(S.reader, ep.pages.length)
@@ -237,6 +246,8 @@ function moveLens(e) {
 function bindReader() {
   const ep = readerEp(); if (!ep) return
   $('#rclose').onclick = closeReader
+  // Casual saving: no right-click / long-press menu, no dragging a page out, no selecting. (Screenshots cannot be stopped; the watermark covers that.)
+  const rd = $('.reader'); rd.oncontextmenu = e => { e.preventDefault() }; rd.ondragstart = e => { e.preventDefault() }; rd.oncopy = e => { e.preventDefault() }
   $('#rprev').onclick = () => stepReader(-1)
   $('#rnext').onclick = () => stepReader(1)
   const zoomBtn = $('#rzoom'); if (zoomBtn) zoomBtn.onclick = () => zoomBy(S.reader.z > 1 ? 1 / S.reader.z : 2)
@@ -294,6 +305,7 @@ document.addEventListener('error', e => {
 }, true)
 document.addEventListener('keydown', e => {
   if (!S.reader) return
+  if ((e.ctrlKey || e.metaKey) && /^[spc]$/i.test(e.key)) { e.preventDefault(); return }
   if (e.key === 'Escape') { if (S.reader.full && !document.fullscreenElement) setFull(false); else if (!document.fullscreenElement) closeReader() }
   else if (e.key === 'f' || e.key === 'F') setFull(!S.reader.full)
   else if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); stepReader(1) }

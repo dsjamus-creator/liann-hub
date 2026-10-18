@@ -2,6 +2,7 @@
 import { APPS, NAV, CODE_LENGTH, appUrl } from './config.js'
 import { formatBytes } from './downloads.js'
 import { clampPage, visiblePages } from './comics.js'
+import { watermarkStyle } from './pages.js'
 
 const I = {
   home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h5v-6h4v6h5V9.5"/>',
@@ -286,7 +287,8 @@ export function readerHTML(s) {
     <button class="rarrow back" id="rprev" aria-label="Previous page"${i === 0 ? ' disabled' : ''}>${ARROW}</button>
     <span class="rcount" aria-live="polite"><b>${label}</b> / ${n}</span>
     <button class="rarrow fwd" id="rnext" aria-label="Next page"${(spread ? visiblePages(i, n, true).includes(n - 1) : i === n - 1) ? ' disabled' : ''}>${ARROW}</button></div>
-   <input type="range" id="rseek" min="1" max="${n}" value="${i + 1}" aria-label="Page"></div></div></div>`
+   <input type="range" id="rseek" min="1" max="${n}" value="${i + 1}" aria-label="Page"></div>
+  <div class="wm" aria-hidden="true" style="${esc(watermarkStyle(s.user?.email))}"></div></div></div>`
 }
 
 // A download button for a manifest slot: live when the checked file is in the manifest, otherwise "Coming soon".

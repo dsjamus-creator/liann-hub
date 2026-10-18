@@ -37,7 +37,9 @@ jobs:
           CHROME_PATH: /usr/bin/google-chrome
       - name: Deploy to app.lwliann.com
         if: env.HAS_CLOUDFLARE == 'true'
-        run: npx wrangler deploy
+        # The comic-page signing key is made fresh for every deploy and only ever lives in the Worker: signed page links last
+        # 30 minutes, so a new key just means open readers fetch fresh links.
+        run: npx wrangler deploy --var "SIGNING_KEY:$(openssl rand -hex 32)"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

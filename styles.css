@@ -312,3 +312,9 @@ a.btn{display:inline-block;text-decoration:none;text-align:center}
 .brass .bglass::after{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(110% 70% at 28% 18%,rgba(255,255,255,.38),transparent 46%)}
 .brass .brim{position:absolute;inset:0;border-radius:50%;pointer-events:none;background:conic-gradient(from 200deg,#8a6b2e,#ecd48c,#b58e3c,#f8e8b0,#8a6b2e,#d9b766,#8a6b2e);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 14px),#000 calc(100% - 13px));mask:radial-gradient(farthest-side,transparent calc(100% - 14px),#000 calc(100% - 13px))}
 .brass .bgrip{position:absolute;left:166px;top:166px;width:96px;height:22px;margin-top:-11px;border-radius:0 12px 12px 0;transform-origin:0 50%;transform:rotate(45deg);background:linear-gradient(90deg,#d9b766 0 16%,#a07a30 16% 20%,#6b4a2a 20%,#3a2615);box-shadow:inset 0 2px 0 rgba(255,255,255,.2)}
+
+/* Comic protection (docs/COMIC-PROTECTION.md): pages are not draggable or selectable and offer no image menu; the reader does not print */
+.reader{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.reader .pg img,.reader .face img{pointer-events:none;-webkit-user-drag:none}
+.reader .wm{position:fixed;inset:0;z-index:90;pointer-events:none;background-repeat:repeat}
+@media print{.reader,#root{display:none!important}}
