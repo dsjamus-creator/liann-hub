@@ -8,6 +8,7 @@ node_modules
 tests
 scripts
 docs
+worker
 test-results
 package.json
 package-lock.json

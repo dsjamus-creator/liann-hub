@@ -20,7 +20,7 @@ export function parseComics(json, base) {
       number: Number.isFinite(raw.number) ? raw.number : null,
       summary: typeof raw.summary === 'string' ? raw.summary : '',
       cover: safeFileUrl(raw.cover, base) || pages[0],
-      pages, alts,
+      pages, alts, raw: pages.slice(), // pages is what the reader shows; raw stays as published (signed links replace the protected ones)
     }
   }).filter(Boolean).sort((a, b) => (a.number ?? Infinity) - (b.number ?? Infinity))
 }

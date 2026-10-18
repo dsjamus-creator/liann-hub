@@ -2,6 +2,7 @@
 import { APPS, NAV, CODE_LENGTH, appUrl } from './config.js'
 import { formatBytes } from './downloads.js'
 import { clampPage, visiblePages } from './comics.js'
+import { watermarkStyle } from './pages.js'
 
 const I = {
   home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h5v-6h4v6h5V9.5"/>',
@@ -87,6 +88,7 @@ export const profileOf = user => {
 
 function greeting(hour) { return hour < 12 ? ['Good morning', '早上好'] : hour < 18 ? ['Good afternoon', '下午好'] : ['Good evening', '晚上好'] }
 
+export function vComic(s) { return `<div class="gate fade">${decor()}<div class="card">${LOCKUP}<p class="muted" style="margin:0">Opening the comic…</p></div></div>${s.reader ? readerHTML(s) : ''}` }
 export function vLoading() { return `<div class="gate fade">${decor()}<div class="card">${LOCKUP}<p class="muted" style="margin:0">Loading…</p></div></div>` }
 
 export function vEmail(s) {
@@ -286,7 +288,8 @@ export function readerHTML(s) {
     <button class="rarrow back" id="rprev" aria-label="Previous page"${i === 0 ? ' disabled' : ''}>${ARROW}</button>
     <span class="rcount" aria-live="polite"><b>${label}</b> / ${n}</span>
     <button class="rarrow fwd" id="rnext" aria-label="Next page"${(spread ? visiblePages(i, n, true).includes(n - 1) : i === n - 1) ? ' disabled' : ''}>${ARROW}</button></div>
-   <input type="range" id="rseek" min="1" max="${n}" value="${i + 1}" aria-label="Page"></div></div></div>`
+   <input type="range" id="rseek" min="1" max="${n}" value="${i + 1}" aria-label="Page"></div>
+  <div class="wm" aria-hidden="true" style="${esc(watermarkStyle(s.user?.email || s.viewId))}"></div></div></div>`
 }
 
 // A download button for a manifest slot: live when the checked file is in the manifest, otherwise "Coming soon".

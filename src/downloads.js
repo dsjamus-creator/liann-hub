@@ -7,7 +7,7 @@ export function safeFileUrl(file, base) {
   if (typeof file !== 'string' || !file.trim()) return null
   let url
   try { url = new URL(file, base) } catch { return null }
-  if (url.protocol !== 'https:' && !(url.protocol === 'http:' && url.hostname === 'localhost')) return null
+  if (url.protocol !== 'https:' && !(url.protocol === 'http:' && (url.hostname === 'localhost' || url.hostname === '127.0.0.1'))) return null
   if (file.split(/[\\/]/).includes('..')) return null
   return url.href
 }
