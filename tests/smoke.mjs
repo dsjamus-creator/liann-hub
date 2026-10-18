@@ -16,7 +16,8 @@ async function mock(context, { student = true, tour = false } = {}) {
   const seen = { auth: [] }
   if (!tour) await context.addInitScript(() => localStorage.setItem('liann-hub-tour-done', 'true'))
   const PAGE = n => `https://downloads.lwliann.com/comics/ep1/page-${n}.jpg`
-  await context.route('**/data/comics.json', r => r.fulfill({ json: { episodes: [{ id: 'ep1', title: 'Episode 1: Flight', number: 1, summary: 'Bella takes off.', cover: PAGE(1), pages: [PAGE(1), PAGE(2), PAGE(3)] }] } }))
+  await context.route('**/data/comics.json', r => r.fulfill({ json: { episodes: [{ id: 'ep1', title: 'Episode 1: Flight', number: 1, summary: 'Bella takes off.', cover: PAGE(1), pages: [PAGE(1), PAGE(2), PAGE(3)] },
+    { id: 'ep2', title: 'Episode 2: Long', number: 2, summary: 'A longer book.', cover: PAGE(1), pages: [PAGE(1), PAGE(2), PAGE(3), PAGE(1), PAGE(2), PAGE(3)] }] } }))
   await context.route(/downloads\.lwliann\.com\/comics\/ep1\/page-(\d)\.jpg/, r => r.fulfill({ path: fileURLToPath(new URL(`./fixtures/page-${r.request().url().match(/page-(\d)/)[1]}.jpg`, import.meta.url)), contentType: 'image/jpeg', headers: { 'access-control-allow-origin': '*' } }))
   await context.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ status: 200, contentType: 'text/css', body: '' }))
   await context.route('https://pinyin-tiles-api-staging.onrender.com/v1/auth/config', r => r.fulfill({ json: { authentication: { enabled: true, supabaseUrl: 'https://demo.supabase.co', publishableKey: 'pk-test' } } }))
@@ -204,6 +205,31 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
       await page.locator('#r3d').click(); assert.equal(await page.locator('.book3d').count(), 0, 'Flat pages brings back the flat reader')
     } finally {
       if (process.env.SHOTS && await page.locator('.reader').count()) await page.screenshot({ path: `${process.env.SHOTS}/${tag}-book3d-state.png` })
+      if (await page.locator('#r3d[aria-pressed="true"]').count()) await page.locator('#r3d').click()
+      if (await page.locator('.reader').count()) await page.keyboard.press('Escape')
+    }
+  })
+  await step(`${tag}: 3D book: the brass magnifier reaches the whole left-hand page on a later spread`, async () => {
+    try {
+      await page.goto(url + '#read'); await page.locator('[data-readep="ep2"]').click(); await page.locator('.reader').waitFor()
+      if (!await page.locator('#r3d').count()) return
+      await page.locator('#r3d').click(); await page.locator('.book3d canvas').waitFor({ timeout: 15000 }); await page.waitForTimeout(600)
+      await page.waitForTimeout(3000)
+      const st = await page.locator('.book3d canvas').boundingBox()
+      const glassOn = async fx => {
+        const b = await page.locator('.brass').boundingBox()
+        await page.mouse.move(b.x + 100, b.y + 100); await page.mouse.down(); await page.mouse.move(st.x + st.width * fx, st.y + st.height * 0.45, { steps: 6 }); await page.mouse.up()
+        await page.waitForTimeout(200)
+        return /^url/.test(await page.locator('.brass .bglass').evaluate(el => el.style.backgroundImage))
+      }
+      await page.keyboard.press('ArrowRight'); await page.waitForTimeout(4200)
+      await page.keyboard.press('ArrowRight'); await page.waitForTimeout(4200)
+      assert.equal(await page.locator('.rcount').innerText(), '4–5 / 6')
+      // the book is centred, so the left page mirrors the right one: find where the right page ends, then check the left page reaches its mirror
+      let right = 0.55; while (right < 0.99 && await glassOn(right + 0.01)) right += 0.01
+      let left = 0.5; while (left > 0.01 && await glassOn(left - 0.01)) left -= 0.01
+      assert.ok(left < 1 - right + 0.05, `the left page magnifies out to its edge (reaches ${left.toFixed(2)}, right page ends ${right.toFixed(2)})`)
+    } finally {
       if (await page.locator('#r3d[aria-pressed="true"]').count()) await page.locator('#r3d').click()
       if (await page.locator('.reader').count()) await page.keyboard.press('Escape')
     }
