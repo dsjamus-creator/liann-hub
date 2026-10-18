@@ -15,11 +15,13 @@ What stops the comic pages being saved or copied, and what does not. Nothing can
 | Marked copies | A faint tiled mark covers the whole reader, so a screenshot carries it: the signed-in address, or a viewing code ("Learning with LiANN · 0125B90F") for a visitor who is not signed in. A code cannot be traced to a person, so it deters rather than identifies. |
 | Reader-size files | The reader files are 1067 × 1600 px WebP. The print-resolution files stay in Drive and are never served. |
 
-## One-time step after the first deploy (owner or Claude)
+## Where the files live
 
 The reader files are in a **separate private bucket, `liann-reader`**, which has no public address (r2.dev is off and it has no custom domain). Only the hub's Worker can read it, through its R2 binding, so no firewall rule is needed.
 
-The old public page copies under `comics/ep-01/` in the `liann-downloads` bucket (`000.webp` … `022.webp`, `cover-a-page.webp`, `cover-b-page.webp`) are still there because the live hub uses them until this is deployed. After the deploy works, delete them. Keep `cover-a.webp` and `cover-b.webp`: they are the covers on the Read cards and stay public. Claude can delete them on request.
+The old public page copies that were under `comics/ep-01/` in the `liann-downloads` bucket were deleted on 2026-10-18 after the Worker went live. Only the two Read-card covers (`cover-a.webp`, `cover-b.webp`) remain there, and they are meant to be public. A copy cached at Cloudflare's edge can linger for up to 4 hours after a delete.
+
+To add another episode: upload its pages to `liann-reader` under `reader/<episode>/<page>.webp`, list them in `data/comics.json` as `comic/<episode>/<page>.webp`, and keep only the cover thumbnails in the public bucket.
 
 ## The deploy token
 

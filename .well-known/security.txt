@@ -1,0 +1,6 @@
+# How to report a security problem with Learning with LiANN (app.lwliann.com).
+# Please tell us privately first, give us reasonable time to fix it, and do not access other people's data.
+Contact: mailto:security@lwliann.com
+Expires: 2027-10-01T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://app.lwliann.com/.well-known/security.txt
