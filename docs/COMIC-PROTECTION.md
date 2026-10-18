@@ -7,7 +7,7 @@ What stops the comic pages being saved or copied, and what does not. Nothing can
 | Measure | How |
 |---|---|
 | No image menu | Page images take no clicks (`pointer-events: none`), so long-press / right-click offer no "Download / Copy / Share image". The reader also blocks the context menu, dragging, text selection, copy, and Ctrl/Cmd + S / P / C. Printing the page prints nothing. |
-| Pages are not public files | The pages live in the **private** `reader/` folder of the `liann-downloads` bucket, read only by the hub's Worker (`worker/index.js`). The hub's page addresses are `/comic/<episode>/<page>.webp`. |
+| Pages are not public files | The pages live in the **private `liann-reader` bucket**, read only by the hub's Worker (`worker/index.js`). The hub's page addresses are `/comic/<episode>/<page>.webp`. |
 | Sign-in required | The reader asks the Worker (`POST /comic/sign`) for links. The Worker checks the visitor's Supabase token with Supabase itself, so only signed-in LiANN users get links. |
 | Links expire | A link is signed (HMAC-SHA256) for one page and expires after 30 minutes. A copied link stops working; the reader quietly fetches new ones while it is open. The signing key is made fresh at every deploy and lives only in the Worker. |
 | Images only, from the hub only | The Worker serves a page only to an `<img>` or WebGL texture on app.lwliann.com (`Sec-Fetch-Dest: image`, same origin). "Open image in new tab", another site embedding it, or pasting the link into the address bar all get 403. |
@@ -15,20 +15,15 @@ What stops the comic pages being saved or copied, and what does not. Nothing can
 | Traceable copies | A faint tiled mark with the signed-in address covers the whole reader, so a screenshot shows who opened it. |
 | Reader-size files | The reader files are 1067 × 1600 px WebP. The print-resolution files stay in Drive and are never served. |
 
-## Two one-time steps in the Cloudflare dashboard (owner)
+## One-time step after the first deploy (owner or Claude)
 
-The reader files were uploaded to `reader/ep-01/` in the same bucket that serves downloads.lwliann.com, so until step 1 is done they are publicly reachable at `https://downloads.lwliann.com/reader/ep-01/000.webp`.
+The reader files are in a **separate private bucket, `liann-reader`**, which has no public address (r2.dev is off and it has no custom domain). Only the hub's Worker can read it, through its R2 binding, so no firewall rule is needed.
 
-1. **Block `/reader/` on the downloads domain.** Cloudflare → lwliann.com → Security → WAF → Custom rules → Create rule:
-   - Expression (edit as expression): `(http.host eq "downloads.lwliann.com" and starts_with(http.request.uri.path, "/reader/"))`
-   - Action: **Block**.
-
-   The Worker reads the bucket through its R2 binding, which a WAF rule does not affect. Check: `https://downloads.lwliann.com/reader/ep-01/000.webp` should say it is blocked, and the comic should still open in the hub.
-2. **After the hub deploy, remove the old public copies** of the pages (`comics/ep-01/000.webp` … `022.webp`, `cover-a-page.webp`, `cover-b-page.webp`). Keep `comics/ep-01/cover-a.webp` and `cover-b.webp`: they are the covers on the Read cards and stay public. Claude can delete them on request.
+The old public page copies under `comics/ep-01/` in the `liann-downloads` bucket (`000.webp` … `022.webp`, `cover-a-page.webp`, `cover-b-page.webp`) are still there because the live hub uses them until this is deployed. After the deploy works, delete them. Keep `cover-a.webp` and `cover-b.webp`: they are the covers on the Read cards and stay public. Claude can delete them on request.
 
 ## The deploy token
 
-`wrangler deploy` now also binds the R2 bucket. If the Deploy hub run fails with a permissions error naming R2, add **Workers R2 Storage: Edit** to the token stored as the `CLOUDFLARE_API_TOKEN` repository secret.
+`wrangler deploy` now also binds the R2 bucket. If the Deploy hub run fails with a permissions error naming R2 (the Worker is bound to `liann-reader`), add **Workers R2 Storage: Edit** to the token stored as the `CLOUDFLARE_API_TOKEN` repository secret.
 
 ## Not covered (by design or by nature)
 

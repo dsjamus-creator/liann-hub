@@ -2,9 +2,9 @@
 //
 //   POST /comic/sign   Authorization: Bearer <Supabase access token>   body { paths: ["/comic/ep-01/000.webp", ...] }
 //        -> { expires, urls: { "<path>": "<path>?e=..&u=..&s=.." } }   Only signed-in LiANN users get links. Links last 30 minutes.
-//   GET  /comic/<episode>/<page>.webp?e=..&u=..&s=..                   One page image, read from the private R2 folder reader/<episode>/<page>.webp.
+//   GET  /comic/<episode>/<page>.webp?e=..&u=..&s=..                   One page image, read from the private R2 bucket (key reader/<episode>/<page>.webp).
 //
-// The page files are not public: downloads.lwliann.com must block /reader/ (docs/COMIC-PROTECTION.md).
+// The page files are not public: they live in the liann-reader bucket, which has no public address (docs/COMIC-PROTECTION.md).
 // Per-address counters live in this isolate's memory, so they are a brake on bulk copying, not an exact limit.
 
 const SIGN_MS = 30 * 60 * 1000

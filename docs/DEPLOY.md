@@ -4,7 +4,7 @@ The hub runs on Cloudflare Workers as a static-assets-only Worker named `liann-h
 
 `.assetsignore` limits the upload to the site itself: `index.html`, `404.html`, `styles.css`, `_headers`, `src/`, `assets/` and `data/`. Tests, scripts, docs, `node_modules` and the config files stay private. This was checked with `wrangler dev`: those paths return 404.
 
-The Worker also runs a little code, only for `/comic/*` (the protected comic pages): see `docs/COMIC-PROTECTION.md`. It needs the `liann-downloads` R2 bucket and a signing key that every deploy generates itself (`npm run deploy` does this too).
+The Worker also runs a little code, only for `/comic/*` (the protected comic pages): see `docs/COMIC-PROTECTION.md`. It needs the private `liann-reader` R2 bucket and a signing key that every deploy generates itself (`npm run deploy` does this too).
 
 ## Automatic deploys (GitHub Actions)
 
