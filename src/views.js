@@ -254,7 +254,7 @@ const ARROW = '<svg viewBox="0 0 64 48" aria-hidden="true"><path d="M3 15H34V4L6
 export function readerHTML(s) {
   const ep = (s.comics || []).find(e => e.id === s.reader?.id)
   if (!ep) return ''
-  const r = s.reader, n = ep.pages.length, i = clampPage(r.i, n), zoom = !!r.zoom && !r.d3, d3 = !!r.d3, spread = (d3 || !!r.spread) && n > 1
+  const r = s.reader, n = ep.pages.length, i = clampPage(r.i, n), z = r.d3 ? 1 : Math.max(1, r.z || 1), zoom = z > 1, d3 = !!r.d3, spread = (d3 || !!r.spread) && n > 1
   const img = j => (j == null ? '' : `<img${s.noCors ? '' : ' crossorigin="anonymous"'} src="${esc(ep.pages[j])}" alt="${esc(ep.alts[j] || `${ep.title}, page ${j + 1} of ${n}`)}" draggable="false">`)
   const face = (cls, j) => `<div class="face ${cls}">${img(j)}</div>`
   const now = visiblePages(i, n, spread), from = r.flip?.from, dir = r.flip?.dir
@@ -266,6 +266,8 @@ export function readerHTML(s) {
         : `<div class="pg r old">${img(from[1])}</div><div class="flip back">${face('front', from[0])}${face('back', now[1])}</div>`
     } else if (!spread) flip = `<div class="flip ${dir > 0 ? 'sfwd' : 'sback'}">${face('front', from[0])}</div>`
   }
+  // A closed book sits centred: the front cover, or the last page when it is left on its own
+  const shut = spread && !d3 && !flip ? (now[0] == null ? ' shut r' : now[1] == null && i > 0 ? ' shut l' : '') : ''
   const label = spread ? now.filter(j => j != null).map(j => j + 1).join('–') : String(i + 1)
   return `<div class="reader${r.full ? ' full' : ''}" role="dialog" aria-modal="true" aria-label="${esc(ep.title)}">
   <div class="rbar"><button class="iconbtn" id="rclose" aria-label="Close reader">✕</button><div class="rtitle">${esc(ep.title)}</div>
@@ -275,8 +277,8 @@ export function readerHTML(s) {
    <button class="btn ghost" id="rfull" aria-pressed="${!!r.full}">${r.full ? 'Exit full page' : 'Full page'}</button>
    ${d3 ? '' : `<button class="btn ghost" id="rzoom" aria-pressed="${zoom}">${zoom ? 'Fit page' : 'Zoom'}</button>`}</div>
   ${r.full ? '<button class="btn ghost rexit" id="rexit">Exit full page</button>' : ''}
-  <div class="rstage${zoom ? ' zoom' : ''}" id="rstage" tabindex="-1">
-   ${d3 ? (r.d3state === 'loading' ? '<div class="r3dslot">Loading the 3D book…</div>' : '') : `<div class="rbook ${spread ? 'spread' : 'single'}">
+  <div class="rstage${zoom ? ' zoom' : ''}" id="rstage" tabindex="-1" style="--z:${z}">
+   ${d3 ? (r.d3state === 'loading' ? '<div class="r3dslot">Loading the 3D book…</div>' : '') : `<div class="rbook ${spread ? 'spread' : 'single'}${shut}">
     ${spread ? `<div class="pg l">${img(now[0])}</div><div class="pg r">${img(now[1])}</div>` : `<div class="pg one">${img(now[0])}</div>`}${flip}</div>`}
    <div class="lens" id="rlens" hidden></div></div>
   <div class="rfoot">

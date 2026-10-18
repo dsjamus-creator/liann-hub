@@ -16,7 +16,8 @@ async function mock(context, { student = true, tour = false } = {}) {
   const seen = { auth: [] }
   if (!tour) await context.addInitScript(() => localStorage.setItem('liann-hub-tour-done', 'true'))
   const PAGE = n => `https://downloads.lwliann.com/comics/ep1/page-${n}.jpg`
-  await context.route('**/data/comics.json', r => r.fulfill({ json: { episodes: [{ id: 'ep1', title: 'Episode 1: Flight', number: 1, summary: 'Bella takes off.', cover: PAGE(1), pages: [PAGE(1), PAGE(2), PAGE(3)] }] } }))
+  await context.route('**/data/comics.json', r => r.fulfill({ json: { episodes: [{ id: 'ep1', title: 'Episode 1: Flight', number: 1, summary: 'Bella takes off.', cover: PAGE(1), pages: [PAGE(1), PAGE(2), PAGE(3)] },
+    { id: 'ep2', title: 'Episode 2: Long', number: 2, summary: 'A longer book.', cover: PAGE(1), pages: [PAGE(1), PAGE(2), PAGE(3), PAGE(1), PAGE(2), PAGE(3)] }] } }))
   await context.route(/downloads\.lwliann\.com\/comics\/ep1\/page-(\d)\.jpg/, r => r.fulfill({ path: fileURLToPath(new URL(`./fixtures/page-${r.request().url().match(/page-(\d)/)[1]}.jpg`, import.meta.url)), contentType: 'image/jpeg', headers: { 'access-control-allow-origin': '*' } }))
   await context.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ status: 200, contentType: 'text/css', body: '' }))
   await context.route('https://pinyin-tiles-api-staging.onrender.com/v1/auth/config', r => r.fulfill({ json: { authentication: { enabled: true, supabaseUrl: 'https://demo.supabase.co', publishableKey: 'pk-test' } } }))
@@ -144,7 +145,15 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     assert.ok(b0.x < f0.x && b0.y > stageBox.y + stageBox.height - 4, 'Back arrow is left of Forward and both are below the page')
     assert.ok(Math.abs((b0.x + f0.x + f0.width) / 2 - page.viewportSize().width / 2) < 40, 'arrows are centred')
     await noOverflow(page); await shot(page, `${tag}-reader`)
-    await page.keyboard.press('ArrowRight')
+    if (wide) {
+      await page.waitForTimeout(400)
+      const cv = await page.locator('.rbook.shut .pg.r img').boundingBox(), sbx = await page.locator('#rstage').boundingBox()
+      const iw = await page.locator('.rbook').evaluate(el => parseFloat(el.style.getPropertyValue('--iw'))) // the page is drawn against the spine, so its width is what the picture really takes
+      assert.ok(iw > 100 && Math.abs(cv.x + iw / 2 - (sbx.x + sbx.width / 2)) < 8, 'the closed book sits in the middle of the stage')
+      await page.locator('.rbook.shut .pg.r img').click() // clicking the cover opens the book: it slides right, then the page turns
+      await page.waitForFunction(() => !document.querySelector('.rbook.shut'), null, { timeout: 1000 })
+      await page.locator('.flip.fwd').waitFor({ timeout: 2000 })
+    } else await page.keyboard.press('ArrowRight')
     assert.equal(await page.locator(wide ? '.flip.fwd' : '.flip.sfwd').count(), 1, 'the page turns')
     assert.equal(await count(), wide ? '2–3 / 3' : '2 / 3')
     await page.locator('.flip').waitFor({ state: 'detached', timeout: 4000 })
@@ -159,7 +168,9 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
       await page.locator('#rlens[hidden]').waitFor({ state: 'attached' })
       await page.keyboard.press('ArrowLeft'); assert.equal(await page.locator('.flip.back').count(), 1); assert.equal(await count(), '1 / 3')
       await page.locator('.flip').waitFor({ state: 'detached', timeout: 4000 })
-      await page.locator('#rnext').click(); assert.equal(await count(), '2–3 / 3')
+      assert.equal(await page.locator('.rbook.shut.r').count(), 1, 'back on the cover the book closes: it slides back to the middle')
+      await page.locator('#rnext').click(); await page.locator('.flip.fwd').waitFor({ timeout: 2000 }); assert.equal(await count(), '2–3 / 3')
+      await page.locator('.flip').waitFor({ state: 'detached', timeout: 4000 })
       await page.locator('#rmode').click(); assert.equal(await page.locator('.rbook.single').count(), 1); assert.equal(await count(), '2 / 3')
     } else {
       await page.locator('#rnext').click(); assert.equal(await count(), '3 / 3'); assert.equal(await page.locator('#rnext').isDisabled(), true)
@@ -170,6 +181,15 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     assert.equal(await page.locator('.rbar').isVisible(), false); await page.locator('#rexit').click()
     assert.equal(await page.locator('.reader.full').count(), 0); assert.equal(await page.locator('.rbar').isVisible(), true)
     await page.locator('#rzoom').click(); assert.equal(await page.locator('.rstage.zoom').count(), 1)
+    await page.locator('#rzoom').click(); assert.equal(await page.locator('.rstage.zoom').count(), 0, 'Fit page comes back to the whole page')
+    // mouse wheel and the Up / Down arrow keys zoom the pages in and out
+    const zoomOf = () => page.locator('#rstage').evaluate(el => Number(el.style.getPropertyValue('--z')))
+    const sb = await page.locator('#rstage').boundingBox(); await page.mouse.move(sb.x + sb.width / 2, sb.y + sb.height / 2)
+    await page.mouse.wheel(0, -300); assert.ok(await zoomOf() > 1, 'wheel up zooms in'); assert.equal(await page.locator('.rstage.zoom').count(), 1)
+    const z1 = await zoomOf(); await page.keyboard.press('ArrowUp'); assert.ok(await zoomOf() > z1, 'Up arrow zooms in')
+    for (let k = 0; k < 12; k++) await page.keyboard.press('ArrowUp'); assert.ok(await zoomOf() <= 4 + 1e-9, 'zoom stops at 4x')
+    await page.mouse.wheel(0, 3000); await page.keyboard.press('ArrowDown'); assert.equal(await zoomOf(), 1, 'wheel down and Down arrow zoom back out to the whole page')
+    assert.equal(await page.locator('.rstage.zoom').count(), 0); assert.equal(await page.locator('#rzoom').innerText(), 'Zoom')
     await page.keyboard.press('Escape'); assert.equal(await page.locator('.reader').count(), 0)
     assert.match(await page.locator('[data-readep="ep1"]').innerText(), /Continue from page 2/)
     await page.locator('[data-readep="ep1"]').click(); assert.equal(await count(), '2 / 3')
@@ -201,9 +221,37 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
       assert.match(await page.locator('.brass .bglass').evaluate(el => el.style.backgroundImage), /downloads\.lwliann\.com\/comics\/ep1\/page-/, 'the glass shows the page under it')
       await shot(page, `${tag}-book3d-lens`)
       await page.keyboard.press('ArrowLeft'); await page.waitForTimeout(1500); assert.equal(await page.locator('.rcount').innerText(), '1 / 3')
+      await page.mouse.move(st.x + st.width / 2, st.y + st.height / 2); await page.mouse.wheel(0, -400)
+      assert.equal(await page.locator('.book3d.zoomed').count(), 1, 'the wheel zooms the 3D book'); await page.keyboard.press('ArrowDown'); await page.mouse.wheel(0, 3000)
+      assert.equal(await page.locator('.book3d.zoomed').count(), 0, 'and zooms back out to the whole book')
       await page.locator('#r3d').click(); assert.equal(await page.locator('.book3d').count(), 0, 'Flat pages brings back the flat reader')
     } finally {
       if (process.env.SHOTS && await page.locator('.reader').count()) await page.screenshot({ path: `${process.env.SHOTS}/${tag}-book3d-state.png` })
+      if (await page.locator('#r3d[aria-pressed="true"]').count()) await page.locator('#r3d').click()
+      if (await page.locator('.reader').count()) await page.keyboard.press('Escape')
+    }
+  })
+  await step(`${tag}: 3D book: the brass magnifier reaches the whole left-hand page on a later spread`, async () => {
+    try {
+      await page.goto(url + '#read'); await page.locator('[data-readep="ep2"]').click(); await page.locator('.reader').waitFor()
+      if (!await page.locator('#r3d').count()) return
+      await page.locator('#r3d').click(); await page.locator('.book3d canvas').waitFor({ timeout: 15000 }); await page.waitForTimeout(600)
+      await page.waitForTimeout(3000)
+      const st = await page.locator('.book3d canvas').boundingBox()
+      const glassOn = async fx => {
+        const b = await page.locator('.brass').boundingBox()
+        await page.mouse.move(b.x + 100, b.y + 100); await page.mouse.down(); await page.mouse.move(st.x + st.width * fx, st.y + st.height * 0.45, { steps: 6 }); await page.mouse.up()
+        await page.waitForTimeout(200)
+        return /^url/.test(await page.locator('.brass .bglass').evaluate(el => el.style.backgroundImage))
+      }
+      await page.keyboard.press('ArrowRight'); await page.waitForTimeout(4200)
+      await page.keyboard.press('ArrowRight'); await page.waitForTimeout(4200)
+      assert.equal(await page.locator('.rcount').innerText(), '4–5 / 6')
+      // the book is centred, so the left page mirrors the right one: find where the right page ends, then check the left page reaches its mirror
+      let right = 0.55; while (right < 0.99 && await glassOn(right + 0.01)) right += 0.01
+      let left = 0.5; while (left > 0.01 && await glassOn(left - 0.01)) left -= 0.01
+      assert.ok(left < 1 - right + 0.05, `the left page magnifies out to its edge (reaches ${left.toFixed(2)}, right page ends ${right.toFixed(2)})`)
+    } finally {
       if (await page.locator('#r3d[aria-pressed="true"]').count()) await page.locator('#r3d').click()
       if (await page.locator('.reader').count()) await page.keyboard.press('Escape')
     }
