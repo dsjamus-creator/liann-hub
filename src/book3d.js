@@ -108,6 +108,7 @@ export async function createBook(opts) {
       pos.setXYZ(i, x, h / 2, z); pos.setXYZ(SEG + 1 + i, x, -h / 2, z)
     }
     pos.needsUpdate = true; L.geo.computeVertexNormals()
+    L.geo.computeBoundingSphere() // the raycaster (the brass magnifier) rejects hits outside the bounds, so they must follow the turned page
   }
   function blocks() { // each block stays just under the top page that is actually resting on its side
     let right = 0, left = 0
