@@ -19,17 +19,21 @@ The hub is a static site plus one small Worker (`worker/index.js`, comic pages o
 | Reporting | `/.well-known/security.txt` tells researchers where to report a problem | `.well-known/security.txt` |
 | Deploys | CI runs the tests before every deploy; the workflow has read-only repo permissions; the page-signing key is generated per deploy | `.github/workflows/deploy.yml` |
 
-## Cloudflare (Owner)
+## Cloudflare (done from a scoped token on 2026-10-18; the rest is Owner)
 
-- **SSL/TLS** → mode **Full (strict)**; **Always Use HTTPS** on; **Minimum TLS 1.2**; **Automatic HTTPS Rewrites** on.
-- **Security → WAF**: turn on the **Cloudflare Managed Ruleset** and **OWASP Core Ruleset**. Add a **rate-limiting rule**: `http.host eq "app.lwliann.com" and http.request.uri.path eq "/comic/sign"`, 60 requests per minute per IP, action Block for 10 minutes.
-- **Security → Bots**: **Bot Fight Mode** on. (Currently Cloudflare also blocks some automated tools by itself: that is how this dev environment gets "Your request was blocked".)
-- **Turnstile** on the sign-in form (free): needs a small code change plus a site key. Claude can add the code once the key exists.
-- **DNS**: enable **DNSSEC**; add **CAA** records (`0 issue "letsencrypt.org"`, `0 issue "pki.goog"`) for lwliann.com.
-- **Email**: SPF, DKIM and **DMARC** for lwliann.com, starting at `p=none` with a `rua` report address, then `p=quarantine`, then `p=reject` once the reports show only your own mail (Resend, Supabase auth mail, Google). This is the single best protection against someone sending phishing "from" your domain.
-- **Account**: 2FA with a hardware key or passkey on Cloudflare, the domain registrar (also turn on registrar lock), Google, GitHub, Supabase, Render and (later) Stripe.
-- **Mailbox**: create `security@lwliann.com` (an alias is enough) so the address in `security.txt` is real.
-- **API tokens**: delete the R2 upload token used earlier in the project. Keep the deploy token scoped to Workers only.
+Checked on the live lwliann.com zone (Pro plan):
+
+- **Done:** SSL/TLS **Full (strict)**, **Always Use HTTPS**, **Minimum TLS 1.2**, **TLS 1.3**, **Automatic HTTPS Rewrites** (switched on).
+- **Done:** a **rate-limit rule** on `app.lwliann.com/comic/sign`: 60 requests per minute per IP, then blocked for 10 minutes.
+- **Done:** the **Cloudflare Managed Ruleset** is now deployed on the whole zone at its default actions (it was available but not switched on). If it ever blocks something legitimate: Security → WAF → Managed rules → turn the rule off, or look in Security → Events for the rule that fired. The OWASP Core ruleset is deliberately **not** deployed: it is prone to false positives for the games and APIs and needs tuning first.
+- **Done:** the **duplicate DMARC record** was removed. Two `_dmarc` records make DMARC invalid; the remaining one is `v=DMARC1; p=quarantine; adkim=r; aspf=r; rua=mailto:dmarc_rua@onsecureserver.net`.
+- **Not touched:** Bot Fight Mode. The zone already has custom skip rules for audio, media, search crawlers and downloads, which shows automated traffic has been a problem before; turning it on needs care.
+- **DNSSEC: Owner.** Enabled at Cloudflare but **pending** until the registrar has the DS record. At the registrar (GoDaddy, judging by the old `_domainconnect` record), add: key tag **2371**, algorithm **13** (ECDSAP256SHA256), digest type **2** (SHA-256), digest `D676803E5D214497F8909C70F170392E57ED84FDD523B3577AECF905F9B0259F`.
+- **Mail is Google Workspace** (MX records point to Google), so **do not enable Cloudflare Email Routing**: it would replace the MX records and stop mail arriving. Create `security@lwliann.com` as a Google Workspace alias or group instead.
+- **DKIM for Google mail: Owner.** There is an SPF record (`include:_spf.google.com`) but no Google DKIM key. In the Google Admin console: Apps → Google Workspace → Gmail → Authenticate email → generate the key, then add the TXT record it shows in Cloudflare DNS, then Start authentication. Stripe already has its own DKIM records. After a few weeks of clean DMARC reports, move `p=quarantine` to `p=reject`.
+- **CAA records:** skipped on purpose; Cloudflare manages the certificates and a wrong CAA record can break HTTPS.
+- **Turnstile: Owner/Claude.** Create the widget (site key is public; the secret key goes only into Supabase → Authentication → Attack Protection → CAPTCHA), then Claude adds the widget to the sign-in form.
+- **Account:** 2FA with a hardware key or passkey on Cloudflare, the registrar (also turn on registrar lock), Google, GitHub, Supabase, Render and Stripe. **Delete the scoped API token** used for this setup.
 
 ## GitHub (Owner)
 
