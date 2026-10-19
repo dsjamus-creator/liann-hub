@@ -87,8 +87,10 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     await page.getByRole('alert').waitFor()
     assert.match(await page.getByRole('alert').innerText(), /wrong or has expired/)
   })
-  await step(`${tag}: the right code signs in and shows "Who's learning?"`, async () => {
-    await page.locator('#c0').pressSequentially('246810')
+  await step(`${tag}: the right code, dropped into the first box by autofill, signs in and shows "Who's learning?"`, async () => {
+    assert.equal(await page.locator('#c0').getAttribute('autocomplete'), 'one-time-code')
+    assert.equal(await page.locator('#c0').getAttribute('maxlength'), null, 'autofill must fit a whole code in the first box')
+    await page.locator('#c0').evaluate(el => { el.value = '246810'; el.dispatchEvent(new Event('input', { bubbles: true })) })
     await page.locator('#pick').waitFor()
     assert.match(await page.locator('.who').innerText(), /Ann Mingen/)
   })
