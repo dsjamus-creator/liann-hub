@@ -51,7 +51,7 @@ Checked on the live lwliann.com zone (Pro plan):
 
 ## Render / lwl-backend (Owner and Decide)
 
-- **Staging API in production:** `src/config.js` points sign-in config at `pinyin-tiles-api-staging.onrender.com`. Real users and payments should use a production service. Decide the production address, then Claude changes `config.pinyinApi`, the CSP `connect-src`, and `PINYIN_API` in `wrangler.jsonc`.
+- **API address:** the hub uses `https://api.pinyintiles.com` (Render service `pinyin-tiles-api-staging`, custom domain, auto-deploy off, health check `/healthz`) with the Supabase project `pinyin-tiles-staging`. The service and project are still named staging; before payments, decide whether to move to a separate production service and Supabase project (`pinyin-tiles-production` exists and is empty).
 - Every endpoint must check who is calling and that they own the record they ask for (children's profiles and SetLists especially). Test with two accounts trying to read each other's data.
 - Make the backends accept browser traffic only from the app's origins (CORS allow-list, no `*`), and ideally only requests that came through Cloudflare, so a flood cannot skip Cloudflare by hitting the Render address.
 - Validate all input on the server; use parameterised queries; log errors without personal data.

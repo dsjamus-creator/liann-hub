@@ -34,7 +34,7 @@ If `app.lwliann.com` already has a DNS record (for example a placeholder), Cloud
 ## Before sign-in and the Library work on the live hub
 
 1. **lwl-backend CORS.** `/learning/*` only accepts browser calls from `https://playtest.lwliann.com`. Add `https://app.lwliann.com` for bearer-authenticated `/learning/*` calls (see the lwl-backend PR that does this), and deploy the backend.
-2. **Pinyin API CORS.** `https://pinyin-tiles-api-staging.onrender.com/v1/auth/config` must answer CORS requests from `https://app.lwliann.com`. This wasn't checked: the cloud session's network can't reach onrender.com.
+2. **Pinyin API CORS.** `https://api.pinyintiles.com/v1/auth/config` must answer CORS requests from `https://app.lwliann.com` (`app.lwliann.com` is in the API's `ALLOWED_ORIGINS`). Sign-in from the live hub has been checked by hand; the cloud session's network can't reach the API itself.
 3. **Supabase.** Email-code (OTP) sign-in needs no redirect URL. If the email template uses a magic link rather than a code, add `https://app.lwliann.com` to the allowed redirect URLs.
 
 Until those are done, the live hub shows its pages, apps and downloads, but sign-in and the Library show "Could not reach the server".
