@@ -347,7 +347,14 @@ function bind() {
       catch (error) { S.busy = false; S.error = error.message; render() }
     }
     ins.forEach((el, i) => {
-      el.oninput = () => { el.value = el.value.replace(/\D/g, '').slice(-1); if (el.value && ins[i + 1]) ins[i + 1].focus(); if (ins.every(x => x.value)) submit() }
+      el.oninput = () => {
+        const d = el.value.replace(/\D/g, '')
+        // A one-time-code autofill (iOS Mail, Android keyboard suggestion) drops the whole code into the first box.
+        if (d.length > 1) { d.slice(0, CODE_LENGTH).split('').forEach((ch, j) => { ins[j].value = ch }); ins[Math.min(d.length, CODE_LENGTH) - 1].focus() }
+        else el.value = d
+        if (d.length === 1 && ins[i + 1]) ins[i + 1].focus()
+        if (ins.every(x => x.value)) submit()
+      }
       el.onkeydown = e => { if (e.key === 'Backspace' && !el.value && ins[i - 1]) ins[i - 1].focus() }
       el.onpaste = e => { const d = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, CODE_LENGTH); if (d.length >= 6) { e.preventDefault(); ins.forEach((x, j) => { x.value = d[j] || '' }); submit() } }
     })
