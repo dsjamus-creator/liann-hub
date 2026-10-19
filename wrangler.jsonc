@@ -17,7 +17,7 @@
     { "binding": "PAGES", "bucket_name": "liann-reader" }
   ],
   "vars": {
-    "PINYIN_API": "https://pinyin-tiles-api-staging.onrender.com"
+    "PINYIN_API": "https://api.pinyintiles.com"
   },
   "routes": [
     { "pattern": "app.lwliann.com", "custom_domain": true }

@@ -5,7 +5,7 @@ const override = globalThis.LIANN_HUB_CONFIG || {}
 export const config = {
   hubOrigin: 'https://app.lwliann.com',
   gamesOrigin: 'https://playtest.lwliann.com',
-  pinyinApi: 'https://pinyin-tiles-api-staging.onrender.com',
+  pinyinApi: 'https://api.pinyintiles.com',
   backend: 'https://lwl-backend-mhgo.onrender.com',
   downloadsManifest: 'data/downloads.json',
   comicsManifest: 'data/comics.json',

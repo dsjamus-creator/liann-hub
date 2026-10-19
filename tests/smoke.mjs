@@ -27,7 +27,7 @@ async function mock(context, { student = true, tour = false } = {}) {
   await context.route(/\/comic\/ep-03\/p\d\.webp\?/, r => r.fulfill({ path: fileURLToPath(new URL('./fixtures/page-1.jpg', import.meta.url)), contentType: 'image/jpeg' }))
   await context.route(/downloads\.lwliann\.com\/comics\/ep1\/page-(\d)\.jpg/, r => r.fulfill({ path: fileURLToPath(new URL(`./fixtures/page-${r.request().url().match(/page-(\d)/)[1]}.jpg`, import.meta.url)), contentType: 'image/jpeg', headers: { 'access-control-allow-origin': '*' } }))
   await context.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ status: 200, contentType: 'text/css', body: '' }))
-  await context.route('https://pinyin-tiles-api-staging.onrender.com/v1/auth/config', r => r.fulfill({ json: { authentication: { enabled: true, supabaseUrl: 'https://demo.supabase.co', publishableKey: 'pk-test' } } }))
+  await context.route('https://api.pinyintiles.com/v1/auth/config', r => r.fulfill({ json: { authentication: { enabled: true, supabaseUrl: 'https://demo.supabase.co', publishableKey: 'pk-test' } } }))
   await context.route('https://demo.supabase.co/auth/v1/**', async r => {
     const u = new URL(r.request().url()), body = r.request().postDataJSON?.() || {}
     seen.auth.push(u.pathname)
