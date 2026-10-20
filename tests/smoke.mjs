@@ -122,7 +122,7 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     assert.equal(await page.locator('[data-slot]').count(), 25, 'the reserved figures slot is hidden from Downloads')
     assert.equal(await page.locator('[data-slot] a[download]').count(), 20)
     assert.equal(await page.locator('[data-slot="lyricsync/extension"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/lyricsync/chrome-edge/0.9.29/LyricSync-v0.9.29-cleared.zip?v=a5e49d0109a9')
-    assert.equal(await page.locator('[data-slot="dualsubs/extension"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/dual-subs/chrome-edge/0.16.118/dual-subs-v0.16.118-free-hub-public-20261020.zip?v=81515a333300')
+    assert.equal(await page.locator('[data-slot="dualsubs/extension"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/dual-subs/chrome-edge/0.16.118/dual-subs-v0.16.118-free-hub-public-portable-20261020.zip?v=96fcd8d8ca74')
     assert.equal(await page.locator('[data-slot="polyflow/windows"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/polyflow/windows/0.1.0/PolyFlow-Setup-0.1.0.exe')
     assert.equal(await page.locator('[data-slot="mahjong-tones/test-build"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/mahjong-tones/windows/0.2.0/LiANN-Mahjong-Tones-Windows-0.2.0.zip')
     assert.equal(await page.locator('[data-slot="alongside/android-test"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/alongside-dashboard/android/0.1.3/AlongSide-Dashboard-0.1.3-debug.apk')

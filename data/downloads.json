@@ -1,17 +1,17 @@
 [
   {
-    "file": "https://downloads.lwliann.com/dual-subs/chrome-edge/0.16.118/dual-subs-v0.16.118-free-hub-public-20261020.zip?v=81515a333300",
+    "file": "https://downloads.lwliann.com/dual-subs/chrome-edge/0.16.118/dual-subs-v0.16.118-free-hub-public-portable-20261020.zip?v=96fcd8d8ca74",
     "bytes": 73449483,
-    "sha256": "81515a333300438711c877be74a927a2758c2133d8fdc2d149f14ae1fc109c75",
-    "builtAt": "2026-10-20T12:58:15Z",
+    "sha256": "96fcd8d8ca7441537cd81431000d511559cd4ac5c9e1e3ec61cc4fa02fef8d96",
+    "builtAt": "2026-10-20T13:04:38Z",
     "product": "dual-subs",
     "name": "Dual Subs for Chrome/Edge — preview build for testers",
     "version": "0.16.118",
     "platform": "Chrome/Edge (developer install)",
     "hubSlot": "dualsubs/extension",
     "sourceRepo": "dsjamus-creator/Dual-subs",
-    "sourceCommit": "0edf081e0cb57ca67d27b7ae3e31e507fa49b286",
-    "buildCommand": "scripts/build-release-candidate.ps1 -Candidate hub-public-20261020",
+    "sourceCommit": "c2716494c1ec8f7723c9e9a932be863cc5ce7132",
+    "buildCommand": "scripts/build-release-candidate.ps1 -Candidate hub-public-portable-20261020",
     "licenceNotes": "Hanken Grotesk and Spectral fonts: SIL OFL 1.1; CC-CEDICT adapted word data: CC BY-SA 4.0; notices included in ZIP.",
     "notes": "Public preview for developer installation. Unzip, open chrome://extensions, turn on Developer mode, and choose Load unpacked. Not yet distributed through the Chrome Web Store or Edge Add-ons.",
     "producer": "codex"
