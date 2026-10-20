@@ -10,7 +10,7 @@
     "platform": "Chrome/Edge (developer install)",
     "hubSlot": "dualsubs/extension",
     "sourceRepo": "dsjamus-creator/Dual-subs",
-    "sourceCommit": null,
+    "sourceCommit": "0edf081e0cb57ca67d27b7ae3e31e507fa49b286",
     "buildCommand": "scripts/build-release-candidate.ps1 -Candidate hub-public-20261020",
     "licenceNotes": "Hanken Grotesk and Spectral fonts: SIL OFL 1.1; CC-CEDICT adapted word data: CC BY-SA 4.0; notices included in ZIP.",
     "notes": "Public preview for developer installation. Unzip, open chrome://extensions, turn on Developer mode, and choose Load unpacked. Not yet distributed through the Chrome Web Store or Edge Add-ons.",
