@@ -1,19 +1,19 @@
 [
   {
-    "file": "https://downloads.lwliann.com/dual-subs/chrome-edge/0.16.117/dual-subs-v0.16.117.zip?v=d3d2e5b19c54",
-    "bytes": 73450239,
-    "sha256": "d3d2e5b19c54eb2c1d9aa3ee78369c2b31503418f174e2de9aa3d4f3cb6edc2e",
-    "builtAt": null,
+    "file": "https://downloads.lwliann.com/dual-subs/chrome-edge/0.16.118/dual-subs-v0.16.118-free-hub-public-20261020.zip?v=81515a333300",
+    "bytes": 73449483,
+    "sha256": "81515a333300438711c877be74a927a2758c2133d8fdc2d149f14ae1fc109c75",
+    "builtAt": "2026-10-20T12:58:15Z",
     "product": "dual-subs",
     "name": "Dual Subs for Chrome/Edge — preview build for testers",
-    "version": "0.16.117",
+    "version": "0.16.118",
     "platform": "Chrome/Edge (developer install)",
     "hubSlot": "dualsubs/extension",
     "sourceRepo": "dsjamus-creator/Dual-subs",
     "sourceCommit": null,
-    "buildCommand": "Python zipfile (ZIP_DEFLATED, compresslevel=6) from supplied folder contents",
+    "buildCommand": "scripts/build-release-candidate.ps1 -Candidate hub-public-20261020",
     "licenceNotes": "Hanken Grotesk and Spectral fonts: SIL OFL 1.1; CC-CEDICT adapted word data: CC BY-SA 4.0; notices included in ZIP.",
-    "notes": "Preview build for testers. Unzip, open chrome://extensions, turn on Developer mode, choose Load unpacked. The public release will come from the Chrome Web Store and Edge Add-ons.",
+    "notes": "Public preview for developer installation. Unzip, open chrome://extensions, turn on Developer mode, and choose Load unpacked. Not yet distributed through the Chrome Web Store or Edge Add-ons.",
     "producer": "codex"
   },
   {
