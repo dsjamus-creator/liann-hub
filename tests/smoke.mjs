@@ -476,6 +476,30 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
   await context.close()
 }
 
+// The sign-in link in the email comes back to the hub with the session in the address (Supabase implicit flow).
+{
+  const context = await browser.newContext({ viewport: { width: 1280, height: 860 } })
+  const seen = await mock(context)
+  const page = await context.newPage()
+  await step('the email sign-in link signs the person in and clears the address', async () => {
+    await page.goto(url + '#access_token=at&refresh_token=rt&expires_in=3600&token_type=bearer&type=magiclink')
+    await page.locator('#pick, .hello').first().waitFor()
+    assert.equal(await page.evaluate(() => location.hash), '', 'the tokens are not left in the address bar')
+    assert.equal(await page.locator('#f1').count(), 0, 'no sign-in form: the link signed in')
+  })
+  await context.close()
+  const context2 = await browser.newContext({ viewport: { width: 1280, height: 860 } })
+  await mock(context2)
+  const page2 = await context2.newPage()
+  await step('a used sign-in link says so and keeps the code route open', async () => {
+    await page2.goto(url + '#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired')
+    await page2.locator('#f1').waitFor()
+    assert.match(await page2.getByRole('alert').innerText(), /already used or has expired/)
+    assert.equal(await page2.evaluate(() => location.hash), '')
+  })
+  await context2.close()
+}
+
 await browser.close(); server.close()
 if (failures) { console.log(`${failures} smoke step(s) failed`); process.exit(1) }
 console.log('Smoke test passed')
