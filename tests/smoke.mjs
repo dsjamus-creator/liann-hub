@@ -83,6 +83,7 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
   })
   await step(`${tag}: a wrong code is refused with a clear message`, async () => {
     assert.equal(await page.locator('#f2 .code input').count(), 6, 'one six-digit code for every sign-in (owner, 13 Oct 2026)')
+    assert.match(await page.locator('#linknote').innerText(), /don't tap the sign-in link/, 'the email link uses up the code, so the screen says not to tap it')
     await page.locator('#c0').pressSequentially('111111')
     await page.getByRole('alert').waitFor()
     assert.match(await page.getByRole('alert').innerText(), /wrong or has expired/)

@@ -108,6 +108,7 @@ export function vCode(s) {
   <h1>Enter the code we sent</h1>
   <p class="muted" style="margin:0">Sent to <b>${esc(s.email)}</b>. Check your spam folder if it hasn't arrived.</p>
   <div class="code">${Array.from({ length: CODE_LENGTH }, (_, i) => i).map(i => `<input id="c${i}" inputmode="numeric" autocomplete="${i ? 'off' : 'one-time-code'}"${i ? ' maxlength="1"' : ''} aria-label="Digit ${i + 1}">`).join('')}</div>
+  <p class="note muted" id="linknote" style="margin:0">Type the code from the email. Please don't tap the sign-in link in it: that opens a different site and uses the code up.</p>
   ${s.error ? `<p class="note err" role="alert">${esc(s.error)}</p>` : ''}
   <button class="btn" type="submit" ${s.busy ? 'disabled' : ''}>${s.busy ? 'Checking…' : 'Sign in'}</button>
   <div style="display:flex;justify-content:space-between"><button type="button" class="link" id="back">Use a different email</button><button type="button" class="link" id="resend">Resend code</button></div></form></div>`
