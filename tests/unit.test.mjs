@@ -88,6 +88,38 @@ test('email code sign-in stores a session and reads SetLists with a bearer token
   await assert.rejects(acct.setlists(), /Sign in/)
 })
 
+test('the sign-in email link returns to this site, and the session in the address is accepted', async () => {
+  const f = fakeServer(), sent = []
+  const redirect = 'POST https://sb.test/auth/v1/otp?redirect_to=https%3A%2F%2Fapp.test%2F'
+  const fetchImpl = async (u, o = {}) => { sent.push(`${o.method || 'GET'} ${u}`); return f.fetchImpl(u, o) }
+  const acct = createAccount({ pinyinApi: 'https://api.test', backend: 'https://be.test', fetchImpl, storage: f.storage, origin: 'https://app.test' })
+  // Supabase is asked to send the email link back here, not to the project's default site (the Pinyin Tiles game).
+  const orig = f.fetchImpl; f.fetchImpl = async (u, o = {}) => (`${o.method || 'GET'} ${u}` === redirect ? { ok: true, status: 200, json: async () => ({}) } : orig(u, o))
+  await acct.requestCode('a@b.c')
+  assert.ok(sent.includes(redirect))
+  // Other fragments (page links) are not sign-in links.
+  assert.equal(acct.acceptLink('#read/ep1a'), null)
+  assert.equal(acct.acceptLink(''), null)
+  assert.equal(acct.hasSession(), false)
+  // A sign-in link: the session comes in the fragment and the user is then looked up as usual.
+  assert.deepEqual(acct.acceptLink('#access_token=at9&refresh_token=rt9&expires_in=3600&token_type=bearer&type=magiclink'), { ok: true })
+  assert.equal(acct.hasSession(), true)
+  assert.deepEqual(await acct.user(), { email: 'a@b.c', confirmed: true })
+  // A half-formed fragment is refused rather than stored.
+  const acct2 = createAccount({ pinyinApi: 'https://api.test', backend: 'https://be.test', fetchImpl: f.fetchImpl, storage: { getItem: () => null, setItem: () => {}, removeItem: () => {} }, origin: 'https://app.test' })
+  assert.throws(() => acct2.acceptLink('#access_token=at9'), /incomplete/)
+})
+
+test('a sign-in link that was already used says so and points at the code', () => {
+  const f = fakeServer()
+  const acct = createAccount({ pinyinApi: 'https://api.test', backend: 'https://be.test', fetchImpl: f.fetchImpl, storage: f.storage })
+  const used = acct.acceptLink('#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired')
+  assert.equal(used.ok, false)
+  assert.match(used.message, /already used or has expired.*code/)
+  assert.equal(acct.hasSession(), false)
+  assert.match(acct.acceptLink('#error=server_error&error_description=Something+broke').message, /Something broke/)
+})
+
 test('a missing learner profile leads to AlongSide through a one-time pass, on AlongSide addresses only', async () => {
   const f = fakeServer(), profile = { url: 'https://be.test/student#profile', sessionPass: { url: 'https://be.test/learning/session-pass', next: '/student#profile' } }
   const acct = createAccount({ pinyinApi: 'https://api.test', backend: 'https://be.test', fetchImpl: f.fetchImpl, storage: f.storage })

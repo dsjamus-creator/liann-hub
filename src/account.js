@@ -9,7 +9,7 @@ export class AccountError extends Error {
   constructor(message, code, status) { super(message); this.code = code; this.status = status }
 }
 
-export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(...a), storage = globalThis.localStorage, now = () => Date.now() }) {
+export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(...a), storage = globalThis.localStorage, now = () => Date.now(), origin = globalThis.location?.origin }) {
   let authConfig = null
 
   const read = () => { try { return JSON.parse(storage.getItem(SESSION_KEY) || 'null') } catch { return null } }
@@ -44,7 +44,11 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
 
   async function requestCode(email) {
     const s = await settings()
-    await json(`${s.supabaseUrl}/auth/v1/otp`, {
+    // The email also carries a sign-in link. Without a return address Supabase sends it to the project's default site (the
+    // Pinyin Tiles game), which uses the code up. Asking for this site brings the link back here; Supabase ignores an address
+    // that is not on its Redirect URLs list.
+    const back = origin ? `?redirect_to=${encodeURIComponent(`${origin}/`)}` : ''
+    await json(`${s.supabaseUrl}/auth/v1/otp${back}`, {
       method: 'POST', headers: { 'content-type': 'application/json', apikey: s.publishableKey },
       body: JSON.stringify({ email, create_user: true }),
     })
@@ -65,6 +69,21 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     }
     store(session)
     return user()
+  }
+
+  // The sign-in link in the email returns here with the session in the address fragment (#access_token=...&refresh_token=...),
+  // or with #error=...&error_code=otp_expired when the link or code was already used. Returns null for any other fragment.
+  function acceptLink(hash) {
+    const q = new URLSearchParams(String(hash || '').replace(/^#/, ''))
+    if (q.get('access_token')) {
+      store({ access_token: q.get('access_token'), refresh_token: q.get('refresh_token'), expires_in: q.get('expires_in'), expires_at: q.get('expires_at') })
+      return { ok: true }
+    }
+    if (q.get('error') || q.get('error_code')) {
+      const used = ['otp_expired', 'access_denied'].includes(q.get('error_code') || q.get('error'))
+      return { ok: false, code: q.get('error_code') || q.get('error'), message: used ? 'That sign-in link was already used or has expired. Type the code from the email, or send a new code.' : (q.get('error_description') || 'That sign-in link could not be used.').replace(/\+/g, ' ') }
+    }
+    return null
   }
 
   async function accessToken() {
@@ -164,5 +183,5 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     }
   }
 
-  return { requestCode, verifyCode, accessToken, user, signOut, setlists, setlistWords, profileLink, household, householdAction, hasSession: () => Boolean(read()?.access_token) }
+  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, profileLink, household, householdAction, hasSession: () => Boolean(read()?.access_token) }
 }

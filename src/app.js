@@ -439,13 +439,20 @@ function showTour() {
 window.addEventListener('hashchange', () => { if (S.view === 'hub') { S.page = pageFromHash(); S.openList = null; render(); openFromHash() } })
 
 async function start() {
+  // Returning from the sign-in link in the email: take the session out of the address before the hub reads it as a page.
+  let linkError = ''
+  if (/^#(access_token|error)=/.test(location.hash)) {
+    try { const link = account.acceptLink(location.hash); if (link && !link.ok) linkError = link.message }
+    catch (error) { linkError = error.message }
+    history.replaceState(null, '', location.pathname + location.search)
+  }
   applyTheme(); render()
   loadComics(config.comicsManifest).then(c => { S.comics = c }, () => { S.comics = [] }).finally(() => { if (S.view === 'hub' || S.view === 'comic') { render(); openFromHash() } })
   loadDownloads(config.downloadsManifest).then(d => { S.downloads = d }, e => { S.downloads = e }).finally(() => { if (S.view === 'hub') render() })
   // A shared comic link (#read/<episode>) opens the comic for anyone; the rest of the hub needs a sign-in.
   const shared = hashParts()[0] === 'read' && hashParts()[1], gate = extra => (shared ? (go('comic'), openFromHash()) : go('email', extra))
-  if (!account.hasSession()) return gate()
-  try { const user = await account.user(); user ? enterHub(user) : gate() }
+  if (!account.hasSession()) return gate(linkError ? { error: linkError } : undefined)
+  try { const user = await account.user(); user ? enterHub(user) : gate(linkError ? { error: linkError } : undefined) }
   catch (error) { gate({ error: error.message }) }
 }
 start()
