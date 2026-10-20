@@ -117,10 +117,11 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     assert.match(await page.locator('table.words').innerText(), /一般[\s\S]*ordinary[\s\S]*一半[\s\S]*half/)
     await noOverflow(page); await shot(page, `${tag}-library`)
   })
-  await step(`${tag}: Downloads offers the 19 publicly verified files`, async () => {
+  await step(`${tag}: Downloads offers the 20 publicly verified files`, async () => {
     await page.goto(url + '#downloads'); await page.locator('[data-slot]').first().waitFor()
     assert.equal(await page.locator('[data-slot]').count(), 25, 'the reserved figures slot is hidden from Downloads')
-    assert.equal(await page.locator('[data-slot] a[download]').count(), 19)
+    assert.equal(await page.locator('[data-slot] a[download]').count(), 20)
+    assert.equal(await page.locator('[data-slot="lyricsync/extension"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/lyricsync/chrome-edge/0.9.29/LyricSync-v0.9.29-cleared.zip?v=a5e49d0109a9')
     assert.equal(await page.locator('[data-slot="dualsubs/extension"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/dual-subs/chrome-edge/0.16.117/dual-subs-v0.16.117.zip?v=d3d2e5b19c54')
     assert.equal(await page.locator('[data-slot="polyflow/windows"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/polyflow/windows/0.1.0/PolyFlow-Setup-0.1.0.exe')
     assert.equal(await page.locator('[data-slot="mahjong-tones/test-build"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/mahjong-tones/windows/0.2.0/LiANN-Mahjong-Tones-Windows-0.2.0.zip')

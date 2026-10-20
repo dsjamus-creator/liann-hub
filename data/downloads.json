@@ -17,10 +17,10 @@
     "producer": "codex"
   },
   {
-    "file": null,
-    "bytes": null,
-    "sha256": null,
-    "builtAt": null,
+    "file": "https://downloads.lwliann.com/lyricsync/chrome-edge/0.9.29/LyricSync-v0.9.29-cleared.zip?v=a5e49d0109a9",
+    "bytes": 45339014,
+    "sha256": "a5e49d0109a9ad557daeab7faae86dd21d925459a5f62e52934f4d2f0978a6ec",
+    "builtAt": "2026-10-20T11:24:43Z",
     "product": "lyricsync",
     "name": "LyricSync for Chrome/Edge — preview build for testers",
     "version": "0.9.29",
@@ -28,9 +28,9 @@
     "hubSlot": "lyricsync/extension",
     "sourceRepo": "dsjamus-creator/lyricsync",
     "sourceCommit": null,
-    "buildCommand": null,
-    "licenceNotes": "PaddleOCR models and ONNX Runtime are bundled; a packaged song-lyric sample has not been cleared.",
-    "notes": "LyricSync 0.9.29 withheld: packaged MODEL-PROVENANCE.md contains an unreviewed third-party song-lyric sample.",
+    "buildCommand": "node scripts/package-extension.mjs dist/LyricSync-v0.9.29-cleared; Compress-Archive folder contents to LyricSync-v0.9.29-cleared.zip",
+    "licenceNotes": "PaddleOCR models, ONNX Runtime and CC-CEDICT-derived dictionary data are bundled with attribution notices. Unreviewed song text was removed from this preview package.",
+    "notes": "Preview build for testers. Unzip, open chrome://extensions, turn on Developer mode, choose Load unpacked. The public release will come from the Chrome Web Store and Edge Add-ons.",
     "producer": "codex"
   },
   {
