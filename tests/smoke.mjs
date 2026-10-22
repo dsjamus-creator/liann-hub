@@ -131,7 +131,7 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     assert.doesNotMatch(await page.locator('main').innerText(), /signing|redistribution/i)
     await noOverflow(page); await shot(page, `${tag}-downloads`)
     if (tag === 'phone') {
-      await page.locator('[data-slot="kids/stickers/kinetic-shield-specular"]').scrollIntoViewIfNeeded()
+      await page.locator('[data-slot="kids/stickers/kinetic-shield-bw"]').scrollIntoViewIfNeeded()
       await shot(page, 'phone-downloads-last')
     }
   })
@@ -290,10 +290,10 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     assert.equal(await page.locator('main a[download]').count(), 1, 'the Issue One PDF is the only download on the Read page')
     await shot(page, `${tag}-read`)
     await page.goto(url + '#kids'); await page.locator('[data-slot="kids/colouring/characters"]').waitFor()
-    assert.match(await page.locator('main').innerText(), /Colour the characters[\s\S]*Colour by tone[\s\S]*Specular sticker sheets/)
-    assert.equal(await page.locator('main a[download]').count(), 7)
-    assert.equal(await page.locator('[data-slot="kids/stickers/bella-print"], [data-slot="kids/stickers/bella"], [data-slot="kids/stickers/kinetic-shield"], [data-slot="kids/stickers/kinetic-shield-colour"], [data-slot="kids/stickers/adventure-ribbon-specular"], [data-slot="kids/stickers/adventure-ribbon-colour"]').count(), 0, 'removed cards stay removed')
-    assert.deepEqual(await page.locator('main [data-slot^="kids/stickers/"]').evaluateAll(els => els.map(e => e.dataset.slot)), ['kids/stickers/specular', 'kids/stickers/adventure-ribbon-bw', 'kids/stickers/kinetic-shield-bw', 'kids/stickers/kinetic-shield-specular'])
+    assert.match(await page.locator('main').innerText(), /Colour the characters[\s\S]*Colour by tone[\s\S]*Adventure Ribbon & Kinetic Shield specular sticker pack/)
+    assert.equal(await page.locator('main a[download]').count(), 6)
+    assert.equal(await page.locator('[data-slot="kids/stickers/bella-print"], [data-slot="kids/stickers/bella"], [data-slot="kids/stickers/kinetic-shield"], [data-slot="kids/stickers/kinetic-shield-colour"], [data-slot="kids/stickers/adventure-ribbon-specular"], [data-slot="kids/stickers/adventure-ribbon-colour"], [data-slot="kids/stickers/kinetic-shield-specular"]').count(), 0, 'removed cards stay removed')
+    assert.deepEqual(await page.locator('main [data-slot^="kids/stickers/"]').evaluateAll(els => els.map(e => e.dataset.slot)), ['kids/stickers/specular', 'kids/stickers/adventure-ribbon-bw', 'kids/stickers/kinetic-shield-bw'])
     assert.equal(await page.locator('main button[disabled]').count(), 0, 'no Kids card is an empty "Coming soon"')
     assert.equal(await page.locator('[data-slot="kids/colouring/flight"]').count(), 0, 'the unreleased Flight book has no card')
     assert.equal(await page.locator('[data-slot="kids/colouring/characters"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/kids/colouring/1.1.0/BellaLiANN-Colour-the-Characters-1.1.0-A4.pdf?v=fbd7b2172238')
@@ -303,7 +303,7 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     if (tag === 'phone') {
       await page.locator('[data-slot="kids/stickers/specular"]').scrollIntoViewIfNeeded()
       await shot(page, 'phone-kids-stickers')
-      await page.locator('[data-slot="kids/stickers/kinetic-shield-specular"]').scrollIntoViewIfNeeded()
+      await page.locator('[data-slot="kids/stickers/kinetic-shield-bw"]').scrollIntoViewIfNeeded()
       await shot(page, 'phone-kids-artwork')
     }
   })
