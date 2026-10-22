@@ -10,7 +10,7 @@ The browser hub for **app.lwliann.com**. It is a static web app with no build st
 | Who's learning? | The signed-in account. Family, Couple and Tutor profiles come later, once the backend has profiles (D15/D18). |
 | Home, Apps, Discover | `src/config.js`. Pinyin Tiles and Pinyin Puzzle open on `playtest.lwliann.com`. **LiANN Pinyin Mahjong Tones is the Unity app here** (owner decision, 12 Oct 2026). The web edition stays on the playtest site, and the hub lists the Unity build from Downloads. |
 | Library | The learner's AlongSide SetLists: `GET /learning/setlists` and `/learning/setlists/:id/words` with the Supabase bearer token. Read only. |
-| Downloads, Read, Kids | `data/downloads.json`, a copy of the registry's `downloads/manifest.json`. A file is offered only when its entry has a file, a size and a SHA-256; until then the Kids cards say "Coming soon". |
+| Downloads, Read, Kids | `data/downloads.json`, a copy of the registry's `downloads/manifest.json`. A file is offered only when its entry has a file, a size and a SHA-256; a Kids card with no file is not shown at all (the reserved Flight colouring book has an entry in the manifest but no card until its PDF exists). |
 | Figures | Early 3D models drawn in the browser with three.js r128 (MIT), served from `vendor/three-r128/` so the page's script policy stays `'self'`. It loads only when Figures opens. |
 | Shop | The design's items, all "Coming soon" with prices to be set. Nothing can be bought yet. |
 | Plan | The current plan (Free), account and sign-out, appearance, and the Learner, Tutor and Organisation plans. Plans other than Free say "Coming soon". |

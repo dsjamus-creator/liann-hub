@@ -298,13 +298,13 @@ function slotButton(s, slot, label) {
   return d?.available ? `<a class="btn" href="${esc(d.href)}" download rel="noopener">${esc(label)}</a>` : '<button class="btn ghost" disabled>Coming soon</button>'
 }
 
-const KIDBOOKS = [['cb1', 'Bella &amp; LiANN colouring book: Flight', '12 pages from the comic', 'Colour Bella’s flight, then print it at home.', 'kids/colouring/flight'],
-  ['cb2', 'Colour the characters', '24 A4 pages', 'Colour Bella and the characters from Issue 1.', 'kids/colouring/characters'],
+const KIDBOOKS = [['cb2', 'Colour the characters', '24 A4 pages', 'Colour Bella and the characters from Issue 1.', 'kids/colouring/characters'],
   ['cb3', 'Colour by tone', '20 A4 pages', 'Read a word, then colour its tone.', 'kids/colouring/by-tone'],
   ['cb4', 'Issue 1 colouring pages', '22 A4 pages', 'Colour scenes from Bella & LiANN Issue 1.', 'kids/colouring/issue1']]
-const KIDSTICK = [['sp1', 'Bella &amp; LiANN sticker pack', '4 A4 sheets', 'Print them on sticker paper.', 'kids/stickers/bella-print'],
-  ['sp2', 'Specular sticker sheets', '2 A4 sheets', 'Colour character stickers to print.', 'kids/stickers/specular'],
-  ['sp3', 'Kinetic Shield sticker pack', '2 A4 sheets', 'Black-and-white and colour character stickers.', 'kids/stickers/kinetic-shield']]
+const KIDSTICK = [['sp2', 'Specular sticker sheets', '2 A4 sheets', 'Colour character stickers to print.', 'kids/stickers/specular']]
+
+// Manifest slots that stay in the manifest but have no card on the Kids page.
+const HIDDEN_KIDS_SLOTS = new Set(['kids/stickers/bella', 'kids/stickers/kinetic-shield-bw', 'kids/stickers/kinetic-shield-colour', 'kids/stickers/adventure-ribbon-specular'])
 
 function kidCard(s, [k, t, sub, d, slot], label) {
   return `<div class="c"${slot ? ` data-slot="${slot}"` : ''}>${art('kid:' + k)}<div class="t">${t}</div><div class="s">${esc(sub)}</div><div class="d">${esc(d)}</div><div class="acts">${slot ? slotButton(s, slot, label) : '<button class="btn ghost" disabled>Coming soon</button>'}</div></div>`
@@ -314,7 +314,7 @@ function pKids(s) {
   return `<div class="kidhead"><img src="assets/sticker-bella.png" alt=""><div><h2 style="margin:0;font-size:1.5rem">Kids</h2><div class="muted">Colouring books and sticker packs to print at home with a grown-up.</div></div></div>
   <section class="sec"><div class="sechead"><h2>Colouring books</h2></div><div class="grid">${KIDBOOKS.map(x => kidCard(s, x, 'Download PDF')).join('')}</div></section>
   <section class="sec"><div class="sechead"><h2>Sticker packs</h2></div><div class="grid">${KIDSTICK.map(x => kidCard(s, x, 'Download PDF')).join('')}</div></section>
-  <section class="sec"><div class="sechead"><h2>Individual sticker artwork</h2></div>${downloadsFor(s, d => d.product === 'kids' && d.platform === 'PNG')}</section>`
+  <section class="sec"><div class="sechead"><h2>Individual sticker artwork</h2></div>${downloadsFor(s, d => d.product === 'kids' && d.platform === 'PNG' && !HIDDEN_KIDS_SLOTS.has(d.slot))}</section>`
 }
 
 function pDiscover(s) {
