@@ -304,7 +304,7 @@ const KIDBOOKS = [['cb2', 'Colour the characters', '24 A4 pages', 'Colour Bella 
 const KIDSTICK = [['sp2', 'Specular sticker sheets', '2 A4 sheets', 'Colour character stickers to print.', 'kids/stickers/specular']]
 
 // Manifest slots that stay in the manifest but have no card on the Kids page.
-const HIDDEN_KIDS_SLOTS = new Set(['kids/stickers/bella', 'kids/stickers/kinetic-shield-bw', 'kids/stickers/kinetic-shield-colour', 'kids/stickers/adventure-ribbon-specular', 'kids/stickers/adventure-ribbon-colour'])
+const HIDDEN_KIDS_SLOTS = new Set(['kids/stickers/bella', 'kids/stickers/kinetic-shield-colour', 'kids/stickers/adventure-ribbon-specular', 'kids/stickers/adventure-ribbon-colour'])
 
 function kidCard(s, [k, t, sub, d, slot], label) {
   return `<div class="c"${slot ? ` data-slot="${slot}"` : ''}>${art('kid:' + k)}<div class="t">${t}</div><div class="s">${esc(sub)}</div><div class="d">${esc(d)}</div><div class="acts">${slot ? slotButton(s, slot, label) : '<button class="btn ghost" disabled>Coming soon</button>'}</div></div>`
