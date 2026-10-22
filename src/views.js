@@ -298,8 +298,7 @@ function slotButton(s, slot, label) {
   return d?.available ? `<a class="btn" href="${esc(d.href)}" download rel="noopener">${esc(label)}</a>` : '<button class="btn ghost" disabled>Coming soon</button>'
 }
 
-const KIDBOOKS = [['cb1', 'Bella &amp; LiANN colouring book: Flight', '12 pages from the comic', 'Colour Bella’s flight, then print it at home.', 'kids/colouring/flight'],
-  ['cb2', 'Colour the characters', '24 A4 pages', 'Colour Bella and the characters from Issue 1.', 'kids/colouring/characters'],
+const KIDBOOKS = [['cb2', 'Colour the characters', '24 A4 pages', 'Colour Bella and the characters from Issue 1.', 'kids/colouring/characters'],
   ['cb3', 'Colour by tone', '20 A4 pages', 'Read a word, then colour its tone.', 'kids/colouring/by-tone'],
   ['cb4', 'Issue 1 colouring pages', '22 A4 pages', 'Colour scenes from Bella & LiANN Issue 1.', 'kids/colouring/issue1']]
 const KIDSTICK = [['sp1', 'Bella &amp; LiANN sticker pack', '4 A4 sheets', 'Print them on sticker paper.', 'kids/stickers/bella-print'],
