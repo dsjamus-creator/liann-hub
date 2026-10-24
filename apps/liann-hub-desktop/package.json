@@ -1,0 +1,51 @@
+{
+  "name": "liann-hub-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Learning with LiANN HUB for Windows and macOS",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.cjs",
+    "dist:win": "electron-builder --win nsis",
+    "dist:mac": "electron-builder --mac dmg"
+  },
+  "devDependencies": {
+    "electron": "^44.9.3",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "com.lwliann.hub",
+    "productName": "LiANN HUB",
+    "files": [
+      "main.cjs",
+      "url-policy.cjs",
+      "package.json",
+      "icons/*"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "icons/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "artifactName": "LiANN-HUB-Setup-${version}.${ext}"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "icons/icon.icns",
+      "category": "public.app-category.education",
+      "artifactName": "LiANN-HUB-${version}-${arch}.${ext}"
+    },
+    "dmg": {
+      "title": "LiANN HUB ${version}"
+    }
+  }
+}
