@@ -118,7 +118,7 @@ async function page(request, env, url, now) {
   if (!object) return deny(404)
   return new Response(request.method === 'HEAD' ? null : object.body, { headers: {
     'content-type': 'image/webp', 'content-length': String(object.size),
-    'cache-control': 'private, max-age=1800', 'content-disposition': 'inline', 'x-robots-tag': 'noindex',
+    'cache-control': 'private, no-store', 'content-disposition': 'inline', 'x-robots-tag': 'noindex',
     'cross-origin-resource-policy': 'same-origin', 'x-content-type-options': 'nosniff',
   } })
 }
