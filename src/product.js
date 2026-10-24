@@ -64,12 +64,32 @@ const row = (m, glyph) => `<div class="c prow" data-os="${esc(m.os)}"><div class
   <div class="status ${m.status.cls}">${esc(m.status.text)}</div><div class="d">${esc(m.note || m.buttons.find(b => b.meta)?.meta || '')}</div>
   ${m.note && m.buttons.some(b => b.meta) ? `<div class="d">${esc(m.buttons.find(b => b.meta).meta)}</div>` : ''}<div class="acts">${m.buttons.map(button).join('')}</div></div>`
 
+// Light and dark, as in the hub's Appearance settings: same storage key, so the choice follows the visitor
+// between the hub and every product page.
+export const THEME_SWITCH = `<div class="pmodes" role="group" aria-label="Theme">${['light', 'dark'].map(m => `<button type="button" class="chip" data-mode="${m}" aria-pressed="false">${m === 'light' ? 'Light' : 'Dark'}</button>`).join('')}</div>`
+
+export function setThemeMode(mode, root = document.documentElement, storage = globalThis.localStorage) {
+  if (!/^(light|dark)$/.test(mode)) return
+  root.dataset.t = mode
+  try {
+    const saved = JSON.parse(storage.getItem('liann-hub-theme') || 'null')
+    storage.setItem('liann-hub-theme', JSON.stringify({ ds: saved && DS.some(d => d[0] === saved.ds) ? saved.ds : root.dataset.ds || 'liann', t: mode }))
+  } catch { /* storage blocked: the choice lasts for this page only */ }
+}
+
+function bindThemeSwitch(host, root = document.documentElement) {
+  const buttons = [...host.querySelectorAll('.pmodes [data-mode]')]
+  const sync = () => buttons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === root.dataset.t)))
+  buttons.forEach(b => { b.onclick = () => { setThemeMode(b.dataset.mode, root); sync() } })
+  sync()
+}
+
 export function productHTML(product, downloads, os, others = []) {
   const rows = orderPlatforms(product.platforms, os).map(p => platformModel(p, downloads))
   const links = (product.links || []).map(([t, h]) => `<li><a href="${esc(h)}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join('')
   return `<div class="product fade">
   <header class="ptop"><a class="plock" href="/" aria-label="Learning with LiANN hub">${LOCKUP}</a>
-    <nav class="plinks"><a href="/#apps">All apps</a><a href="/#downloads">Downloads</a></nav></header>
+    <nav class="plinks"><a href="/#apps">All apps</a><a href="/#downloads">Downloads</a>${THEME_SWITCH}</nav></header>
   <main class="pmain">
     <section class="hero"><div class="pic">${art(product.app)}</div>
       <div class="txt"><div class="eyebrow">${esc(product.kind)}</div><h1>${esc(product.name)}</h1><p class="lead">${esc(product.oneLine)}</p><p class="muted">${esc(product.audience)}</p></div></section>
@@ -112,6 +132,7 @@ export async function mount(root = document.getElementById('root'), slug = docum
   if (!product) { root.innerHTML = `<div class="gate"><div class="card"><h1>That app isn't here</h1><p class="muted" style="margin:0"><a href="/#apps">See every app</a></p></div></div>`; return }
   document.title = `${product.name} · Learning with LiANN`
   root.innerHTML = productHTML(product, downloads, detectOS(), alsoFrom(products, slug))
+  bindThemeSwitch(root)
 }
 
 if (typeof document !== 'undefined' && document.documentElement.dataset.product) mount().catch(e => { document.getElementById('root').innerHTML = `<div class="gate"><div class="card"><p class="err">${esc(e.message)}</p></div></div>` })

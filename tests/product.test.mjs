@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { readFile, access } from 'node:fs/promises'
 import { APPS } from '../src/config.js'
 import { parseManifest } from '../src/downloads.js'
-import { alsoFrom, detectOS, orderPlatforms, platformModel, productHTML, STORES } from '../src/product.js'
+import { alsoFrom, setThemeMode, THEME_SWITCH, detectOS, orderPlatforms, platformModel, productHTML, STORES } from '../src/product.js'
 
 const BASE = 'https://app.lwliann.com/data/downloads.json'
 const products = JSON.parse(await readFile(new URL('../data/products.json', import.meta.url), 'utf8')).products
@@ -81,4 +81,18 @@ test('Dual Subs and PolyFlow never list each other under Also from; everything e
   assert.ok(ids('dual-subs').includes('alongside') && ids('polyflow').includes('lyricsync'))
   assert.ok(!ids('polyflow').includes('polyflow'), 'a page never lists itself')
   assert.equal(ids('pinyin-tiles').length, products.length - 1)
+})
+
+test('every product page offers Light and Dark, and the choice is stored under the hub key', () => {
+  const html = productHTML(products[0], manifest, 'other', [])
+  assert.ok(html.includes(THEME_SWITCH) && /data-mode="light"/.test(html) && /data-mode="dark"/.test(html))
+  const root = { dataset: { ds: 'cadence', t: 'dark' } }, mem = {}
+  const storage = { getItem: k => mem[k] ?? null, setItem: (k, v) => { mem[k] = v } }
+  setThemeMode('light', root, storage)
+  assert.equal(root.dataset.t, 'light')
+  assert.deepEqual(JSON.parse(mem['liann-hub-theme']), { ds: 'cadence', t: 'light' }, 'the hub palette is kept; only the mode changes')
+  setThemeMode('sepia', root, storage)
+  assert.equal(root.dataset.t, 'light', 'an unknown mode is ignored')
+  assert.doesNotThrow(() => setThemeMode('dark', root, { getItem() { throw new Error('blocked') }, setItem() { throw new Error('blocked') } }))
+  assert.equal(root.dataset.t, 'dark', 'blocked storage still switches the page')
 })
