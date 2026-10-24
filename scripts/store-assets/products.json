@@ -1,0 +1,79 @@
+{
+  "_comment": "Store assets rendered in the hub's theme. Glyphs and one-liners come from src/config.js APPS; captures/ holds raw screenshots taken from the shipped apps (see README.md).",
+  "products": [
+    {
+      "id": "polyflow",
+      "name": "PolyFlow",
+      "glyph": "琴",
+      "line": "Multilingual lyrics that turn the page as you play",
+      "stores": ["google-play", "microsoft-store"],
+      "phone": [
+        ["polyflow-rehearse-phone", "Rehearse: the lyric, its pinyin and English, over the piano"],
+        ["polyflow-perform-phone", "Perform: Auto turns the page from your saved counts"],
+        ["polyflow-index-phone", "Choose Studio, Performance or Light"],
+        ["polyflow-studio-empty-phone", "Studio, ready for a song"]
+      ],
+      "desktop": [
+        ["polyflow-rehearse-desktop", "Rehearse: the lyric, its pinyin and English, over the piano"],
+        ["polyflow-perform-desktop", "Perform: Auto turns the page from your saved counts"],
+        ["polyflow-index-desktop", "Choose Studio, Performance or Light"],
+        ["polyflow-light-desktop", "Light: the simpler stage workspace"]
+      ]
+    },
+    {
+      "id": "pinyin-tiles",
+      "name": "LiANN Pinyin Tiles",
+      "glyph": "拼",
+      "line": "Build the word. Hear the tones. Know what it means.",
+      "stores": ["google-play"],
+      "phone": [
+        ["tiles-board-phone", "Place initials and finals, then choose every tone"],
+        ["tiles-start-phone", "Start a match: mode, vocabulary and opponent"],
+        ["tiles-words-phone", "My words: everything you have built, with meanings"]
+      ],
+      "desktop": [
+        ["tiles-board-desktop", "A match in progress"],
+        ["tiles-landing-desktop", "Build the word. Hear the tones. Know what it means."]
+      ]
+    },
+    {
+      "id": "pinyin-puzzle",
+      "name": "LiANN Pinyin Puzzle",
+      "glyph": "谜",
+      "line": "Read the clue. Build the Pinyin. Cross every answer.",
+      "stores": ["google-play"],
+      "phone": [
+        ["puzzle-board-phone", "An 11 by 11 crossword of initials, finals and tones"],
+        ["puzzle-landing-phone", "English clues; shared squares help solve the next answer"]
+      ],
+      "desktop": [
+        ["puzzle-board-desktop", "Across and Down, with HSK level and tile count on every clue"],
+        ["puzzle-landing-desktop", "Read the clue. Build the Pinyin. Cross every answer."]
+      ]
+    },
+    {
+      "id": "mahjong-tones",
+      "name": "LiANN Pinyin Mahjong Tones",
+      "glyph": "声",
+      "line": "Match the word to its meaning, then give it the right tones",
+      "stores": ["microsoft-store"],
+      "phone": [
+        ["tones-board-phone", "Find a pair, hear the word, choose its tones"],
+        ["tones-start-phone", "Mode, board size and word set"]
+      ],
+      "desktop": [
+        ["tones-board-desktop", "A Starter board in Practice"],
+        ["tones-start-desktop", "Practice, Challenge or Zen; 16 to 72 tiles; HSK 1 to 3"]
+      ]
+    },
+    {
+      "id": "alongside",
+      "name": "AlongSide",
+      "glyph": "伴",
+      "line": "Learn AlongSide the video",
+      "stores": ["apple-app-store", "google-play"],
+      "phone": [],
+      "desktop": []
+    }
+  ]
+}
