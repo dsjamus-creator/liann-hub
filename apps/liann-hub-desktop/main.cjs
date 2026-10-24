@@ -20,11 +20,13 @@ function secureContents(contents) {
     openExternal(url);
     return { action: 'deny' };
   });
-  contents.on('will-navigate', (event, url) => {
+  const handleNavigation = (event, url) => {
     if (isHubUrl(url)) return;
     event.preventDefault();
     openExternal(url);
-  });
+  };
+  contents.on('will-navigate', handleNavigation);
+  contents.on('will-redirect', handleNavigation);
   contents.on('will-attach-webview', event => event.preventDefault());
 }
 

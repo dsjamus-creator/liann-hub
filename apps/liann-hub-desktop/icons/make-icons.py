@@ -1,30 +1,28 @@
-"""Generate the HUB's simple two-colour desktop mark with Pillow."""
+"""Package the approved LiANN lettering as Windows and Mac app icons."""
 
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 
 ROOT = Path(__file__).parent
-SIZE = 1024
-image = Image.new("RGBA", (SIZE, SIZE), "#121410")
-draw = ImageDraw.Draw(image)
-draw.rounded_rectangle((54, 54, 970, 970), radius=214, fill="#1B1914", outline="#8A9B7E", width=18)
+source = Image.open(ROOT / "canonical-logo.png").convert("RGBA")
 
-font_paths = [
-    Path("C:/Windows/Fonts/arialbd.ttf"),
-    Path("/System/Library/Fonts/Supplemental/Arial Bold.ttf"),
-    Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
-]
-font_path = next((path for path in font_paths if path.exists()), None)
-font = ImageFont.truetype(str(font_path), 460) if font_path else ImageFont.load_default()
-text = "Li"
-bounds = draw.textbbox((0, 0), text, font=font)
-width = bounds[2] - bounds[0]
-height = bounds[3] - bounds[1]
-x = (SIZE - width) / 2 - bounds[0]
-y = (SIZE - height) / 2 - bounds[1] - 12
-draw.text((x, y), text, font=font, fill="#F8F1E5", stroke_width=0)
-draw.ellipse((760, 760, 860, 860), fill="#DE5A4F")
+# Crop the red LiANN lettering from the approved transparent brand lockup.
+# Its pixels are preserved exactly; only scale and placement change.
+red = Image.new("L", source.size)
+red.putdata([
+    alpha if red_channel > green * 1.25 and red_channel > blue * 1.25 else 0
+    for red_channel, green, blue, alpha in source.get_flattened_data()
+])
+box = red.getbbox()
+if box is None:
+    raise RuntimeError("Canonical logo has no LiANN lettering")
+lettering = source.crop(box)
+width = 880
+height = round(lettering.height * width / lettering.width)
+lettering = lettering.resize((width, height), Image.Resampling.LANCZOS)
 
-image.save(ROOT / "icon.png")
-image.save(ROOT / "icon.ico", sizes=[(16, 16), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
-image.save(ROOT / "icon.icns")
+icon = Image.new("RGBA", (1024, 1024), "#121410")
+icon.alpha_composite(lettering, ((1024 - width) // 2, (1024 - height) // 2))
+icon.save(ROOT / "icon.png")
+icon.save(ROOT / "icon.ico", sizes=[(16, 16), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
+icon.save(ROOT / "icon.icns")
