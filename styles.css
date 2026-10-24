@@ -318,3 +318,25 @@ a.btn{display:inline-block;text-decoration:none;text-align:center}
 .reader .pg img,.reader .face img{pointer-events:none;-webkit-user-drag:none}
 .reader .wm{position:fixed;inset:0;z-index:90;pointer-events:none;background-repeat:repeat}
 @media print{.reader,#root{display:none!important}}
+
+/* ---------- product pages (app.lwliann.com/<id>) ---------- */
+.product{min-height:100%;display:grid;grid-template-rows:auto 1fr auto;background:var(--bg)}
+.ptop{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px clamp(16px,4vw,48px);flex-wrap:wrap}
+.ptop .brand{text-decoration:none;color:var(--fg);font-size:1rem}.ptop .brand b{color:var(--accent)}
+.plinks{display:flex;gap:6px}.plinks a{color:var(--muted);text-decoration:none;font-weight:800;font-size:.9rem;padding:.4rem .8rem;border-radius:999px}.plinks a:hover{color:var(--fg);background:var(--card)}
+.pmain{background:var(--main);border-top-left-radius:18px;border-top-right-radius:18px;padding:28px clamp(16px,4vw,48px) 60px;min-width:0}
+.pmain>*{max-width:1180px;margin-inline:auto}
+.pmain .sec{margin-top:34px}
+.product .hero{display:grid;grid-template-columns:1.1fr 1fr;gap:28px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.product .hero .pic .cart{height:280px;margin:0;border-bottom:0}
+.product .hero .txt{padding:24px 28px 28px;display:grid;gap:10px}
+.product .hero h1{margin:0;font-family:var(--disp);font-weight:var(--dispw);font-size:clamp(2rem,4vw,3rem);letter-spacing:-.01em;text-wrap:balance}
+.product .hero .lead{margin:0;font-size:1.15rem;font-weight:700}
+.prows .prow{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;display:grid;gap:10px;align-content:start;min-width:0}
+.prow .phead{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.prow .t{font-weight:900;font-size:1.05rem}
+.prow .acts{display:flex;gap:8px;flex-wrap:wrap}.prow .d{font-size:.85rem;color:var(--muted);overflow-wrap:anywhere}
+.points{margin:0;padding-left:1.2em;display:grid;gap:8px;max-width:760px}.points li{line-height:1.5}
+.plist{margin:0;padding:0;list-style:none;display:grid;gap:8px}.plist a{color:var(--fg);font-weight:700}
+.product .chips{justify-content:flex-start}.product .chip{text-decoration:none}
+.pfoot{padding:18px clamp(16px,4vw,48px);font-size:.85rem;text-align:center}.pfoot a{color:var(--muted)}
+@media (max-width:720px){.product .hero{grid-template-columns:1fr}.product .hero .pic .cart{height:200px}.pmain{border-radius:0}.plinks a{padding:.35rem .6rem}}

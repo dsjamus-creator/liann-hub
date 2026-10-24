@@ -141,7 +141,7 @@ export function appCard(app, s) {
     : app.st === 'soon' ? '<button class="btn ghost" disabled>Coming soon</button>'
       : `<button class="btn ghost" data-nav="downloads">Get</button>`
   return `<div class="c" data-app="${app.id}">${app.yt ? `<div style="position:relative">${art(app.id)}<span class="ytb">▶ YouTube app</span></div>` : art(app.id)}<div class="h"><div class="tile">${app.g}</div><div><div class="t">${esc(app.name)}</div><div class="s">${esc(app.kind)}</div></div></div>
-  <div class="status ${st.cls}">${esc(st.text)}</div><div class="d">${esc(app.desc)}</div><div class="acts">${act}</div></div>`
+  <div class="status ${st.cls}">${esc(st.text)}</div><div class="d">${esc(app.desc)}</div><div class="acts">${app.page ? `<a class="btn ghost" href="/${esc(app.page)}" data-page="${esc(app.page)}">Details</a>` : ''}${act}</div></div>`
 }
 
 const GAMES = () => APPS.filter(a => a.kind.startsWith('Game'))

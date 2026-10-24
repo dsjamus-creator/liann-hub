@@ -101,7 +101,7 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     const tones = page.locator('[data-app="tones"]').first()
     assert.match(await tones.innerText(), /web and Windows/)
     assert.equal(await tones.locator('a[href*="/playtest/Tones"]').getAttribute('href'), 'https://playtest.lwliann.com/playtest/Tones')
-    assert.equal(await page.locator('[data-app="tiles"] a').first().getAttribute('href'), 'https://playtest.lwliann.com/playtest/game/')
+    assert.equal(await page.locator('[data-app="tiles"] a[data-open]').first().getAttribute('href'), 'https://playtest.lwliann.com/playtest/game/')
     await noOverflow(page); await shot(page, `${tag}-home`)
   })
   await step(`${tag}: search filters games, apps and SetLists`, async () => {
@@ -120,11 +120,12 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
   })
   await step(`${tag}: Downloads withholds private tester builds`, async () => {
     await page.goto(url + '#downloads'); await page.locator('[data-slot]').first().waitFor()
-    assert.equal(await page.locator('[data-slot]').count(), 24, 'the reserved figures and comic slots are hidden from Downloads')
-    assert.equal(await page.locator('[data-slot] a[download]').count(), 15)
+    assert.equal(await page.locator('[data-slot]').count(), 25, 'the reserved figures and comic slots are hidden from Downloads')
+    assert.equal(await page.locator('[data-slot] a[download]').count(), 17, 'PolyFlow 0.1.1 for Windows and Android are public (lwl-backend docs/LIANN-DOWNLOADS.md)')
     assert.equal(await page.locator('[data-slot="lyricsync/extension"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/lyricsync/chrome-edge/0.9.31/LyricSync-v0.9.31-hub-public-20261021.zip?v=9860fee62532')
     assert.equal(await page.locator('[data-slot="dualsubs/extension"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/dual-subs/chrome-edge/0.16.120/dual-subs-v0.16.120-free-hub-public-20261021.zip?v=3dbaeb17ccb1')
-    for (const slot of ['polyflow/windows', 'mahjong-tones/test-build', 'alongside/android-test', 'alongside/windows']) assert.equal(await page.locator(`[data-slot="${slot}"] a[download]`).count(), 0)
+    for (const slot of ['mahjong-tones/test-build', 'alongside/android-test', 'alongside/windows']) assert.equal(await page.locator(`[data-slot="${slot}"] a[download]`).count(), 0)
+    assert.match(await page.locator('[data-slot="polyflow/windows"] a[download]').getAttribute('href'), /PolyFlow-Setup-0\.1\.1\.exe$/)
     assert.equal(await page.locator('[data-slot="kids/stickers/bella"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/kids/stickers/2026-10-14/bella-sticker-1440px-upscaled-full.png?v=5ffdac')
     assert.doesNotMatch(await page.locator('main').innerText(), /signing|redistribution/i)
     await noOverflow(page); await shot(page, `${tag}-downloads`)
@@ -303,6 +304,22 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
       await page.locator('[data-slot="kids/stickers/kinetic-shield-bw"]').scrollIntoViewIfNeeded()
       await shot(page, 'phone-kids-artwork')
     }
+  })
+  await step(`${tag}: product pages render for visitors, the visitor's platform first`, async () => {
+    await page.goto(url + 'polyflow'); await page.locator('.product .hero h1').waitFor()
+    assert.match(await page.locator('.product .hero h1').innerText(), /PolyFlow/)
+    assert.match(await page.locator('.pmain').innerText(), /Studio[\s\S]*Performance[\s\S]*Light/)
+    assert.equal(await page.locator('.prows .prow').first().getAttribute('data-os'), tag === 'phone' ? 'web' : 'web', 'a Linux Chromium visitor is "other": the web row leads')
+    assert.match(await page.locator('.prow[data-os="windows"] a[download]').getAttribute('href'), /PolyFlow-Setup-0\.1\.1\.exe$/, 'the Windows file comes from the manifest')
+    assert.match(await page.locator('.prow[data-os="android"] a[download]').getAttribute('href'), /PolyFlow-Android-0\.1\.1\.apk$/)
+    assert.equal(await page.locator('.prow[data-os="android"] button[disabled]').innerText(), 'Coming to Google Play')
+    await noOverflow(page); await shot(page, `${tag}-product-polyflow`)
+    for (const slug of ['pinyin-tiles', 'pinyin-puzzle', 'mahjong-tones', 'alongside', 'dual-subs', 'lyricsync']) {
+      await page.goto(url + slug); await page.locator('.product .hero h1').waitFor(); await noOverflow(page)
+    }
+    await shot(page, `${tag}-product-alongside`)
+    await page.goto(url + '#apps'); await page.locator('[data-app="poly"] [data-page="polyflow"]').waitFor()
+    assert.equal(await page.locator('[data-app="poly"] [data-page="polyflow"]').getAttribute('href'), '/polyflow')
   })
   await step(`${tag}: the menu matches the approved design and every page renders`, async () => {
     if (tag === 'desktop') assert.deepEqual(await page.locator('nav.rail .lbl').allInnerTexts(), ['Home', 'Apps', 'Library', 'Read', 'Figures', 'Discover', 'Kids', 'Shop', 'Downloads', 'Plan'])

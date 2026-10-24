@@ -17,6 +17,19 @@ The browser hub for **app.lwliann.com**. It is a static web app with no build st
 
 Not in this version: profiles and permissions, buying plans or shop items, and comic reading. They need content or backend work first.
 
+## Product pages
+
+Every app has a public page at a stable address, `app.lwliann.com/<id>`: `/polyflow`, `/pinyin-tiles`,
+`/pinyin-puzzle`, `/mahjong-tones`, `/alongside`, `/dual-subs`, `/lyricsync`. These are the landing pages the
+store listings, guides and QR codes point at (registry `DEPLOYMENT-AND-STOREFRONT-PLAN (2026-10-24).md` §4).
+The record for each is in `data/products.json`; `src/product.js` renders it with the hub's styles and theme,
+and the page shows Open, a store badge (a disabled "Coming to …" until `storeUrl` is filled) or a Download from
+the same record, the visitor's own platform first. Files come from `data/downloads.json` under the usual rule
+(a file, its size and its SHA-256). `<id>.html` at the root is the page's shell; the Worker serves it at
+`/<id>`, and `scripts/serve.mjs` does the same locally. The Apps and Home cards link to the pages with Details.
+
+When a store listing goes live, put its public URL in `storeUrl` for that platform and the badge becomes a link.
+
 ## Run and test
 
 ```

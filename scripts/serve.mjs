@@ -13,8 +13,10 @@ export function serve(port = Number(process.env.PORT) || 4173) {
     const file = normalize(join(root, path.endsWith('/') ? path + 'index.html' : path))
     if (!file.startsWith(root + sep) || /[\\/]\.|node_modules/.test(file.slice(root.length))) { res.writeHead(404).end(); return }
     try {
-      const body = await readFile(file)
-      res.writeHead(200, { 'content-type': types[extname(file)] || 'application/octet-stream', 'cache-control': 'no-store' }).end(body)
+      // Like the Worker's html_handling: /polyflow serves polyflow.html.
+      let served = file
+      const body = await readFile(file).catch(e => { if (e.code === 'ENOENT' && !extname(file)) { served = file + '.html'; return readFile(served) } throw e })
+      res.writeHead(200, { 'content-type': types[extname(served)] || 'application/octet-stream', 'cache-control': 'no-store' }).end(body)
     } catch { res.writeHead(404).end('Not found') }
   })
   return new Promise(ok => server.listen(port, '127.0.0.1', () => ok(server)))
