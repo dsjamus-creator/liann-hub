@@ -1,0 +1,177 @@
+{
+  "_comment": "One record per product (DEPLOYMENT-AND-STOREFRONT-PLAN 2026-10-24 §4.1). Each product has a public page at app.lwliann.com/<id> rendered by src/product.js. A platform row may carry a web url (Open), a store (badge; storeUrl empty = coming) and a downloads slot (file from data/downloads.json, offered only with bytes and sha256). Copy is read from the shipped apps; no superlatives, no comparisons.",
+  "products": [
+    {
+      "id": "polyflow",
+      "app": "poly",
+      "name": "PolyFlow",
+      "glyph": "琴",
+      "kind": "App · web, Android and Windows",
+      "oneLine": "Multilingual lyrics that turn the page as you play.",
+      "audience": "Musicians, worship teams and learners through music.",
+      "points": [
+        "A song's words in several languages on one line: characters, pronunciation and translation.",
+        "Rehearse a line once and PolyFlow remembers how many notes it took; next time, Auto turns the page for you.",
+        "Three editions on one player: Studio (full local workspace, no sign-in), Performance (connected workspace, AlongSide sign-in) and Light (simpler stage workspace, no sign-in).",
+        "Background visuals, a built-in piano with five voices, takes you can play back and score, and word study saved to AlongSide."
+      ],
+      "platforms": [
+        { "os": "web", "url": "https://lwl-backend-mhgo.onrender.com/music-app/polyflow/index.html", "status": "ok", "note": "Chrome or Edge for Export video; everything else works in any current browser." },
+        { "os": "android", "store": "play", "storeUrl": "", "slot": "polyflow/android", "status": "testing", "note": "Android 7.0 or newer with Chrome. The APK opens the same editions as the web app." },
+        { "os": "windows", "store": "microsoft", "storeUrl": "", "slot": "polyflow/windows", "status": "ok", "note": "Preview installer, not yet code-signed: Windows may ask you to confirm the publisher." }
+      ],
+      "links": [
+        ["User Guide", "https://lwliann.com/guides/polyflow/user-guide.html"],
+        ["Quick Start", "https://lwliann.com/guides/polyflow/quick-start.html"],
+        ["Studio Guide", "https://lwliann.com/guides/polyflow/studio-guide.html"],
+        ["Release notes", "https://lwliann.com/guides/polyflow/release-notes.html"],
+        ["About PolyFlow on lwliann.com", "https://lwliann.com/prosumers/polyflow.html"]
+      ],
+      "privacyUrl": "https://lwliann.com/privacy-polyflow.html",
+      "support": "enquiries@lwliann.com"
+    },
+    {
+      "id": "pinyin-tiles",
+      "app": "tiles",
+      "name": "LiANN Pinyin Tiles",
+      "glyph": "拼",
+      "kind": "Game · web and Android",
+      "oneLine": "Build the word. Hear the tones. Know what it means.",
+      "audience": "Anyone learning Mandarin words and tones, from the first lesson.",
+      "points": [
+        "Place Pinyin initials and finals to build words, then choose the tone for every syllable.",
+        "Every scored word shows its verified English meaning; recorded pronunciations let you hear the tones.",
+        "Play a solo match against one computer opponent; Novice mode protects your rack while you learn.",
+        "No account needed. My words and Stats stay on your device, and an optional LiANN sign-in sends your words to AlongSide SetLists."
+      ],
+      "platforms": [
+        { "os": "web", "url": "https://playtest.lwliann.com/playtest/game/", "status": "ok" },
+        { "os": "android", "store": "play", "storeUrl": "", "status": "testing", "note": "In internal testing on Google Play." }
+      ],
+      "links": [["Learning with LiANN", "https://lwliann.com/"]],
+      "privacyUrl": "",
+      "support": "enquiries@lwliann.com"
+    },
+    {
+      "id": "pinyin-puzzle",
+      "app": "puzzle",
+      "name": "LiANN Pinyin Puzzle",
+      "glyph": "谜",
+      "kind": "Game · web and Android",
+      "oneLine": "Read the clue. Build the Pinyin. Cross every answer.",
+      "audience": "Learners who like a crossword, from HSK 1 to 3.",
+      "points": [
+        "An 11 by 11 crossword where each square holds one Pinyin initial or final, and the finals carry the tone.",
+        "English meanings are the clues; shared squares mean every answer you solve helps solve the next.",
+        "Three puzzles a day on a 365-day cycle. Nothing is timed.",
+        "Your score and placed tiles are saved on your device."
+      ],
+      "platforms": [
+        { "os": "web", "url": "https://playtest.lwliann.com/playtest/puzzle/", "status": "ok" },
+        { "os": "android", "store": "play", "storeUrl": "", "status": "soon", "note": "An Android build of the crossword is on its way." }
+      ],
+      "links": [["Learning with LiANN", "https://lwliann.com/"]],
+      "privacyUrl": "",
+      "support": "enquiries@lwliann.com"
+    },
+    {
+      "id": "mahjong-tones",
+      "app": "tones",
+      "name": "LiANN Pinyin Mahjong Tones",
+      "glyph": "声",
+      "kind": "Game · web and Windows",
+      "oneLine": "Find matching words and meanings. Hear each word. Choose its tones to clear the board.",
+      "audience": "Learners from HSK 1 to 3 who want tone practice that feels like a game.",
+      "points": [
+        "Match a word tile to its English meaning, hear the word, then give it the right tones.",
+        "Practice, Challenge and Zen modes; boards from 16 to 72 tiles; HSK 1, 2 and 3 word sets, tone pairs and a daily board.",
+        "Hint, Undo and Shuffle when you need them; a seed for every board so a round can be replayed.",
+        "Playing never needs an account. Sign in only to sync saved words with AlongSide."
+      ],
+      "platforms": [
+        { "os": "web", "url": "https://playtest.lwliann.com/playtest/Tones", "status": "ok" },
+        { "os": "windows", "store": "microsoft", "storeUrl": "", "slot": "mahjong-tones/test-build", "status": "soon", "note": "The Unity edition for Windows is being prepared for the Microsoft Store." }
+      ],
+      "links": [["Learning with LiANN", "https://lwliann.com/"]],
+      "privacyUrl": "",
+      "support": "enquiries@lwliann.com"
+    },
+    {
+      "id": "alongside",
+      "app": "dash",
+      "name": "AlongSide",
+      "glyph": "伴",
+      "kind": "App · web, with Android, iPhone and iPad to come",
+      "oneLine": "Your words, your reviews and your tutor's classroom in one place.",
+      "audience": "Students and tutors of Learning with LiANN.",
+      "points": [
+        "Students curate vocabulary into SetLists, build recall through Word Mastery and follow HSK Milestones.",
+        "Tutors craft curricula in AuthorBoard, teach through MultiBoard and ClassRoom, and review learner SetLists.",
+        "Words saved from the Pinyin games and from PolyFlow arrive in the same SetLists.",
+        "Saving your own words is free; plans are for households, tutors and organisations that share."
+      ],
+      "platforms": [
+        { "os": "web", "url": "https://lwl-backend-mhgo.onrender.com/app", "status": "ok" },
+        { "os": "android", "store": "play", "storeUrl": "", "slot": "alongside/android-test", "status": "testing", "note": "A test build for Android testers; the Google Play listing follows." },
+        { "os": "ios", "store": "appstore", "storeUrl": "", "status": "soon" }
+      ],
+      "links": [
+        ["About AlongSide on lwliann.com", "https://lwliann.com/product-alongside.html"],
+        ["Sign in to AlongSide", "https://lwl-backend-mhgo.onrender.com/app"]
+      ],
+      "privacyUrl": "",
+      "support": "enquiries@lwliann.com"
+    },
+    {
+      "id": "dual-subs",
+      "app": "dual",
+      "name": "Dual Subs",
+      "glyph": "字",
+      "kind": "YouTube app · Chrome and Edge on desktop",
+      "oneLine": "Multiple subtitled languages at once on YouTube.",
+      "audience": "Learners who watch YouTube in the language they are learning.",
+      "points": [
+        "Show more than one subtitle language at the same time on any YouTube video.",
+        "Save the words you meet and review them with spaced repetition.",
+        "Export saved words and SetLists to AlongSide.",
+        "Preview build for testers: unzip, open chrome://extensions, turn on Developer mode and choose Load unpacked."
+      ],
+      "platforms": [
+        { "os": "chrome", "store": "chrome", "storeUrl": "", "slot": "dualsubs/extension", "status": "testing", "note": "The public release will come from the Chrome Web Store." },
+        { "os": "edge", "store": "edge", "storeUrl": "", "status": "soon" }
+      ],
+      "links": [
+        ["User Guide", "https://lwliann.com/guides/dual-subs/user-guide.html"],
+        ["About Dual Subs on lwliann.com", "https://lwliann.com/prosumers/dual-subs.html"]
+      ],
+      "privacyUrl": "https://lwliann.com/privacy-dual-subs.html",
+      "support": "enquiries@lwliann.com"
+    },
+    {
+      "id": "lyricsync",
+      "app": "lyric",
+      "name": "LyricSync",
+      "glyph": "歌",
+      "kind": "YouTube app · Chrome and Edge on desktop",
+      "oneLine": "Turn any song into a multilingual master.",
+      "audience": "Singers, worship teams and learners who work from song lyrics.",
+      "points": [
+        "Capture a song's lyrics from YouTube and build a master with language layers.",
+        "On-device OCR reads lyrics from the video when captions are missing.",
+        "Open a master in PolyFlow to rehearse and perform it.",
+        "Preview build for testers: unzip, open chrome://extensions, turn on Developer mode and choose Load unpacked."
+      ],
+      "platforms": [
+        { "os": "chrome", "store": "chrome", "storeUrl": "", "slot": "lyricsync/extension", "status": "testing", "note": "The public release will come from the Chrome Web Store." },
+        { "os": "edge", "store": "edge", "storeUrl": "", "status": "soon" }
+      ],
+      "links": [
+        ["User Guide", "https://lwliann.com/guides/lyricsync/user-guide.html"],
+        ["Quick Start", "https://lwliann.com/guides/lyricsync/quick-start.html"],
+        ["About LyricSync on lwliann.com", "https://lwliann.com/prosumers/lyricsync.html"]
+      ],
+      "privacyUrl": "",
+      "support": "enquiries@lwliann.com"
+    }
+  ]
+}

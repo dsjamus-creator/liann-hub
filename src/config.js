@@ -13,15 +13,15 @@ export const config = {
 }
 
 // st: 'ok' opens a web app (url, or path on the games origin; a slot adds a Downloads button for its installer); 'native' is a store or desktop build listed in Downloads;
-// 'desk' is a desktop browser extension; 'soon' is announced but not available.
+// 'desk' is a desktop browser extension; 'soon' is announced but not available. page: the product's public page, app.lwliann.com/<page> (data/products.json).
 export const APPS = [
-  { id: 'tones', g: '声', name: 'LiANN Pinyin Mahjong Tones', kind: 'Game · web and Windows', desc: 'Match word and meaning, then enter the tones.', st: 'ok', path: '/playtest/Tones', slot: 'mahjong-tones/test-build' },
-  { id: 'tiles', g: '拼', name: 'Pinyin Tiles', kind: 'Game · web', desc: 'Build connected words.', st: 'ok', path: '/playtest/game/' },
-  { id: 'puzzle', g: '谜', name: 'Pinyin Puzzle', kind: 'Game · web', desc: 'Solve across and down.', st: 'ok', path: '/playtest/puzzle/' },
-  { id: 'dash', g: '伴', name: 'AlongSide', kind: 'App · Android test build', desc: 'Classes, whiteboards, SetLists and progress.', st: 'native', slot: 'alongside/android-test' },
-  { id: 'poly', g: '琴', name: 'PolyFlow', kind: 'App · web and Windows', desc: 'Play the song. The lyrics follow you.', st: 'ok', url: 'https://lwl-backend-mhgo.onrender.com/music-app/polyflow/studio.html', slot: 'polyflow/windows' },
-  { id: 'lyric', g: '歌', name: 'LyricSync', kind: 'YouTube app · Chrome / Edge on desktop', desc: 'Turn any song into a Multi-Lingual Master.', st: 'desk', yt: 1, slot: 'lyricsync/extension' },
-  { id: 'dual', g: '字', name: 'Dual Subs', kind: 'YouTube app · Chrome / Edge on desktop', desc: 'Multiple SubTitled Languages at Once on YouTube.', st: 'desk', yt: 1, slot: 'dualsubs/extension' },
+  { id: 'tones', page: 'mahjong-tones', g: '声', name: 'LiANN Pinyin Mahjong Tones', kind: 'Game · web and Windows', desc: 'Match word and meaning, then enter the tones.', st: 'ok', path: '/playtest/Tones', slot: 'mahjong-tones/test-build' },
+  { id: 'tiles', page: 'pinyin-tiles', g: '拼', name: 'Pinyin Tiles', kind: 'Game · web', desc: 'Build connected words.', st: 'ok', path: '/playtest/game/' },
+  { id: 'puzzle', page: 'pinyin-puzzle', g: '谜', name: 'Pinyin Puzzle', kind: 'Game · web', desc: 'Solve across and down.', st: 'ok', path: '/playtest/puzzle/' },
+  { id: 'dash', page: 'alongside', g: '伴', name: 'AlongSide', kind: 'App · Android test build', desc: 'Classes, whiteboards, SetLists and progress.', st: 'native', slot: 'alongside/android-test' },
+  { id: 'poly', page: 'polyflow', g: '琴', name: 'PolyFlow', kind: 'App · web and Windows', desc: 'Play the song. The lyrics follow you.', st: 'ok', url: 'https://lwl-backend-mhgo.onrender.com/music-app/polyflow/studio.html', slot: 'polyflow/windows' },
+  { id: 'lyric', page: 'lyricsync', g: '歌', name: 'LyricSync', kind: 'YouTube app · Chrome / Edge on desktop', desc: 'Turn any song into a Multi-Lingual Master.', st: 'desk', yt: 1, slot: 'lyricsync/extension' },
+  { id: 'dual', page: 'dual-subs', g: '字', name: 'Dual Subs', kind: 'YouTube app · Chrome / Edge on desktop', desc: 'Multiple SubTitled Languages at Once on YouTube.', st: 'desk', yt: 1, slot: 'dualsubs/extension' },
   { id: 'trans', g: '练', name: 'TransApp', kind: 'Practice app', desc: 'Practice App Coming Soon.', st: 'soon' },
   { id: 'game', g: '游', name: 'Coming video game', kind: 'Game · native', desc: 'Announced soon.', st: 'soon' },
 ]
