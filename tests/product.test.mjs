@@ -15,10 +15,12 @@ test('every product has a page shell, an app card and manifest slots that exist'
     assert.match(shell, new RegExp(`data-product="${p.id}"`), `${p.id}.html names its product`)
     assert.ok(shell.includes('src/product.js'), `${p.id}.html loads the product module`)
     assert.ok(shell.includes(`https://app.lwliann.com/${p.id}`), `${p.id}.html carries its canonical address`)
-    const app = APPS.find(a => a.id === p.app)
-    assert.ok(app, `${p.id} → app card ${p.app}`)
-    assert.equal(app.page, p.id, `${app.id}.page points back at the product`)
-    assert.equal(app.g, p.glyph, `${p.id} glyph matches the card`)
+    if (p.app) {
+      const app = APPS.find(a => a.id === p.app)
+      assert.ok(app, `${p.id} → app card ${p.app}`)
+      assert.equal(app.page, p.id, `${app.id}.page points back at the product`)
+      assert.equal(app.g, p.glyph, `${p.id} glyph matches the card`)
+    } else assert.equal(p.id, 'hub', 'only the hub itself has a product page without an Apps card')
     for (const pl of p.platforms) {
       if (pl.slot) assert.ok(manifest.some(d => d.slot === pl.slot), `${p.id} ${pl.os} → slot ${pl.slot}`)
       if (pl.store) assert.ok(STORES[pl.store], `${p.id} ${pl.os} store ${pl.store}`)
@@ -43,6 +45,9 @@ test('the visitor platform comes from the user agent, and their row goes first',
   assert.deepEqual(orderPlatforms(poly.platforms, 'other').map(p => p.os), ['web', 'android', 'windows'])
   const dual = products.find(p => p.id === 'dual-subs')
   assert.equal(orderPlatforms(dual.platforms, 'mac')[0].os, 'chrome', 'a desktop visitor sees the browser rows first')
+  const hub = products.find(p => p.id === 'hub')
+  assert.equal(orderPlatforms(hub.platforms, 'windows')[0].os, 'windows')
+  assert.equal(orderPlatforms(hub.platforms, 'mac')[0].os, 'mac')
 })
 
 test('a platform row offers Open, a store badge or a checked file from the same record', () => {
@@ -63,6 +68,12 @@ test('a platform row offers Open, a store badge or a checked file from the same 
   assert.equal(live.status.text, 'Ready'); assert.equal(live.buttons[0].href, 'https://play.google.com/store/apps/details?id=com.lwliann.polyflow'); assert.equal(live.buttons[0].primary, true, 'a live store badge is the primary action')
   const waiting = platformModel({ os: 'windows', slot: 'nope/none', status: 'soon' }, manifest)
   assert.equal(waiting.status.text, 'Waiting for the latest file'); assert.equal(waiting.status.cls, 'up'); assert.equal(waiting.buttons[0].disabled, true)
+  const hub = products.find(p => p.id === 'hub')
+  for (const os of ['windows', 'mac']) {
+    const row = platformModel(hub.platforms.find(p => p.os === os), manifest)
+    assert.equal(row.status.text, 'Waiting for the latest file')
+    assert.equal(row.buttons[0].disabled, true, `${os} has no public installer without a file, size and checksum`)
+  }
 })
 
 test('the page escapes record text and shows every platform', () => {
