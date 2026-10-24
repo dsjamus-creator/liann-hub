@@ -35,5 +35,8 @@ main (`public/game`, `public/puzzle`, `public/tones`). Phone captures are 1,080 
 432 × 768 or 360 × 640 viewport at 2.5× or 3×); desktop captures are 1,920 × 1,080.
 
 Retake them when the apps change. The Mahjong Tones captures are of the web edition; the Microsoft
-Store submission needs captures of the Windows build itself (see the kit). The Pinyin Tiles board
-capture was taken without the Pinyin API reachable, so the status chips are cropped out of frame.
+Store submission needs captures of the Windows build itself (see the kit). The Tiles and Puzzle
+phone board captures were taken without the Pinyin API reachable: the page header and the match
+status card are removed before the capture so the board fills the frame, and the Puzzle capture is
+an element screenshot of the crossword panel (`.board-column`), 1,032 × 3,252, which the frame
+crops from the top.
