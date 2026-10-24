@@ -4,7 +4,7 @@
 // a size and a SHA-256, as on the Downloads page. Looks and theme follow the hub (styles.css, liann-hub-theme).
 
 import { config } from './config.js'
-import { art, esc, ico, DS } from './views.js'
+import { art, esc, ico, DS, LOCKUP } from './views.js'
 import { loadDownloads, formatBytes } from './downloads.js'
 
 export const STORES = {
@@ -40,7 +40,7 @@ export function platformModel(p, downloads) {
   if (p.url) buttons.push({ kind: 'open', label: 'Open', href: p.url })
   if (p.store && STORES[p.store]) buttons.push(p.storeUrl ? { kind: 'store', label: STORES[p.store].get, href: p.storeUrl } : { kind: 'store', label: STORES[p.store].soon, disabled: true })
   if (p.slot) buttons.push(file?.available
-    ? { kind: 'file', label: `Download for ${OS[p.os] || p.os}`, href: file.href, meta: `Version ${file.version || '—'} · ${formatBytes(file.bytes)}`, sha256: file.sha256 }
+    ? { kind: 'file', label: `Download for ${OS[p.os] || p.os}`, href: file.href, meta: `Version ${file.version || '—'} · ${formatBytes(file.bytes)}` }
     : { kind: 'file', label: 'Download', disabled: true, meta: 'Waiting for the latest file' })
   const ready = Boolean(p.url || p.storeUrl || file?.available)
   const status = ready ? 'Ready' : p.status === 'testing' ? 'Testing' : 'Coming soon'
@@ -55,25 +55,25 @@ const button = b => {
 
 const row = m => `<div class="prow" data-os="${esc(m.os)}"><div class="phead"><div class="t">${esc(m.label)}</div><div class="status${m.status === 'Ready' ? '' : ' up'}">${esc(m.status)}</div></div>
   ${m.note ? `<div class="d">${esc(m.note)}</div>` : ''}<div class="acts">${m.buttons.map(button).join('')}</div>
-  ${m.buttons.filter(b => b.meta).map(b => `<div class="d">${esc(b.meta)}${b.sha256 ? `<br><span class="mono" title="SHA-256">SHA-256 ${esc(b.sha256)}</span>` : ''}</div>`).join('')}</div>`
+  ${m.buttons.filter(b => b.meta).map(b => `<div class="d">${esc(b.meta)}</div>`).join('')}</div>`
 
 export function productHTML(product, downloads, os, others = []) {
   const rows = orderPlatforms(product.platforms, os).map(p => platformModel(p, downloads))
   const links = (product.links || []).map(([t, h]) => `<li><a href="${esc(h)}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join('')
   return `<div class="product fade">
-  <header class="ptop"><a class="brand" href="/" aria-label="Learning with LiANN hub"><span class="tile">${esc(product.glyph)}</span><span>Learning with <b>LiANN</b></span></a>
+  <header class="ptop"><a class="plock" href="/" aria-label="Learning with LiANN hub">${LOCKUP}</a>
     <nav class="plinks"><a href="/#apps">All apps</a><a href="/#downloads">Downloads</a></nav></header>
   <main class="pmain">
     <section class="hero"><div class="pic">${art(product.app)}</div>
       <div class="txt"><div class="eyebrow">${esc(product.kind)}</div><h1>${esc(product.name)}</h1><p class="lead">${esc(product.oneLine)}</p><p class="muted">${esc(product.audience)}</p></div></section>
     <section class="sec"><div class="sechead"><h2>Get it</h2><span class="muted" style="font-size:.85rem">${rows[0] && rows[0].os === os ? `Your device first: ${esc(rows[0].label)}` : 'Every platform'}</span></div>
       <div class="grid prows">${rows.map(row).join('')}</div>
-      <p class="muted" style="margin:0;font-size:.85rem">Files carry their version, size and SHA-256 checksum so you can check what you downloaded. Store listings open here as they go live.</p></section>
+      <p class="muted" style="margin:0;font-size:.85rem">Every file is listed from a signed-off manifest with its version and size. Store listings open here as they go live.</p></section>
     <section class="sec"><div class="sechead"><h2>What it does</h2></div><ul class="points">${(product.points || []).map(t => `<li>${esc(t)}</li>`).join('')}</ul></section>
     <section class="sec"><div class="sechead"><h2>Guides and help</h2></div><ul class="plist">${links}${product.privacyUrl ? `<li><a href="${esc(product.privacyUrl)}" target="_blank" rel="noopener">Privacy notice</a></li>` : ''}${product.support ? `<li><a href="mailto:${esc(product.support)}">${esc(product.support)}</a></li>` : ''}</ul></section>
     ${others.length ? `<section class="sec"><div class="sechead"><h2>Also from Learning with LiANN</h2></div><div class="chips">${others.map(o => `<a class="chip" href="/${esc(o.id)}"><span class="han">${esc(o.glyph)}</span> ${esc(o.name)}</a>`).join('')}</div></section>` : ''}
   </main>
-  <footer class="pfoot muted">Learning with LiANN is a YOLO TECH Ltd product. <a href="/">app.lwliann.com</a></footer>
+  <footer class="pfoot muted"><span class="wm" style="font-size:1rem"><span class="pre">Learning with</span><span class="nm">LiANN</span></span> · Multilingual education through Entertainment · a YOLO TECH Ltd product · <a href="/">app.lwliann.com</a></footer>
 </div>`
 }
 

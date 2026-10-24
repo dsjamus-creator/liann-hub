@@ -32,7 +32,7 @@ export const DS = [['liann', 'LiANN', 'Canonical sage, coral and porcelain', ['#
   ['cadence', 'Cadence', 'Stage darks, paper and brass', ['#FAF5EC', '#A86A1F', '#E0A141']],
   ['ivoryline', 'Ivoryline', 'Warm ivory and wood', ['#EFE2C8', '#947641', '#8F5C20']]]
 
-const LOCKUP = '<div class="lockup" aria-label="Learning with LiANN"><span class="wm"><span class="pre">Learning with</span><span class="nm">LiANN</span></span><span class="strap">Multilingual education through Entertainment</span></div>'
+export const LOCKUP = '<div class="lockup" aria-label="Learning with LiANN"><span class="wm"><span class="pre">Learning with</span><span class="nm">LiANN</span></span><span class="strap">Multilingual education through Entertainment</span></div>'
 
 const SHAPES = {
   note: '<svg viewBox="0 0 60 100" class="CLS" style="STY"><ellipse cx="22" cy="82" rx="17" ry="12.5" transform="rotate(-22 22 82)" fill="currentColor"/><rect x="33" y="8" width="6" height="74" rx="3" fill="currentColor"/><path d="M36 8 C40 30 64 36 54 64 C53 48 46 41 36 38 Z" fill="currentColor"/></svg>',
@@ -213,7 +213,7 @@ const DOWNLOAD_ART = { 'dual-subs': 'dual', lyricsync: 'lyric', polyflow: 'poly'
 // licenceNotes in the manifest are reviewer notes for whoever publishes the file; they are not shown to learners.
 function downloadCard(d) {
   const meta = d.available ? `<div class="status">Version ${esc(d.version || '—')}${d.builtAt ? ` · built ${esc(d.builtAt.slice(0, 10))}` : ''}</div>
-   <div class="d">${esc(formatBytes(d.bytes))}</div><div class="d mono" title="SHA-256">SHA-256 ${esc(d.sha256)}</div>`
+   <div class="d">${esc(formatBytes(d.bytes))}</div>`
     : '<div class="status" style="color:var(--muted)">Waiting for the latest file</div><div class="d" style="font-size:.78rem">Version, size and checksum appear here when the file arrives.</div>'
   const act = d.available ? `<a class="btn" href="${esc(d.href)}" download rel="noopener">Download</a>` : '<button class="btn ghost" disabled>Download</button>'
   const pic = art(DOWNLOAD_ART[d.slot] || DOWNLOAD_ART[d.product] || '')
@@ -230,7 +230,7 @@ function downloadsFor(s, filter) {
 function pDownloads(s) {
   return `<section class="sec"><div class="sechead"><h2>Downloads</h2><span class="muted" style="font-size:.85rem">Latest files, checked and signed off</span></div>
   ${downloadsFor(s, d => d.product !== 'figures' && d.product !== 'bella-liann')}
-  <p class="muted" style="margin:0;font-size:.85rem">Each file is listed from a manifest with its version, source and SHA-256 checksum, so you can check what you downloaded.</p></section>`
+  <p class="muted" style="margin:0;font-size:.85rem">Each file is listed from a signed-off manifest with its version, size and source. The manifest (<a href="data/downloads.json" style="color:inherit">downloads.json</a>) carries every file's SHA-256 checksum for anyone who wants to verify a download.</p></section>`
 }
 
 function pRead(s) {

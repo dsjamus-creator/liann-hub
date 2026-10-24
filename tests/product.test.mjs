@@ -52,7 +52,7 @@ test('a platform row offers Open, a store badge or a checked file from the same 
   assert.deepEqual(windows.buttons.map(b => [b.kind, b.disabled || false]), [['store', true], ['file', false]])
   assert.match(windows.buttons[1].href, /PolyFlow-Setup-0\.1\.1\.exe$/)
   assert.match(windows.buttons[1].meta, /Version 0\.1\.1 · 111 MB/)
-  assert.equal(windows.buttons[1].sha256.length, 64)
+  assert.equal(windows.buttons[1].sha256, undefined, 'the checksum stays on the Downloads page')
   const android = platformModel(poly.platforms.find(p => p.os === 'android'), manifest)
   assert.match(android.buttons[1].href, /PolyFlow-Android-0\.1\.1\.apk$/)
   const web = platformModel(poly.platforms.find(p => p.os === 'web'), manifest)
