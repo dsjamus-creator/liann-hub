@@ -120,7 +120,7 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
   })
   await step(`${tag}: Downloads withholds private tester builds`, async () => {
     await page.goto(url + '#downloads'); await page.locator('[data-slot]').first().waitFor()
-    assert.equal(await page.locator('[data-slot]').count(), 25, 'the reserved figures and comic slots are hidden from Downloads')
+    assert.equal(await page.locator('[data-slot]').count(), 27, 'the reserved figures and comic slots are hidden from Downloads')
     assert.equal(await page.locator('[data-slot] a[download]').count(), 17, 'PolyFlow 0.1.1 for Windows and Android are public (lwl-backend docs/LIANN-DOWNLOADS.md)')
     assert.equal(await page.locator('[data-slot="lyricsync/extension"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/lyricsync/chrome-edge/0.9.31/LyricSync-v0.9.31-hub-public-20261021.zip?v=9860fee62532')
     assert.equal(await page.locator('[data-slot="dualsubs/extension"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/dual-subs/chrome-edge/0.16.120/dual-subs-v0.16.120-free-hub-public-20261021.zip?v=3dbaeb17ccb1')

@@ -16,16 +16,50 @@
         "Background visuals, a built-in piano with five voices, takes you can play back and score, and word study saved to AlongSide."
       ],
       "platforms": [
-        { "os": "web", "url": "https://lwl-backend-mhgo.onrender.com/music-app/polyflow/index.html", "status": "ok", "note": "Chrome or Edge for Export video; everything else works in any current browser." },
-        { "os": "android", "store": "play", "storeUrl": "", "slot": "polyflow/android", "status": "testing", "note": "Android 7.0 or newer with Chrome. The APK opens the same editions as the web app." },
-        { "os": "windows", "store": "microsoft", "storeUrl": "", "slot": "polyflow/windows", "status": "ok", "note": "Preview installer, not yet code-signed: Windows may ask you to confirm the publisher." }
+        {
+          "os": "web",
+          "url": "https://lwl-backend-mhgo.onrender.com/music-app/polyflow/index.html",
+          "status": "ok",
+          "note": "Chrome or Edge for Export video; everything else works in any current browser."
+        },
+        {
+          "os": "android",
+          "store": "play",
+          "storeUrl": "",
+          "slot": "polyflow/android",
+          "status": "testing",
+          "note": "Android 7.0 or newer with Chrome. The APK opens the same editions as the web app."
+        },
+        {
+          "os": "windows",
+          "store": "microsoft",
+          "storeUrl": "",
+          "slot": "polyflow/windows",
+          "status": "ok",
+          "note": "Preview installer, not yet code-signed: Windows may ask you to confirm the publisher."
+        }
       ],
       "links": [
-        ["User Guide", "https://lwliann.com/guides/polyflow/user-guide.html"],
-        ["Quick Start", "https://lwliann.com/guides/polyflow/quick-start.html"],
-        ["Studio Guide", "https://lwliann.com/guides/polyflow/studio-guide.html"],
-        ["Release notes", "https://lwliann.com/guides/polyflow/release-notes.html"],
-        ["About PolyFlow on lwliann.com", "https://lwliann.com/prosumers/polyflow.html"]
+        [
+          "User Guide",
+          "https://lwliann.com/guides/polyflow/user-guide.html"
+        ],
+        [
+          "Quick Start",
+          "https://lwliann.com/guides/polyflow/quick-start.html"
+        ],
+        [
+          "Studio Guide",
+          "https://lwliann.com/guides/polyflow/studio-guide.html"
+        ],
+        [
+          "Release notes",
+          "https://lwliann.com/guides/polyflow/release-notes.html"
+        ],
+        [
+          "About PolyFlow on lwliann.com",
+          "https://lwliann.com/prosumers/polyflow.html"
+        ]
       ],
       "privacyUrl": "https://lwliann.com/privacy-polyflow.html",
       "support": "enquiries@lwliann.com"
@@ -45,10 +79,25 @@
         "No account needed. My words and Stats stay on your device, and an optional LiANN sign-in sends your words to AlongSide SetLists."
       ],
       "platforms": [
-        { "os": "web", "url": "https://playtest.lwliann.com/playtest/game/", "status": "ok" },
-        { "os": "android", "store": "play", "storeUrl": "", "status": "testing", "note": "In internal testing on Google Play." }
+        {
+          "os": "web",
+          "url": "https://playtest.lwliann.com/playtest/game/",
+          "status": "ok"
+        },
+        {
+          "os": "android",
+          "store": "play",
+          "storeUrl": "",
+          "status": "testing",
+          "note": "In internal testing on Google Play."
+        }
       ],
-      "links": [["Learning with LiANN", "https://lwliann.com/"]],
+      "links": [
+        [
+          "Learning with LiANN",
+          "https://lwliann.com/"
+        ]
+      ],
       "privacyUrl": "",
       "support": "enquiries@lwliann.com"
     },
@@ -67,10 +116,25 @@
         "Your score and placed tiles are saved on your device."
       ],
       "platforms": [
-        { "os": "web", "url": "https://playtest.lwliann.com/playtest/puzzle/", "status": "ok" },
-        { "os": "android", "store": "play", "storeUrl": "", "status": "soon", "note": "An Android build of the crossword is on its way." }
+        {
+          "os": "web",
+          "url": "https://playtest.lwliann.com/playtest/puzzle/",
+          "status": "ok"
+        },
+        {
+          "os": "android",
+          "store": "play",
+          "storeUrl": "",
+          "status": "soon",
+          "note": "An Android build of the crossword is on its way."
+        }
       ],
-      "links": [["Learning with LiANN", "https://lwliann.com/"]],
+      "links": [
+        [
+          "Learning with LiANN",
+          "https://lwliann.com/"
+        ]
+      ],
       "privacyUrl": "",
       "support": "enquiries@lwliann.com"
     },
@@ -89,10 +153,26 @@
         "Playing never needs an account. Sign in only to sync saved words with AlongSide."
       ],
       "platforms": [
-        { "os": "web", "url": "https://playtest.lwliann.com/playtest/Tones", "status": "ok" },
-        { "os": "windows", "store": "microsoft", "storeUrl": "", "slot": "mahjong-tones/test-build", "status": "soon", "note": "The Unity edition for Windows is being prepared for the Microsoft Store." }
+        {
+          "os": "web",
+          "url": "https://playtest.lwliann.com/playtest/Tones",
+          "status": "ok"
+        },
+        {
+          "os": "windows",
+          "store": "microsoft",
+          "storeUrl": "",
+          "slot": "mahjong-tones/test-build",
+          "status": "soon",
+          "note": "The Unity edition for Windows is being prepared for the Microsoft Store."
+        }
       ],
-      "links": [["Learning with LiANN", "https://lwliann.com/"]],
+      "links": [
+        [
+          "Learning with LiANN",
+          "https://lwliann.com/"
+        ]
+      ],
       "privacyUrl": "",
       "support": "enquiries@lwliann.com"
     },
@@ -111,13 +191,35 @@
         "Saving your own words is free; plans are for households, tutors and organisations that share."
       ],
       "platforms": [
-        { "os": "web", "url": "https://lwl-backend-mhgo.onrender.com/app", "status": "ok" },
-        { "os": "android", "store": "play", "storeUrl": "", "slot": "alongside/android-test", "status": "testing", "note": "A test build for Android testers; the Google Play listing follows." },
-        { "os": "ios", "store": "appstore", "storeUrl": "", "status": "soon" }
+        {
+          "os": "web",
+          "url": "https://lwl-backend-mhgo.onrender.com/app",
+          "status": "ok"
+        },
+        {
+          "os": "android",
+          "store": "play",
+          "storeUrl": "",
+          "slot": "alongside/android-test",
+          "status": "testing",
+          "note": "A test build for Android testers; the Google Play listing follows."
+        },
+        {
+          "os": "ios",
+          "store": "appstore",
+          "storeUrl": "",
+          "status": "soon"
+        }
       ],
       "links": [
-        ["About AlongSide on lwliann.com", "https://lwliann.com/product-alongside.html"],
-        ["Sign in to AlongSide", "https://lwl-backend-mhgo.onrender.com/app"]
+        [
+          "About AlongSide on lwliann.com",
+          "https://lwliann.com/product-alongside.html"
+        ],
+        [
+          "Sign in to AlongSide",
+          "https://lwl-backend-mhgo.onrender.com/app"
+        ]
       ],
       "privacyUrl": "",
       "support": "enquiries@lwliann.com"
@@ -137,12 +239,30 @@
         "Preview build for testers: unzip, open chrome://extensions, turn on Developer mode and choose Load unpacked."
       ],
       "platforms": [
-        { "os": "chrome", "store": "chrome", "storeUrl": "", "slot": "dualsubs/extension", "status": "testing", "note": "The public release will come from the Chrome Web Store." },
-        { "os": "edge", "store": "edge", "storeUrl": "", "status": "soon" }
+        {
+          "os": "chrome",
+          "store": "chrome",
+          "storeUrl": "",
+          "slot": "dualsubs/extension",
+          "status": "testing",
+          "note": "The public release will come from the Chrome Web Store."
+        },
+        {
+          "os": "edge",
+          "store": "edge",
+          "storeUrl": "",
+          "status": "soon"
+        }
       ],
       "links": [
-        ["User Guide", "https://lwliann.com/guides/dual-subs/user-guide.html"],
-        ["About Dual Subs on lwliann.com", "https://lwliann.com/prosumers/dual-subs.html"]
+        [
+          "User Guide",
+          "https://lwliann.com/guides/dual-subs/user-guide.html"
+        ],
+        [
+          "About Dual Subs on lwliann.com",
+          "https://lwliann.com/prosumers/dual-subs.html"
+        ]
       ],
       "privacyUrl": "https://lwliann.com/privacy-dual-subs.html",
       "support": "enquiries@lwliann.com"
@@ -162,13 +282,76 @@
         "Preview build for testers: unzip, open chrome://extensions, turn on Developer mode and choose Load unpacked."
       ],
       "platforms": [
-        { "os": "chrome", "store": "chrome", "storeUrl": "", "slot": "lyricsync/extension", "status": "testing", "note": "The public release will come from the Chrome Web Store." },
-        { "os": "edge", "store": "edge", "storeUrl": "", "status": "soon" }
+        {
+          "os": "chrome",
+          "store": "chrome",
+          "storeUrl": "",
+          "slot": "lyricsync/extension",
+          "status": "testing",
+          "note": "The public release will come from the Chrome Web Store."
+        },
+        {
+          "os": "edge",
+          "store": "edge",
+          "storeUrl": "",
+          "status": "soon"
+        }
       ],
       "links": [
-        ["User Guide", "https://lwliann.com/guides/lyricsync/user-guide.html"],
-        ["Quick Start", "https://lwliann.com/guides/lyricsync/quick-start.html"],
-        ["About LyricSync on lwliann.com", "https://lwliann.com/prosumers/lyricsync.html"]
+        [
+          "User Guide",
+          "https://lwliann.com/guides/lyricsync/user-guide.html"
+        ],
+        [
+          "Quick Start",
+          "https://lwliann.com/guides/lyricsync/quick-start.html"
+        ],
+        [
+          "About LyricSync on lwliann.com",
+          "https://lwliann.com/prosumers/lyricsync.html"
+        ]
+      ],
+      "privacyUrl": "",
+      "support": "enquiries@lwliann.com"
+    },
+    {
+      "id": "hub",
+      "app": null,
+      "name": "Learning with LiANN",
+      "glyph": "",
+      "kind": "Hub · web, Windows and Mac",
+      "oneLine": "Every Learning with LiANN game and app in one place, with your SetLists and your plan.",
+      "audience": "Learners, parents and tutors.",
+      "points": [
+        "Home, Apps, Library, Read, Figures, Discover, Kids, Shop, Downloads and Plan in one hub.",
+        "One LiANN account by six-digit email code; the same sign-in as the games.",
+        "Your AlongSide SetLists in the Library, read-only.",
+        "The Windows and Mac apps open the same hub in their own window; the games and apps open in your browser from there."
+      ],
+      "platforms": [
+        {
+          "os": "web",
+          "url": "https://app.lwliann.com/",
+          "status": "ok"
+        },
+        {
+          "os": "windows",
+          "slot": "hub/windows",
+          "status": "soon",
+          "note": "Installer for Windows 10 and 11. Not yet code-signed: Windows may ask you to confirm the publisher."
+        },
+        {
+          "os": "mac",
+          "slot": "hub/mac",
+          "status": "soon",
+          "note": "Disk image for Apple silicon and Intel Macs. Not yet signed: the first time, open it from the context menu."
+        }
+      ],
+      "links": [
+        [
+          "Learning with LiANN",
+          "https://lwliann.com/"
+        ]
       ],
       "privacyUrl": "",
       "support": "enquiries@lwliann.com"

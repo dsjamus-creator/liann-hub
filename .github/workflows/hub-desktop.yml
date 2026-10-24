@@ -1,0 +1,65 @@
+name: Hub desktop installers
+
+# Builds the Learning with LiANN hub desktop window for Windows (NSIS installer) and Mac (DMG, universal) and keeps
+# them as workflow artifacts with a SHA256SUMS.txt each. Nothing is published: the owner downloads the artifacts,
+# signs where possible, and publishes to downloads.lwliann.com by the usual release contract
+# (lwl-backend docs/LIANN-DOWNLOADS.md), then fills the hub/windows and hub/mac entries in data/downloads.json.
+#
+# Both builds are unsigned until the owner adds certificates: Windows shows an unknown-publisher warning; macOS
+# Gatekeeper asks the person to open the app from the context menu the first time. A Developer ID certificate
+# from the Apple Developer Program account removes the Mac warning (notarisation is a later step).
+
+on:
+  push:
+    tags:
+      - hub-desktop-v*
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            script: dist:win
+            name: hub-windows-installer
+            glob: dist/LiANN-Hub-Setup-*.exe
+          - os: macos-latest
+            script: dist:mac
+            name: hub-mac-dmg
+            glob: dist/LiANN-Hub-*-mac.dmg
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: apps/hub-desktop
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: apps/hub-desktop/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run ${{ matrix.script }}
+      - name: Check the build and write its checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          file=$(ls ${{ matrix.glob }})
+          size=$(wc -c < "$file")
+          if [ "$size" -lt 10000000 ]; then echo "Build is unexpectedly small: $size bytes"; exit 1; fi
+          if command -v sha256sum >/dev/null; then sha256sum "$file" > dist/SHA256SUMS.txt; else shasum -a 256 "$file" > dist/SHA256SUMS.txt; fi
+          cat dist/SHA256SUMS.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ matrix.name }}
+          path: |
+            apps/hub-desktop/${{ matrix.glob }}
+            apps/hub-desktop/dist/SHA256SUMS.txt

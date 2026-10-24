@@ -30,6 +30,18 @@ the same record, the visitor's own platform first. Files come from `data/downloa
 
 When a store listing goes live, put its public URL in `storeUrl` for that platform and the badge becomes a link.
 
+## Windows and Mac apps
+
+`apps/hub-desktop/` is an Electron window on app.lwliann.com, on the PolyFlow desktop model: no Node in the page,
+navigation kept to the hub's origin, every Open button handed to the system browser, every permission request
+refused. The **Hub desktop installers** workflow (`.github/workflows/hub-desktop.yml`, run by hand or on a
+`hub-desktop-v*` tag) builds the Windows NSIS installer and the universal Mac DMG and keeps them as artifacts with
+their checksums; it publishes nothing. The owner publishes them to downloads.lwliann.com under the release
+contract in lwl-backend `docs/LIANN-DOWNLOADS.md` and fills the `hub/windows` and `hub/mac` entries in
+`data/downloads.json`, after which `app.lwliann.com/hub` offers them. Both builds are unsigned until certificates
+exist (Windows warns about an unknown publisher; macOS asks to open the app from the context menu once). The app
+icon is the wordmark on the hub ground (`apps/hub-desktop/icons/icon.png`). `apps/` never deploys with the site.
+
 ## Run and test
 
 ```

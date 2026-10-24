@@ -15,10 +15,12 @@ test('every product has a page shell, an app card and manifest slots that exist'
     assert.match(shell, new RegExp(`data-product="${p.id}"`), `${p.id}.html names its product`)
     assert.ok(shell.includes('src/product.js'), `${p.id}.html loads the product module`)
     assert.ok(shell.includes(`https://app.lwliann.com/${p.id}`), `${p.id}.html carries its canonical address`)
-    const app = APPS.find(a => a.id === p.app)
-    assert.ok(app, `${p.id} → app card ${p.app}`)
-    assert.equal(app.page, p.id, `${app.id}.page points back at the product`)
-    assert.equal(app.g, p.glyph, `${p.id} glyph matches the card`)
+    if (p.app) {
+      const app = APPS.find(a => a.id === p.app)
+      assert.ok(app, `${p.id} → app card ${p.app}`)
+      assert.equal(app.page, p.id, `${app.id}.page points back at the product`)
+      assert.equal(app.g, p.glyph, `${p.id} glyph matches the card`)
+    }
     for (const pl of p.platforms) {
       if (pl.slot) assert.ok(manifest.some(d => d.slot === pl.slot), `${p.id} ${pl.os} → slot ${pl.slot}`)
       if (pl.store) assert.ok(STORES[pl.store], `${p.id} ${pl.os} store ${pl.store}`)

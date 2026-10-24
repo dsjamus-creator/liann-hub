@@ -457,5 +457,39 @@
     "licenceNotes": "Final model and packaging rights require verification.",
     "notes": "Only placeholders described in design; no final GLB found in inspected trees.",
     "producer": "codex"
+  },
+  {
+    "file": null,
+    "bytes": null,
+    "sha256": null,
+    "builtAt": null,
+    "product": "liann-hub",
+    "sourceRepo": "dsjamus-creator/liann-hub",
+    "sourceCommit": null,
+    "licenceNotes": "Electron wrapper on app.lwliann.com; unsigned until the owner adds certificates.",
+    "producer": "claude",
+    "name": "Learning with LiANN for Windows",
+    "version": "0.1.0",
+    "platform": "Windows installer",
+    "hubSlot": "hub/windows",
+    "buildCommand": "GitHub Actions: Hub desktop installers (apps/hub-desktop, npm run dist:win)",
+    "notes": "Built by the Hub desktop installers workflow as an artifact; the owner publishes it to downloads.lwliann.com and fills file, bytes, sha256 and builtAt."
+  },
+  {
+    "file": null,
+    "bytes": null,
+    "sha256": null,
+    "builtAt": null,
+    "product": "liann-hub",
+    "sourceRepo": "dsjamus-creator/liann-hub",
+    "sourceCommit": null,
+    "licenceNotes": "Electron wrapper on app.lwliann.com; unsigned until the owner adds certificates.",
+    "producer": "claude",
+    "name": "Learning with LiANN for Mac",
+    "version": "0.1.0",
+    "platform": "Mac disk image (universal)",
+    "hubSlot": "hub/mac",
+    "buildCommand": "GitHub Actions: Hub desktop installers (apps/hub-desktop, npm run dist:mac)",
+    "notes": "Built by the Hub desktop installers workflow as an artifact; unsigned, so macOS asks to open it from the context menu the first time. The owner publishes it to downloads.lwliann.com and fills file, bytes, sha256 and builtAt."
   }
 ]

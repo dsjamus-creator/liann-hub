@@ -60,7 +60,7 @@ const button = b => {
   return `<a class="btn${b.primary ? '' : ' ghost'}" href="${esc(b.href)}" ${attrs}>${esc(b.label)}</a>`
 }
 
-const row = (m, glyph) => `<div class="c prow" data-os="${esc(m.os)}"><div class="h"><div class="tile">${esc(glyph)}</div><div><div class="t">${esc(m.label)}</div><div class="s">${esc(m.sub)}</div></div></div>
+const row = (m, glyph) => `<div class="c prow" data-os="${esc(m.os)}"><div class="h">${glyph ? `<div class="tile">${esc(glyph)}</div>` : ''}<div><div class="t">${esc(m.label)}</div><div class="s">${esc(m.sub)}</div></div></div>
   <div class="status ${m.status.cls}">${esc(m.status.text)}</div><div class="d">${esc(m.note || m.buttons.find(b => b.meta)?.meta || '')}</div>
   ${m.note && m.buttons.some(b => b.meta) ? `<div class="d">${esc(m.buttons.find(b => b.meta).meta)}</div>` : ''}<div class="acts">${m.buttons.map(button).join('')}</div></div>`
 
@@ -71,14 +71,14 @@ export function productHTML(product, downloads, os, others = []) {
   <header class="ptop"><a class="plock" href="/" aria-label="Learning with LiANN hub">${LOCKUP}</a>
     <nav class="plinks"><a href="/#apps">All apps</a><a href="/#downloads">Downloads</a></nav></header>
   <main class="pmain">
-    <section class="hero"><div class="pic">${art(product.app)}</div>
+    <section class="hero"><div class="pic">${art(product.app || '') || `<div class="cart" style="display:grid;place-items:center;background:var(--bg)">${LOCKUP}</div>`}</div>
       <div class="txt"><div class="eyebrow">${esc(product.kind)}</div><h1>${esc(product.name)}</h1><p class="lead">${esc(product.oneLine)}</p><p class="muted">${esc(product.audience)}</p></div></section>
     <section class="sec"><div class="sechead"><h2>Get it</h2><span class="muted" style="font-size:.85rem">${rows[0] && rows[0].os === os ? `Your device first: ${esc(rows[0].label)}` : 'Every platform'}</span></div>
       <div class="grid prows">${rows.map(m => row(m, product.glyph)).join('')}</div>
       <p class="muted" style="margin:0;font-size:.85rem">Every file is listed from a signed-off manifest with its version and size. Store listings open here as they go live.</p></section>
     <section class="sec"><div class="sechead"><h2>What it does</h2></div><ul class="points">${(product.points || []).map(t => `<li>${esc(t)}</li>`).join('')}</ul></section>
     <section class="sec"><div class="sechead"><h2>Guides and help</h2></div><ul class="plist">${links}${product.privacyUrl ? `<li><a href="${esc(product.privacyUrl)}" target="_blank" rel="noopener">Privacy notice</a></li>` : ''}${product.support ? `<li><a href="mailto:${esc(product.support)}">${esc(product.support)}</a></li>` : ''}</ul></section>
-    ${others.length ? `<section class="sec"><div class="sechead"><h2>Also from Learning with LiANN</h2></div><div class="chips">${others.map(o => `<a class="chip" href="/${esc(o.id)}"><span class="han">${esc(o.glyph)}</span> ${esc(o.name)}</a>`).join('')}</div></section>` : ''}
+    ${others.length ? `<section class="sec"><div class="sechead"><h2>Also from Learning with LiANN</h2></div><div class="chips">${others.map(o => `<a class="chip" href="/${esc(o.id)}">${o.glyph ? `<span class="han">${esc(o.glyph)}</span> ` : ''}${esc(o.name)}</a>`).join('')}</div></section>` : ''}
   </main>
   <footer class="pfoot muted"><span class="wm" style="font-size:1rem"><span class="pre">Learning with</span><span class="nm">LiANN</span></span> · Multilingual education through Entertainment · a YOLO TECH Ltd product · <a href="/">app.lwliann.com</a></footer>
 </div>`

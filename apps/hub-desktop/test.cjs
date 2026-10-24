@@ -1,0 +1,18 @@
+'use strict';
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const pkg = require('./package.json');
+const source = fs.readFileSync(require('node:path').join(__dirname, 'main.cjs'), 'utf8');
+assert.equal(pkg.build.appId, 'com.lwliann.hub');
+assert.equal(pkg.build.productName, 'Learning with LiANN');
+assert.equal(pkg.build.win.target, 'nsis');
+assert.equal(pkg.build.mac.target[0].target, 'dmg');
+assert.equal(pkg.build.mac.identity, null, 'unsigned until the owner adds a Developer ID certificate');
+assert.ok(pkg.build.files.includes('icons/icon.png'));
+const png = fs.readFileSync(require('node:path').join(__dirname, 'icons', 'icon.png'));
+assert.equal(png.toString('ascii', 1, 4), 'PNG');
+assert.ok(png.readUInt32BE(16) >= 512 && png.readUInt32BE(16) === png.readUInt32BE(20), 'a square icon of at least 512 px');
+assert.match(source, /const APP_URL = 'https:\/\/app\.lwliann\.com\/'/);
+for (const setting of ['nodeIntegration: false', 'contextIsolation: true', 'sandbox: true', 'webSecurity: true']) assert.ok(source.includes(setting), setting);
+assert.ok(source.includes('callback(false)'), 'every permission request is refused');
+console.log('PASS hub desktop wrapper: origin, isolation settings, icon');
