@@ -1,7 +1,6 @@
 # Tests the hub, then deploys it to app.lwliann.com (Cloudflare Worker "liann-hub").
 # Runs on every push to main, and on demand from the Actions tab (Run workflow).
-# Needs two repository secrets: CLOUDFLARE_API_TOKEN (a Workers token: "Edit Cloudflare Workers"
-# template plus Zone > DNS > Edit for lwliann.com) and CLOUDFLARE_ACCOUNT_ID.
+# Needs CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID and HUB_SIGNING_KEY repository secrets.
 name: Deploy hub
 
 on:
@@ -21,14 +20,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      HAS_CLOUDFLARE: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+      HAS_CLOUDFLARE: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' && secrets.HUB_SIGNING_KEY != '' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Dependency audit
+        run: npm audit --audit-level=high
       - name: Unit tests
         run: npm test
       - name: Browser smoke test
@@ -37,12 +38,23 @@ jobs:
           CHROME_PATH: /usr/bin/google-chrome
       - name: Deploy to app.lwliann.com
         if: env.HAS_CLOUDFLARE == 'true'
-        # The comic-page signing key is made fresh for every deploy and only ever lives in the Worker: signed page links last
-        # 30 minutes, so a new key just means open readers fetch fresh links.
-        run: npx wrangler deploy --var "SIGNING_KEY:$(openssl rand -hex 32)"
+        run: |
+          umask 077
+          secret_file="$RUNNER_TEMP/hub-secrets.json"
+          trap 'rm -f "$secret_file"' EXIT
+          python3 - <<'PY'
+          import json, os, re
+          key = os.environ['HUB_SIGNING_KEY'].strip()
+          if not re.fullmatch(r'[0-9a-f]{64}', key):
+              raise SystemExit('HUB_SIGNING_KEY must be 64 lowercase hex characters')
+          with open(os.path.join(os.environ['RUNNER_TEMP'], 'hub-secrets.json'), 'w', encoding='utf-8') as output:
+              json.dump({'SIGNING_KEY': key}, output)
+          PY
+          npx wrangler deploy --secrets-file "$secret_file"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          HUB_SIGNING_KEY: ${{ secrets.HUB_SIGNING_KEY }}
       - name: Deploy skipped
         if: env.HAS_CLOUDFLARE != 'true'
-        run: echo "::warning::Not deployed. Add the CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repository secrets."
+        run: echo "::warning::Not deployed. Add the CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID and HUB_SIGNING_KEY repository secrets."

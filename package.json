@@ -9,12 +9,15 @@
     "test": "node --test tests/unit.test.mjs tests/protect.test.mjs tests/security.test.mjs",
     "test:smoke": "node tests/smoke.mjs",
     "check": "npm test && npm run test:smoke",
-    "deploy": "wrangler deploy --var \"SIGNING_KEY:$(openssl rand -hex 32)\"",
-    "deploy:check": "wrangler deploy --dry-run --var SIGNING_KEY:dry-run"
+    "deploy": "wrangler deploy",
+    "deploy:check": "wrangler deploy --dry-run"
   },
   "devDependencies": {
     "playwright-core": "1.56.1",
     "wrangler": "^4.40.0"
+  },
+  "overrides": {
+    "undici": "7.30.1"
   },
   "engines": {
     "node": ">=20"

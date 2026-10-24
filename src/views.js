@@ -229,7 +229,7 @@ function downloadsFor(s, filter) {
 
 function pDownloads(s) {
   return `<section class="sec"><div class="sechead"><h2>Downloads</h2><span class="muted" style="font-size:.85rem">Latest files, checked and signed off</span></div>
-  ${downloadsFor(s, d => d.product !== 'figures')}
+  ${downloadsFor(s, d => d.product !== 'figures' && d.product !== 'bella-liann')}
   <p class="muted" style="margin:0;font-size:.85rem">Each file is listed from a manifest with its version, source and SHA-256 checksum, so you can check what you downloaded.</p></section>`
 }
 
@@ -242,9 +242,8 @@ function pRead(s) {
     }).join('')}</div>`
     : `<div class="feature"><div class="art" style="background:#ddd url(assets/comic-2.jpg) center/cover" role="img" aria-label="Bella flying over the city, from Bella & LiANN"></div>
   <div class="txt"><div class="eyebrow">Coming soon</div><h3>Bella &amp; LiANN</h3><p class="muted" style="margin:0">Read the comic with pinyin and English, and save words to your SetLists.</p></div></div>`
-  return `<section class="sec"><div class="sechead"><h2>Bella &amp; LiANN</h2><span class="muted">${eps.length ? 'Read it here, or download the PDFs below' : 'Episodes appear here when they are published'}</span></div>
-  ${lead}
-  ${downloadsFor(s, d => d.product === 'bella-liann')}</section>`
+  return `<section class="sec"><div class="sechead"><h2>Bella &amp; LiANN</h2><span class="muted">${eps.length ? 'Read with your LiANN account' : 'Episodes appear here when they are published'}</span></div>
+  ${lead}</section>`
 }
 
 // Full-screen comic reader: one page or a two-page spread, a page-turn animation, a hover magnifier, swipe / arrow

@@ -4,7 +4,7 @@ import { loadDownloads } from './downloads.js'
 import { createBook, webglOK } from './book3d.js'
 import { createPageSigner } from './pages.js'
 import { loadComics, clampPage, spreadsOf, spreadIndexOf, firstPageOf, visiblePages, lensGeometry } from './comics.js'
-import { DS, vLoading, vEmail, vCode, vWho, vHub, vComic } from './views.js'
+import { DS, vLoading, vEmail, vCode, vWho, vHub } from './views.js'
 import { mountViewer, stopViewer } from './figures.js'
 
 const account = createAccount({ pinyinApi: config.pinyinApi, backend: config.backend })
@@ -28,7 +28,7 @@ function pageFromHash() { const [k] = hashParts(); return NAV.some(([n]) => n ==
 // A reader link: #read/<episode id> opens that comic as soon as the hub and the episodes are ready.
 function openFromHash() {
   const [k, arg] = hashParts()
-  if (k === 'read' && arg && S.comics && !S.reader && ((S.view === 'hub' && S.page === 'read') || S.view === 'comic')) openReader(arg)
+  if (k === 'read' && arg && S.comics && !S.reader && S.view === 'hub' && S.page === 'read') openReader(arg)
 }
 function applyTheme() { document.documentElement.dataset.ds = S.theme.ds; document.documentElement.dataset.t = S.theme.t; store.set('liann-hub-theme', S.theme) }
 function toast(text) { const el = $('#toast'); el.textContent = text; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => { el.hidden = true }, 2200) }
@@ -57,7 +57,7 @@ async function householdDo(method, path, body, done) {
 }
 
 function render() {
-  const view = { loading: vLoading, email: vEmail, code: vCode, who: vWho, hub: vHub, comic: vComic }[S.view]
+  const view = { loading: vLoading, email: vEmail, code: vCode, who: vWho, hub: vHub }[S.view]
   const focused = document.activeElement?.id
   $('#root').innerHTML = view(S)
   bind()
@@ -114,7 +114,11 @@ async function finishProfile() {
   render()
 }
 
-function signedOut() { go('email', { user: null, setlists: null, openList: null }) }
+function signedOut() {
+  void fetch('/comic/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {})
+  S.reader = null; dropBook()
+  go('email', { user: null, setlists: null, openList: null })
+}
 
 // Comic reader. Progress (last page seen per episode), the one/two-page choice and the magnifier switch stay on this device.
 const LENS_ZOOM = 2.5, LENS_SIZE = 190
@@ -147,7 +151,7 @@ function wantSpread(r, n) {
 const signer = createPageSigner({ getToken: () => account.accessToken() })
 async function signPages(ep) {
   try { ep.pages = await signer.pagesOf(ep); return true }
-  catch (error) { toast(error.message); return false }
+  catch (error) { if (error.code === 'signed_out') { signedOut(); S.error = error.message; render() } else toast(error.message); return false }
 }
 setInterval(() => { const ep = S.reader && S.comics?.find(e => e.id === S.reader.id); if (ep) signer.pagesOf(ep).then(p => { ep.pages = p }, () => {}) }, 120000)
 async function openReader(id) {
@@ -178,7 +182,7 @@ function zoomBy(factor, cx, cy) {
   $('#rlens').hidden = true; $('.flip')?.remove()
   const b = $('#rzoom'); if (b) { b.textContent = z > 1 ? 'Fit page' : 'Zoom'; b.setAttribute('aria-pressed', z > 1) }
 }
-function closeReader() { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); S.reader = null; dropBook(); if (hashParts()[1]) history.replaceState(null, '', '#read'); if (S.view === 'comic') return go('email'); render() }
+function closeReader() { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); S.reader = null; dropBook(); if (hashParts()[1]) history.replaceState(null, '', '#read'); render() }
 // Go to page `to`; dir (+1 / -1) plays the page-turn when it is a single step.
 function showPage(to, dir) {
   const ep = readerEp(); if (!ep) return
@@ -447,10 +451,10 @@ async function start() {
     history.replaceState(null, '', location.pathname + location.search)
   }
   applyTheme(); render()
-  loadComics(config.comicsManifest).then(c => { S.comics = c }, () => { S.comics = [] }).finally(() => { if (S.view === 'hub' || S.view === 'comic') { render(); openFromHash() } })
+  loadComics(config.comicsManifest).then(c => { S.comics = c }, () => { S.comics = [] }).finally(() => { if (S.view === 'hub') { render(); openFromHash() } })
   loadDownloads(config.downloadsManifest).then(d => { S.downloads = d }, e => { S.downloads = e }).finally(() => { if (S.view === 'hub') render() })
-  // A shared comic link (#read/<episode>) opens the comic for anyone; the rest of the hub needs a sign-in.
-  const shared = hashParts()[0] === 'read' && hashParts()[1], gate = extra => (shared ? (go('comic'), openFromHash()) : go('email', extra))
+  // A shared comic link opens after the reader signs in with a LiANN account.
+  const gate = extra => go('email', extra)
   if (!account.hasSession()) return gate(linkError ? { error: linkError } : undefined)
   try { const user = await account.user(); user ? enterHub(user) : gate(linkError ? { error: linkError } : undefined) }
   catch (error) { gate({ error: error.message }) }

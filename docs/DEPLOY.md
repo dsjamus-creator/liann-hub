@@ -4,7 +4,7 @@ The hub runs on Cloudflare Workers as a static-assets-only Worker named `liann-h
 
 `.assetsignore` limits the upload to the site itself: `index.html`, `404.html`, `styles.css`, `_headers`, `src/`, `assets/` and `data/`. Tests, scripts, docs, `node_modules` and the config files stay private. This was checked with `wrangler dev`: those paths return 404.
 
-The Worker also runs a little code, only for `/comic/*` (the protected comic pages): see `docs/COMIC-PROTECTION.md`. It needs the private `liann-reader` R2 bucket and a signing key that every deploy generates itself (`npm run deploy` does this too).
+The Worker also runs a little code, only for `/comic/*` (the protected comic pages): see `docs/COMIC-PROTECTION.md`. It needs the private `liann-reader` R2 bucket and a `SIGNING_KEY` Worker secret. A deployment preserves the key, so short-lived links remain valid across code releases.
 
 ## Automatic deploys (GitHub Actions)
 
@@ -13,8 +13,9 @@ The Worker also runs a little code, only for `/comic/*` (the protected comic pag
 One-time setup, in this repo's **Settings → Secrets and variables → Actions → New repository secret**:
 - `CLOUDFLARE_API_TOKEN`: a Workers token (Create Token → **Edit Cloudflare Workers** template, plus **Zone → DNS → Edit** for lwliann.com). Not the R2 downloads token.
 - `CLOUDFLARE_ACCOUNT_ID`: the 32-character ID in the dashboard address (`dash.cloudflare.com/<account id>/home`).
+- `HUB_SIGNING_KEY`: a 64-character lowercase hex value. Generate it once with a secure random-number generator; keep it in Actions secrets, not source. The deploy workflow uploads it as a Cloudflare Worker secret.
 
-Without both secrets the workflow still runs the tests and says the deploy was skipped.
+Without all three secrets the workflow still runs the tests and says the deploy was skipped.
 
 ## One-time deploy (owner, on a machine signed in to the Cloudflare account that holds lwliann.com)
 
@@ -27,7 +28,7 @@ npm run deploy:check         # dry run: validates the config, uploads nothing
 npm run deploy               # uploads the site and attaches app.lwliann.com
 ```
 
-The certificate usually takes a few minutes. Then open https://app.lwliann.com/. Later deploys use `npm run deploy` only.
+For a brand-new Worker, first generate a 64-character lowercase hex key, set it as `SIGNING_KEY` with `npx wrangler secret put SIGNING_KEY`, and set the same value as the `HUB_SIGNING_KEY` Actions secret. For the existing Worker, the next Actions deployment migrates the current plain-text binding to a Worker secret using the already configured repository secret. A later manual `npm run deploy` preserves that Worker secret. The certificate usually takes a few minutes. Then open https://app.lwliann.com/.
 
 If `app.lwliann.com` already has a DNS record (for example a placeholder), Cloudflare refuses the Custom Domain. Delete that record in the Cloudflare dashboard (lwliann.com → DNS), then deploy again.
 

@@ -51,7 +51,7 @@
     "producer": "codex"
   },
   {
-    "file": "https://downloads.lwliann.com/polyflow/windows/0.1.0/PolyFlow-Setup-0.1.0.exe",
+    "file": null,
     "bytes": 110447405,
     "sha256": "b95ef832ab542617502031a079320de36cc96b2003c379ca0a8602a9534f6c73",
     "builtAt": "2026-10-12T22:05:54Z",
@@ -85,7 +85,7 @@
     "producer": "claude"
   },
   {
-    "file": "https://downloads.lwliann.com/mahjong-tones/windows/0.2.0/LiANN-Mahjong-Tones-Windows-0.2.0.zip",
+    "file": null,
     "bytes": 166071673,
     "sha256": "18f58831a3a151347b08aac627b091742ab3bb067ff4a4d3d477aa8c5644429e",
     "builtAt": "2026-10-13T21:34:45Z",
@@ -102,7 +102,7 @@
     "producer": "claude"
   },
   {
-    "file": "https://downloads.lwliann.com/alongside-dashboard/android/0.1.3/AlongSide-Dashboard-0.1.3-debug.apk",
+    "file": null,
     "bytes": 4855521,
     "sha256": "5d0b74044ffbf50ad9c421f80babd45b6a47f7152d6d9f697bcda7cb5004a0b7",
     "builtAt": "2026-10-13T00:55:34Z",
@@ -119,7 +119,7 @@
     "producer": "codex"
   },
   {
-    "file": "https://downloads.lwliann.com/alongside-dashboard/windows/0.1.0/AlongSide-Dashboard-Setup-0.1.0.exe",
+    "file": null,
     "bytes": 110447937,
     "sha256": "356d462f9a085d580ba6bbe19b3b1792107be62d3c425ec0f32d6e547be3b0e1",
     "builtAt": "2026-10-14T17:31:02Z",
@@ -170,7 +170,7 @@
     "producer": "codex"
   },
   {
-    "file": "https://downloads.lwliann.com/bella-liann/issue-1/Bella_LiANN_Issue_One_BW.pdf?v=c38c05b16322",
+    "file": null,
     "bytes": 25478138,
     "sha256": "c38c05b16322aa5415eb28b22ec88820e987d9d9da471db952747db956072be1",
     "builtAt": "2026-10-17T21:54:42Z",
