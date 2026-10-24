@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "updated": "2026-10-24",
+  "items": [
+    {
+      "id": "free",
+      "topic": "plans",
+      "q": "Do I have to pay to use the hub and the apps?",
+      "a": "No. Everything you do in your own account is free with a LiANN account: the games, your SetLists and the words you save from every game. Plans are for sharing with other people, such as a household, a class or an organisation. The prices for those plans have not been set yet."
+    },
+    {
+      "id": "sign-in",
+      "topic": "account",
+      "q": "How do I sign in?",
+      "a": "The hub sends a six-digit code to your email, so there is no password to remember. The same account works in every game and in AlongSide.",
+      "steps": [
+        "Enter your email address on the sign-in page.",
+        "Open the email from Learning with LiANN and find the six-digit code.",
+        "Type the code into the hub."
+      ]
+    },
+    {
+      "id": "saved-words",
+      "topic": "setlists",
+      "q": "Where are the words I save in the games?",
+      "a": "They are filed into your SetLists in AlongSide, and the Library page in the hub lists them. The Library is read only for now.",
+      "steps": [
+        "Open Library from the menu.",
+        "Choose a SetList to read its words."
+      ]
+    },
+    {
+      "id": "learner-profile",
+      "topic": "setlists",
+      "q": "Why does the hub ask me to finish my learner profile?",
+      "a": "AlongSide files your saved words into your own learner record. Until your profile is finished your saves are kept safely, and they are filed with your next save once the profile is complete."
+    },
+    {
+      "id": "where-apps-run",
+      "topic": "game",
+      "q": "Which apps run in my browser, and which do I install?",
+      "a": "Pinyin Tiles and Pinyin Puzzle run in your browser. LiANN Pinyin Mahjong Tones and PolyFlow run in your browser and have Windows downloads. LyricSync and Dual Subs are Chrome and Edge extensions for a desktop computer. AlongSide has an Android test build. The Apps and Downloads pages show what is ready today."
+    },
+    {
+      "id": "contact",
+      "topic": "other",
+      "q": "How do I talk to a person?",
+      "a": "Use the support form below. If someone is online you can chat live. If not, leave a message and we reply by email, usually within one working day."
+    },
+    {
+      "id": "safety",
+      "topic": "safeguarding",
+      "q": "Is support for children?",
+      "a": "Support is for adults. If you are under 18, please ask a parent or guardian to write to us. If a child or anyone else is in immediate danger, call 999 now."
+    }
+  ]
+}

@@ -448,14 +448,24 @@ export function appearHTML(th) {
 // Phone tab bar: four pages, then More for the rest of the menu.
 const TAB_PAGES = ['home', 'apps', 'library', 'downloads']
 
-export const PAGES = { home: pHome, apps: pApps, library: pLibrary, read: pRead, figures: pFigures, discover: pDiscover, kids: pKids, shop: pShop, downloads: pDownloads, plan: pPlan }
+// Help: the FAQ (data/faq.json, shared with the website) and the support form with live chat. The widget itself is mounted
+// into #support-mount by app.js after each render, so a chat in progress survives the hub redrawing around it.
+const faqItem = f => `<details class="faq" data-faq="${esc(f.id)}"><summary>${esc(f.q)}</summary><div class="faqa"><p>${esc(f.a)}</p>${Array.isArray(f.steps) && f.steps.length ? `<ol>${f.steps.map(x => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}</div></details>`
+function pHelp(s) {
+  return `<section class="sec"><div class="sechead"><h2>Help</h2></div>
+  <p class="muted" style="margin:0">Quick answers first. If you still need a person, the support form is below.</p>
+  <div class="faqs" aria-label="Common questions">${Array.isArray(s.faq) ? s.faq.map(faqItem).join('') : s.faq === null ? '<p class="muted">The questions could not be loaded. The support form below still works.</p>' : '<p class="muted">Loading the questions…</p>'}</div></section>
+  <section class="sec" id="support"><div class="sechead"><h2>Contact support</h2></div><div id="support-mount"></div></section>`
+}
+
+export const PAGES = { home: pHome, apps: pApps, library: pLibrary, read: pRead, figures: pFigures, discover: pDiscover, kids: pKids, shop: pShop, downloads: pDownloads, plan: pPlan, help: pHelp }
 
 export function vHub(s) {
   const p = profileOf(s.user), page = PAGES[s.page] ? s.page : 'home'
   return `<div class="app ${s.slim ? 'slim' : ''}">
   <header class="top"><button class="iconbtn menu" id="slim" aria-label="${s.slim ? 'Expand' : 'Collapse'} menu">${ico('menu')}</button>${LOCKUP}
    <form class="search" id="topsearch" role="search">${ico('search', 18)}<input id="ts" value="${esc(s.query || '')}" placeholder="Search Learning with LiANN" aria-label="Search"></form>
-   <button class="iconbtn" id="apbtn" aria-label="Appearance">${ico('palette')}</button><button class="iconbtn help" aria-label="Help and account" data-nav="plan">${ico('help')}</button><button class="iconbtn${notificationsOf(s).length ? ' has-new' : ''}" id="bell" aria-label="Notifications" aria-expanded="${!!s.notif}">${ico('bell')}</button>
+   <button class="iconbtn" id="apbtn" aria-label="Appearance">${ico('palette')}</button><button class="iconbtn help" aria-label="Help and support" data-nav="help">${ico('help')}</button><button class="iconbtn${notificationsOf(s).length ? ' has-new' : ''}" id="bell" aria-label="Notifications" aria-expanded="${!!s.notif}">${ico('bell')}</button>
    <button class="tile avatar" id="me" aria-label="Profile (${esc(p.name)})">${esc(p.g)}</button></header>
   <nav class="rail" aria-label="Main">${NAV.map(rItem(page)).join('')}</nav>
   <main id="main"><div class="wrap fade">${PAGES[page](s)}</div></main>
