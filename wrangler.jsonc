@@ -1,5 +1,5 @@
 {
-  // Learning with LiANN hub at https://app.lwliann.com: static assets, plus a small Worker that runs only for /comic/*
+  // Learning with LiANN hub at https://app.lwliann.com: static assets, plus a Worker for /comic/* and /session/*
   // (the protected comic pages). `npx wrangler deploy` uploads the site and attaches app.lwliann.com as a Custom Domain,
   // which creates the DNS record and HTTPS certificate in the lwliann.com zone. See docs/DEPLOY.md and docs/COMIC-PROTECTION.md.
   "$schema": "./node_modules/wrangler/config-schema.json",
@@ -10,14 +10,22 @@
     "directory": "./",
     "binding": "ASSETS",
     "not_found_handling": "404-page",
-    "run_worker_first": ["/comic/*"]
+    "run_worker_first": ["/comic/*", "/session/*"]
   },
   // The comic page files: a private bucket with no public address (no r2.dev, no custom domain). Only this Worker reads it.
   "r2_buckets": [
     { "binding": "PAGES", "bucket_name": "liann-reader" }
   ],
+  // Separate per-IP and per-session, per-location abuse brakes for the same-origin session endpoints.
+  // Supabase's forwarded-IP Auth limit remains the authoritative verification limit.
+  "ratelimits": [
+    { "name": "SESSION_VERIFY_LIMITER", "namespace_id": "26102401", "simple": { "limit": 10, "period": 60 } },
+    { "name": "SESSION_REFRESH_LIMITER", "namespace_id": "26102402", "simple": { "limit": 60, "period": 60 } },
+    { "name": "SESSION_LOGOUT_LIMITER", "namespace_id": "26102403", "simple": { "limit": 5, "period": 60 } }
+  ],
   "vars": {
-    "PINYIN_API": "https://api.pinyintiles.com"
+    "PINYIN_API": "https://api.pinyintiles.com",
+    "AUTH_IP_FORWARDING": "0"
   },
   "routes": [
     { "pattern": "app.lwliann.com", "custom_domain": true }

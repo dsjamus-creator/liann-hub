@@ -1,10 +1,12 @@
 # Deploying app.lwliann.com
 
-The hub runs on Cloudflare Workers as a static-assets-only Worker named `liann-hub`. lwliann.com's DNS is already on Cloudflare, where the playtest site's Workers live. `wrangler.jsonc` attaches **app.lwliann.com** as a Workers *Custom Domain*, so the first deploy creates the DNS record and the HTTPS certificate itself. There's no DNS record to add by hand.
+The hub runs on a Cloudflare Worker named `liann-hub`. lwliann.com's DNS is already on Cloudflare, where the playtest site's Workers live. `wrangler.jsonc` attaches **app.lwliann.com** as a Workers *Custom Domain*, so the first deploy creates the DNS record and the HTTPS certificate itself. There's no DNS record to add by hand.
 
 `.assetsignore` limits the upload to the site itself: `index.html`, `404.html`, `styles.css`, `_headers`, `src/`, `assets/` and `data/`. Tests, scripts, docs, `node_modules` and the config files stay private. This was checked with `wrangler dev`: those paths return 404.
 
-The Worker also runs a little code, only for `/comic/*` (the protected comic pages): see `docs/COMIC-PROTECTION.md`. It needs the private `liann-reader` R2 bucket and a `SIGNING_KEY` Worker secret. A deployment preserves the key, so short-lived links remain valid across code releases.
+The Worker handles `/comic/*` (protected comic pages) and `/session/*` (email-code verification, refresh and local sign-out). See `docs/COMIC-PROTECTION.md`. It needs the private `liann-reader` R2 bucket and separate `SIGNING_KEY` and `SESSION_KEY` Worker secrets. A deployment preserves the keys, so short-lived links and signed-in browser sessions remain valid across code releases. The session refresh token is encrypted into a host-only HttpOnly cookie; page JavaScript keeps only an access token in memory. Existing browser-stored sessions are discarded at rollout, so users enter a new email code once.
+
+The draft configuration adds three Worker Rate Limiting bindings for `/session/verify` (per IP), `/session/refresh` (per IP) and `/session/logout` (per sealed session ID). They require no secret and return 429 before an Auth call when a limit is reached. Cloudflare documents these counters as approximate and per location, so keep Supabase Auth limits and test shared-network behaviour before release. There is no separate staging Wrangler target in this repo yet: `wrangler.jsonc` and the Actions workflow deploy to **production**. Do not run either deployment command for a staging exercise. A staging deployment needs an isolated Worker name/host, R2 bucket, session and signing keys, identity project, Pinyin Auth config and browser endpoints.
 
 ## Automatic deploys (GitHub Actions)
 
@@ -14,8 +16,10 @@ One-time setup, in this repo's **Settings → Secrets and variables → Actions 
 - `CLOUDFLARE_API_TOKEN`: a Workers token (Create Token → **Edit Cloudflare Workers** template, plus **Zone → DNS → Edit** for lwliann.com). Not the R2 downloads token.
 - `CLOUDFLARE_ACCOUNT_ID`: the 32-character ID in the dashboard address (`dash.cloudflare.com/<account id>/home`).
 - `HUB_SIGNING_KEY`: a 64-character lowercase hex value. Generate it once with a secure random-number generator; keep it in Actions secrets, not source. The deploy workflow uploads it as a Cloudflare Worker secret.
+- `HUB_SESSION_KEY`: a **different** 64-character lowercase hex value, generated independently. The deploy workflow uploads it as the `SESSION_KEY` Worker secret. Preserve it across deploys; rotating it signs out existing hub browsers.
+- `HUB_AUTH_SECRET_KEY` is **not configured yet**. It is optional while `AUTH_IP_FORWARDING` is `"0"` in `wrangler.jsonc`. If the director approves privileged Auth IP forwarding after staging review, create a dedicated `sb_secret_` key for this Worker, add it only as this Actions secret, opt the exact identity Supabase project into IP forwarding, and change the flag to `"1"` in a reviewed PR. The Worker then refuses any Auth origin except `https://mznljakkdafbqmapqncd.supabase.co` and requires a valid Cloudflare visitor IP. Never put this key in source, a browser, chat or a URL. The key bypasses RLS; see `docs/SESSION-DESIGN.md`.
 
-Without all three secrets the workflow still runs the tests and says the deploy was skipped.
+Without all four secrets the workflow still runs the tests and says the deploy was skipped.
 
 ## One-time deploy (owner, on a machine signed in to the Cloudflare account that holds lwliann.com)
 
@@ -28,7 +32,7 @@ npm run deploy:check         # dry run: validates the config, uploads nothing
 npm run deploy               # uploads the site and attaches app.lwliann.com
 ```
 
-For a brand-new Worker, first generate a 64-character lowercase hex key, set it as `SIGNING_KEY` with `npx wrangler secret put SIGNING_KEY`, and set the same value as the `HUB_SIGNING_KEY` Actions secret. For the existing Worker, the next Actions deployment migrates the current plain-text binding to a Worker secret using the already configured repository secret. A later manual `npm run deploy` preserves that Worker secret. The certificate usually takes a few minutes. Then open https://app.lwliann.com/.
+For a brand-new Worker, generate two independent 64-character lowercase hex keys. Set them as `SIGNING_KEY` and `SESSION_KEY` with `npx wrangler secret put`, and set the same values as the corresponding GitHub Actions secrets. A later manual `npm run deploy` preserves those Worker secrets. The certificate usually takes a few minutes. Then open https://app.lwliann.com/.
 
 If `app.lwliann.com` already has a DNS record (for example a placeholder), Cloudflare refuses the Custom Domain. Delete that record in the Cloudflare dashboard (lwliann.com → DNS), then deploy again.
 
@@ -36,7 +40,7 @@ If `app.lwliann.com` already has a DNS record (for example a placeholder), Cloud
 
 1. **lwl-backend CORS.** `/learning/*` only accepts browser calls from `https://playtest.lwliann.com`. Add `https://app.lwliann.com` for bearer-authenticated `/learning/*` calls (see the lwl-backend PR that does this), and deploy the backend.
 2. **Pinyin API CORS.** `https://api.pinyintiles.com/v1/auth/config` must answer CORS requests from `https://app.lwliann.com` (`app.lwliann.com` is in the API's `ALLOWED_ORIGINS`). Sign-in from the live hub has been checked by hand; the cloud session's network can't reach the API itself.
-3. **Supabase.** Email-code (OTP) sign-in needs no redirect URL. If the email template uses a magic link rather than a code, add `https://app.lwliann.com` to the allowed redirect URLs.
+3. **Supabase.** The hub uses the email code. If the email also contains an implicit magic link, the hub refuses tokens in its URL fragment and asks the user to type the code instead. Keep `https://app.lwliann.com` on the allowed redirect URLs so the link returns to the hub for a safe explanation; ideally update the email template to emphasize the code.
 
 Until those are done, the live hub shows its pages, apps and downloads, but sign-in and the Library show "Could not reach the server".
 
