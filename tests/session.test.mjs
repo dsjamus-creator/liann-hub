@@ -6,9 +6,7 @@ const ORIGIN = 'https://app.lwliann.com'
 const env = {
   PINYIN_API: 'https://api.test', SESSION_KEY: 'a'.repeat(64), SIGNING_KEY: 'b'.repeat(64),
   ASSETS: { fetch: async () => new Response('asset') },
-  SESSION_VERIFY_LIMITER: { limit: async () => ({ success: true }) },
-  SESSION_REFRESH_LIMITER: { limit: async () => ({ success: true }) },
-  SESSION_LOGOUT_LIMITER: { limit: async () => ({ success: true }) },
+  SESSION_RATE_BUCKET: { getByName: () => ({ consume: async () => ({ allowed: true, retryAfter: 0 }) }) },
 }
 const calls = []
 const fetchImpl = async (url, init = {}) => {
@@ -57,7 +55,7 @@ test('reload refreshes through the cookie and rotates it without exposing the re
 test('missing, forged and cross-origin requests cannot refresh or create sessions', async () => {
   assert.equal((await call('/session/refresh')).status, 401)
   const good = (await login()).headers.get('set-cookie').split(';')[0]
-  assert.equal((await call('/session/refresh', { cookie: good.replace(/.$/, 'A') })).status, 401)
+  assert.equal((await call('/session/refresh', { cookie: good.replace(/(v1\.[^.]+\.)/, '$1x') })).status, 401)
   assert.equal((await call('/session/refresh', { cookie: good, origin: 'https://evil.example' })).status, 403)
   assert.equal((await call('/session/refresh', { cookie: good, site: 'same-site' })).status, 403)
   assert.equal((await call('/session/verify', { method: 'GET' })).status, 405)
@@ -99,18 +97,18 @@ test('an unconfirmed Supabase logout keeps the rotated cookie available for retr
   assert.notEqual(r.headers.get('set-cookie').split(';')[0], original)
 })
 
-test('session abuse brakes use separate validated client IP buckets and stop before Auth', async () => {
+test('session abuse brakes use HMAC-scoped actor buckets and stop before Auth', async () => {
   const counts = new Map(), seen = []
   const limitedEnv = {
     ...env,
-    SESSION_VERIFY_LIMITER: { limit: async ({ key }) => {
-      seen.push(key)
-      const next = (counts.get(key) || 0) + 1
-      counts.set(key, next)
-      return { success: next <= 2 }
-    } },
-    SESSION_REFRESH_LIMITER: { limit: async ({ key }) => ({ success: key !== '192.0.2.10' }) },
-    SESSION_LOGOUT_LIMITER: { limit: async ({ key }) => { seen.push(`logout:${key}`); return { success: false } } },
+    SESSION_RATE_BUCKET: { getByName: name => ({ consume: async (kind, digest) => {
+      seen.push({ name, kind, digest })
+      if (kind === 'refresh_ip' || kind === 'logout_session') return { allowed: false, retryAfter: 37 }
+      if (kind === 'verify_email') return { allowed: true, retryAfter: 0 }
+      const countKey = `${kind}:${digest}`, next = (counts.get(countKey) || 0) + 1
+      counts.set(countKey, next)
+      return { allowed: next <= 2, retryAfter: next <= 2 ? 0 : 37 }
+    } }) },
   }
   const request = (path, ip = '192.0.2.10') => new Request(ORIGIN + path, {
     method: 'POST', headers: { origin: ORIGIN, 'sec-fetch-site': 'same-origin', 'content-type': 'application/json', ...(ip ? { 'cf-connecting-ip': ip } : {}) },
@@ -122,10 +120,15 @@ test('session abuse brakes use separate validated client IP buckets and stop bef
   const before = calls.length
   const denied = await run('/session/verify')
   assert.equal(denied.status, 429)
-  assert.equal(denied.headers.get('retry-after'), '60')
+  assert.equal(denied.headers.get('retry-after'), '37')
   assert.equal(calls.length, before, 'denied request never reaches Supabase')
   assert.equal((await run('/session/verify', '192.0.2.11')).status, 403)
-  assert.deepEqual(seen, ['192.0.2.10', '192.0.2.10', '192.0.2.10', '192.0.2.11'])
+  const verifyIps = seen.filter(x => x.kind === 'verify_ip').map(x => x.digest)
+  assert.equal(verifyIps.length, 4)
+  assert.equal(verifyIps[0], verifyIps[1])
+  assert.equal(verifyIps[0], verifyIps[2])
+  assert.notEqual(verifyIps[0], verifyIps[3])
+  assert.ok(!verifyIps[0].includes('192.0.2.'), 'raw IP is not stored in the Durable Object key')
   assert.equal((await run('/session/refresh')).status, 429, 'refresh uses its own limiter')
   const signedIn = await login(), cookie = signedIn.headers.get('set-cookie').split(';')[0], sessionId = (await signedIn.json()).session_id
   const logoutRequest = new Request(ORIGIN + '/session/logout', { method: 'POST', headers: {
@@ -133,10 +136,11 @@ test('session abuse brakes use separate validated client IP buckets and stop bef
   } })
   const beforeLogout = calls.length
   assert.equal((await worker.fetch(logoutRequest, limitedEnv, {}, { fetchImpl })).status, 429, 'the sealed session has its own logout limit')
-  assert.deepEqual(seen.at(-1), `logout:${sessionId}`, 'the client cannot select the logout key')
+  assert.equal(seen.at(-1).kind, 'logout_session')
+  assert.ok(!seen.at(-1).digest.includes(sessionId), 'the session ID is not a Durable Object key')
   assert.equal(calls.length, beforeLogout, 'limited logout never calls Auth')
-  const allowedLogout = await worker.fetch(logoutRequest, { ...limitedEnv, SESSION_LOGOUT_LIMITER: { limit: async () => ({ success: true }) } }, {}, { fetchImpl })
+  const allowedLogout = await worker.fetch(logoutRequest, { ...limitedEnv, SESSION_RATE_BUCKET: env.SESSION_RATE_BUCKET }, {}, { fetchImpl })
   assert.equal(allowedLogout.status, 204, 'logout remains available despite refresh saturation on the same IP')
   assert.equal((await run('/session/verify', '')).status, 503, 'missing trusted client IP fails closed')
-  assert.equal((await worker.fetch(request('/session/verify'), { ...env, SESSION_VERIFY_LIMITER: null }, {}, { fetchImpl })).status, 503)
+  assert.equal((await worker.fetch(request('/session/verify'), { ...env, SESSION_RATE_BUCKET: null }, {}, { fetchImpl })).status, 503)
 })

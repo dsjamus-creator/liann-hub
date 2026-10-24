@@ -1,6 +1,7 @@
 // The hub keeps only a short-lived access token in page memory. Supabase refresh tokens
 // are sealed into an HttpOnly, host-only cookie and are exchanged only by this Worker.
 import { authHeaders, visitorIp } from './auth-forwarding.js'
+import { checkRate } from './strict-rate.js'
 const COOKIE = '__Host-liann-refresh'
 const COOKIE_AGE = 30 * 24 * 60 * 60
 const AAD = new TextEncoder().encode('liann-hub-refresh-v1')
@@ -39,15 +40,10 @@ async function unseal(request, env) {
 const setCookie = value => `${COOKIE}=${value}; Max-Age=${COOKIE_AGE}; Path=/; HttpOnly; Secure; SameSite=Strict`
 const sameOrigin = request => request.headers.get('origin') === new URL(request.url).origin && !['cross-site', 'same-site'].includes(request.headers.get('sec-fetch-site'))
 
-async function rateGate(request, env, path, sessionId = null) {
-  const limiter = path === '/session/verify' ? env.SESSION_VERIFY_LIMITER
-    : path === '/session/refresh' ? env.SESSION_REFRESH_LIMITER : env.SESSION_LOGOUT_LIMITER
-  if (!limiter || typeof limiter.limit !== 'function') return json({ error: 'auth_unavailable' }, 503)
+async function rateGate(env, kind, actor) {
   try {
-    const key = path === '/session/logout' ? sessionId : visitorIp(request)
-    if (!key) return json({ error: 'auth_unavailable' }, 503)
-    const { success } = await limiter.limit({ key })
-    return success ? null : json({ error: 'slow_down' }, 429, { 'retry-after': '60' })
+    const { allowed, retryAfter } = await checkRate(env, kind, typeof actor === 'function' ? actor() : actor)
+    return allowed ? null : json({ error: 'slow_down' }, 429, { 'retry-after': String(retryAfter) })
   } catch {
     return json({ error: 'auth_unavailable' }, 503)
   }
@@ -76,7 +72,7 @@ export async function session(request, env, fetchImpl, settings, makeAuthHeaders
   if (request.method !== 'POST') return json({ error: 'method_not_allowed' }, 405, { allow: 'POST' })
   if (!sameOrigin(request)) return json({ error: 'forbidden' }, 403)
   if (path !== '/session/logout') {
-    const rateResponse = await rateGate(request, env, path)
+    const rateResponse = await rateGate(env, path === '/session/verify' ? 'verify_ip' : 'refresh_ip', () => visitorIp(request))
     if (rateResponse) return rateResponse
   }
   const auth = await authConfig(settings)
@@ -92,6 +88,8 @@ export async function session(request, env, fetchImpl, settings, makeAuthHeaders
     try { body = JSON.parse(raw) } catch { return json({ error: 'bad_request' }, 400) }
     const email = String(body?.email || '').trim().toLowerCase(), code = String(body?.code || '')
     if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !/^\d{6,10}$/.test(code)) return json({ error: 'bad_request' }, 400)
+    const emailRate = await rateGate(env, 'verify_email', email)
+    if (emailRate) return emailRate
     const r = await authCall(fetchImpl, `${auth.supabaseUrl}/auth/v1/verify`, {
       method: 'POST', headers: { ...upstreamHeaders, 'content-type': 'application/json' },
       body: JSON.stringify({ email, token: code, type: 'email' }),
@@ -111,7 +109,10 @@ export async function session(request, env, fetchImpl, settings, makeAuthHeaders
   if (expected && expected !== current.sessionId) return json({ error: 'session_changed' }, 409)
   if (path === '/session/logout' && !expected) return json({ error: 'session_required' }, 400)
   if (path === '/session/logout') {
-    const rateResponse = await rateGate(request, env, path, current.sessionId)
+    const rateResponse = await rateGate(env, 'logout_session', current.sessionId)
+    if (rateResponse) return rateResponse
+  } else {
+    const rateResponse = await rateGate(env, 'refresh_session', current.sessionId)
     if (rateResponse) return rateResponse
   }
   const r = await authCall(fetchImpl, `${auth.supabaseUrl}/auth/v1/token?grant_type=refresh_token`, {
