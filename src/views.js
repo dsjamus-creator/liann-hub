@@ -32,7 +32,7 @@ export const DS = [['liann', 'LiANN', 'Canonical sage, coral and porcelain', ['#
   ['cadence', 'Cadence', 'Stage darks, paper and brass', ['#FAF5EC', '#A86A1F', '#E0A141']],
   ['ivoryline', 'Ivoryline', 'Warm ivory and wood', ['#EFE2C8', '#947641', '#8F5C20']]]
 
-const LOCKUP = '<div class="lockup" aria-label="Learning with LiANN"><span class="wm"><span class="pre">Learning with</span><span class="nm">LiANN</span></span><span class="strap">Multilingual education through Entertainment</span></div>'
+const LOCKUP = '<div class="lockup"><img class="brand-logo" src="assets/brand/learning-with-liann-definitive-logo.png" alt="Learning with LiANN"><span class="strap">Multilingual education through Entertainment</span></div>'
 
 const SHAPES = {
   note: '<svg viewBox="0 0 60 100" class="CLS" style="STY"><ellipse cx="22" cy="82" rx="17" ry="12.5" transform="rotate(-22 22 82)" fill="currentColor"/><rect x="33" y="8" width="6" height="74" rx="3" fill="currentColor"/><path d="M36 8 C40 30 64 36 54 64 C53 48 46 41 36 38 Z" fill="currentColor"/></svg>',
