@@ -14,6 +14,7 @@ export const STORES = {
   chrome: { get: 'Add to Chrome', soon: 'Coming to the Chrome Web Store' },
   edge: { get: 'Add to Edge', soon: 'Coming to Edge Add-ons' },
 }
+export const STORE_NAMES = { play: 'Google Play', appstore: 'App Store', microsoft: 'Microsoft Store', chrome: 'Chrome Web Store', edge: 'Edge Add-ons' }
 export const OS = { web: 'Web', android: 'Android', ios: 'iPhone and iPad', windows: 'Windows', mac: 'Mac', chrome: 'Chrome', edge: 'Edge' }
 
 // The visitor's platform from the user agent: enough to put their row first, never to hide the others.
@@ -33,29 +34,35 @@ export function orderPlatforms(platforms, os) {
   return platforms.map((p, i) => [rank(p), i, p]).sort((a, b) => a[0] - b[0] || a[1] - b[1]).map(x => x[2])
 }
 
-// What one platform row offers, from the record plus the downloads manifest.
+// What one platform row offers, from the record plus the downloads manifest. Wording and shape follow the
+// Apps cards (views.js statusOf/appCard): a primary Open or Download, a ghost store badge, and a dot status line.
 export function platformModel(p, downloads) {
   const file = p.slot ? (downloads || []).find(d => d.slot === p.slot) : null
+  const store = p.store && STORES[p.store]
   const buttons = []
-  if (p.url) buttons.push({ kind: 'open', label: 'Open', href: p.url })
-  if (p.store && STORES[p.store]) buttons.push(p.storeUrl ? { kind: 'store', label: STORES[p.store].get, href: p.storeUrl } : { kind: 'store', label: STORES[p.store].soon, disabled: true })
+  if (store) buttons.push(p.storeUrl ? { kind: 'store', label: store.get, href: p.storeUrl, primary: !p.url } : { kind: 'store', label: store.soon, disabled: true })
   if (p.slot) buttons.push(file?.available
-    ? { kind: 'file', label: `Download for ${OS[p.os] || p.os}`, href: file.href, meta: `Version ${file.version || '—'} · ${formatBytes(file.bytes)}` }
-    : { kind: 'file', label: 'Download', disabled: true, meta: 'Waiting for the latest file' })
-  const ready = Boolean(p.url || p.storeUrl || file?.available)
-  const status = ready ? 'Ready' : p.status === 'testing' ? 'Testing' : 'Coming soon'
-  return { os: p.os, label: OS[p.os] || p.os, status, note: p.note || '', buttons }
+    ? { kind: 'file', label: 'Download', href: file.href, primary: !p.url && !p.storeUrl, meta: `Version ${file.version || '—'} · ${formatBytes(file.bytes)}` }
+    : { kind: 'file', label: 'Download', disabled: true })
+  if (p.url) buttons.push({ kind: 'open', label: 'Open', href: p.url, primary: true })
+  const sub = [store ? STORE_NAMES[p.store] : p.os === 'web' ? 'In your browser' : '', p.slot ? (p.os === 'chrome' || p.os === 'edge' ? 'preview build' : 'download') : ''].filter(Boolean).join(' · ')
+  let status
+  if (p.url || p.storeUrl) status = { cls: '', text: 'Ready' }
+  else if (file?.available) status = { cls: '', text: `Version ${file.version || '—'} · Download` }
+  else if (p.slot) status = { cls: 'up', text: 'Waiting for the latest file' }
+  else status = { cls: '', text: 'Coming soon' }
+  return { os: p.os, label: OS[p.os] || p.os, sub, status, note: p.note || '', buttons }
 }
 
 const button = b => {
   if (b.disabled) return `<button class="btn ghost" disabled>${esc(b.label)}</button>`
   const attrs = b.kind === 'file' ? 'download rel="noopener"' : 'target="_blank" rel="noopener"'
-  return `<a class="btn${b.kind === 'open' ? '' : ' ghost'}" href="${esc(b.href)}" ${attrs}>${esc(b.label)}</a>`
+  return `<a class="btn${b.primary ? '' : ' ghost'}" href="${esc(b.href)}" ${attrs}>${esc(b.label)}</a>`
 }
 
-const row = m => `<div class="prow" data-os="${esc(m.os)}"><div class="phead"><div class="t">${esc(m.label)}</div><div class="status${m.status === 'Ready' ? '' : ' up'}">${esc(m.status)}</div></div>
-  ${m.note ? `<div class="d">${esc(m.note)}</div>` : ''}<div class="acts">${m.buttons.map(button).join('')}</div>
-  ${m.buttons.filter(b => b.meta).map(b => `<div class="d">${esc(b.meta)}</div>`).join('')}</div>`
+const row = (m, glyph) => `<div class="c prow" data-os="${esc(m.os)}"><div class="h"><div class="tile">${esc(glyph)}</div><div><div class="t">${esc(m.label)}</div><div class="s">${esc(m.sub)}</div></div></div>
+  <div class="status ${m.status.cls}">${esc(m.status.text)}</div><div class="d">${esc(m.note || m.buttons.find(b => b.meta)?.meta || '')}</div>
+  ${m.note && m.buttons.some(b => b.meta) ? `<div class="d">${esc(m.buttons.find(b => b.meta).meta)}</div>` : ''}<div class="acts">${m.buttons.map(button).join('')}</div></div>`
 
 export function productHTML(product, downloads, os, others = []) {
   const rows = orderPlatforms(product.platforms, os).map(p => platformModel(p, downloads))
@@ -67,7 +74,7 @@ export function productHTML(product, downloads, os, others = []) {
     <section class="hero"><div class="pic">${art(product.app)}</div>
       <div class="txt"><div class="eyebrow">${esc(product.kind)}</div><h1>${esc(product.name)}</h1><p class="lead">${esc(product.oneLine)}</p><p class="muted">${esc(product.audience)}</p></div></section>
     <section class="sec"><div class="sechead"><h2>Get it</h2><span class="muted" style="font-size:.85rem">${rows[0] && rows[0].os === os ? `Your device first: ${esc(rows[0].label)}` : 'Every platform'}</span></div>
-      <div class="grid prows">${rows.map(row).join('')}</div>
+      <div class="grid prows">${rows.map(m => row(m, product.glyph)).join('')}</div>
       <p class="muted" style="margin:0;font-size:.85rem">Every file is listed from a signed-off manifest with its version and size. Store listings open here as they go live.</p></section>
     <section class="sec"><div class="sechead"><h2>What it does</h2></div><ul class="points">${(product.points || []).map(t => `<li>${esc(t)}</li>`).join('')}</ul></section>
     <section class="sec"><div class="sechead"><h2>Guides and help</h2></div><ul class="plist">${links}${product.privacyUrl ? `<li><a href="${esc(product.privacyUrl)}" target="_blank" rel="noopener">Privacy notice</a></li>` : ''}${product.support ? `<li><a href="mailto:${esc(product.support)}">${esc(product.support)}</a></li>` : ''}</ul></section>

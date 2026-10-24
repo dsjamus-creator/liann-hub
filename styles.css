@@ -332,9 +332,7 @@ a.btn{display:inline-block;text-decoration:none;text-align:center}
 .product .hero .txt{padding:24px 28px 28px;display:grid;gap:10px}
 .product .hero h1{margin:0;font-family:var(--disp);font-weight:var(--dispw);font-size:clamp(2rem,4vw,3rem);letter-spacing:-.01em;text-wrap:balance}
 .product .hero .lead{margin:0;font-size:1.15rem;font-weight:700}
-.prows .prow{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;display:grid;gap:10px;align-content:start;min-width:0}
-.prow .phead{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.prow .t{font-weight:900;font-size:1.05rem}
-.prow .acts{display:flex;gap:8px;flex-wrap:wrap}.prow .d{font-size:.85rem;color:var(--muted);overflow-wrap:anywhere}
+.prows .prow .d:empty{display:none}
 .points{margin:0;padding-left:1.2em;display:grid;gap:8px;max-width:760px}.points li{line-height:1.5}
 .plist{margin:0;padding:0;list-style:none;display:grid;gap:8px}.plist a{color:var(--fg);font-weight:700}
 .product .chips{justify-content:flex-start}.product .chip{text-decoration:none}
