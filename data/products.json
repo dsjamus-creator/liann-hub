@@ -190,7 +190,8 @@
       "platforms": [
         { "os": "web", "url": "https://app.lwliann.com/", "status": "ok" },
         { "os": "windows", "slot": "hub/windows", "status": "soon", "note": "Windows installer. The preview build is unsigned; Windows may ask you to confirm the publisher." },
-        { "os": "mac", "slot": "hub/mac", "status": "soon", "note": "Separate Intel and Apple silicon disk images are built, but neither has been published here or notarised." }
+        { "os": "mac", "label": "Mac — Intel", "slot": "hub/mac-x64", "status": "soon", "note": "Intel disk image. The preview build is unsigned and not notarised." },
+        { "os": "mac", "label": "Mac — Apple silicon", "slot": "hub/mac-arm64", "status": "soon", "note": "Apple silicon disk image. The preview build is unsigned and not notarised." }
       ],
       "links": [["Learning with LiANN", "https://lwliann.com/"]],
       "privacyUrl": "",

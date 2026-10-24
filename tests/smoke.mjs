@@ -120,11 +120,11 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
   })
   await step(`${tag}: Downloads withholds private tester builds`, async () => {
     await page.goto(url + '#downloads'); await page.locator('[data-slot]').first().waitFor()
-    assert.equal(await page.locator('[data-slot]').count(), 27, 'the reserved figures and comic slots are hidden from Downloads; both HUB installer slots are waiting')
+    assert.equal(await page.locator('[data-slot]').count(), 28, 'the reserved figures and comic slots are hidden from Downloads; all three HUB installer slots are waiting')
     assert.equal(await page.locator('[data-slot] a[download]').count(), 17, 'PolyFlow 0.1.1 for Windows and Android are public (lwl-backend docs/LIANN-DOWNLOADS.md)')
     assert.equal(await page.locator('[data-slot="lyricsync/extension"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/lyricsync/chrome-edge/0.9.31/LyricSync-v0.9.31-hub-public-20261021.zip?v=9860fee62532')
     assert.equal(await page.locator('[data-slot="dualsubs/extension"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/dual-subs/chrome-edge/0.16.120/dual-subs-v0.16.120-free-hub-public-20261021.zip?v=3dbaeb17ccb1')
-    for (const slot of ['mahjong-tones/test-build', 'alongside/android-test', 'alongside/windows', 'hub/windows', 'hub/mac']) assert.equal(await page.locator(`[data-slot="${slot}"] a[download]`).count(), 0)
+    for (const slot of ['mahjong-tones/test-build', 'alongside/android-test', 'alongside/windows', 'hub/windows', 'hub/mac-x64', 'hub/mac-arm64']) assert.equal(await page.locator(`[data-slot="${slot}"] a[download]`).count(), 0)
     assert.match(await page.locator('[data-slot="polyflow/windows"] a[download]').getAttribute('href'), /PolyFlow-Setup-0\.1\.1\.exe$/)
     assert.equal(await page.locator('[data-slot="kids/stickers/bella"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/kids/stickers/2026-10-14/bella-sticker-1440px-upscaled-full.png?v=5ffdac')
     assert.doesNotMatch(await page.locator('main').innerText(), /signing|redistribution/i)
@@ -318,9 +318,9 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     await page.goto(url + 'hub'); await page.locator('.product .hero h1').waitFor()
     assert.equal(await page.locator('.product .hero h1').innerText(), 'LiANN HUB')
     assert.equal(await page.locator('.prow[data-os="web"] a').innerText(), 'Open')
-    for (const os of ['windows', 'mac']) {
-      assert.equal(await page.locator(`.prow[data-os="${os}"] button[disabled]`).innerText(), 'Download', `${os} stays unavailable before its file is published`)
-    }
+    assert.equal(await page.locator('.prow[data-os="windows"] button[disabled]').innerText(), 'Download')
+    assert.deepEqual(await page.locator('.prow[data-os="mac"] .t').allInnerTexts(), ['Mac — Intel', 'Mac — Apple silicon'])
+    assert.deepEqual(await page.locator('.prow[data-os="mac"] button[disabled]').allInnerTexts(), ['Download', 'Download'])
     await noOverflow(page); await shot(page, `${tag}-product-hub`)
     for (const slug of ['pinyin-tiles', 'pinyin-puzzle', 'mahjong-tones', 'alongside', 'dual-subs', 'lyricsync']) {
       await page.goto(url + slug); await page.locator('.product .hero h1').waitFor(); await noOverflow(page)

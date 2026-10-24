@@ -47,10 +47,10 @@ test('the visitor platform comes from the user agent, and their row goes first',
   assert.equal(orderPlatforms(dual.platforms, 'mac')[0].os, 'chrome', 'a desktop visitor sees the browser rows first')
   const hub = products.find(p => p.id === 'hub')
   assert.equal(orderPlatforms(hub.platforms, 'windows')[0].os, 'windows')
-  assert.equal(orderPlatforms(hub.platforms, 'mac')[0].os, 'mac')
+  assert.deepEqual(orderPlatforms(hub.platforms, 'mac').map(p => p.slot || p.os), ['hub/mac-x64', 'hub/mac-arm64', 'web', 'hub/windows'])
 })
 
-test('a platform row offers Open, a store badge or a checked file from the same record', () => {
+test('a platform row offers Open, a store badge or a checked file from the same record', async () => {
   const poly = products.find(p => p.id === 'polyflow')
   const windows = platformModel(poly.platforms.find(p => p.os === 'windows'), manifest)
   assert.equal(windows.status.text, 'Version 0.1.1 · Download')
@@ -69,11 +69,18 @@ test('a platform row offers Open, a store badge or a checked file from the same 
   const waiting = platformModel({ os: 'windows', slot: 'nope/none', status: 'soon' }, manifest)
   assert.equal(waiting.status.text, 'Waiting for the latest file'); assert.equal(waiting.status.cls, 'up'); assert.equal(waiting.buttons[0].disabled, true)
   const hub = products.find(p => p.id === 'hub')
-  for (const os of ['windows', 'mac']) {
-    const row = platformModel(hub.platforms.find(p => p.os === os), manifest)
+  for (const slot of ['hub/windows', 'hub/mac-x64', 'hub/mac-arm64']) {
+    const row = platformModel(hub.platforms.find(p => p.slot === slot), manifest)
     assert.equal(row.status.text, 'Waiting for the latest file')
-    assert.equal(row.buttons[0].disabled, true, `${os} has no public installer without a file, size and checksum`)
+    assert.equal(row.buttons[0].disabled, true, `${slot} has no public installer without a file, size and checksum`)
   }
+  assert.deepEqual(hub.platforms.filter(p => p.os === 'mac').map(p => platformModel(p, manifest).label), ['Mac — Intel', 'Mac — Apple silicon'])
+  assert.match(productHTML(hub, manifest, 'mac'), /Your device options: Mac/)
+  const macFiles = JSON.parse(await readFile(new URL('../data/downloads.json', import.meta.url), 'utf8')).filter(d => d.product === 'liann-hub' && d.platform.startsWith('Mac'))
+  assert.deepEqual(macFiles.map(d => [d.hubSlot, d.notes.match(/LiANN-HUB-0\.1\.0-(?:x64|arm64)\.dmg/)?.[0]]), [
+    ['hub/mac-x64', 'LiANN-HUB-0.1.0-x64.dmg'],
+    ['hub/mac-arm64', 'LiANN-HUB-0.1.0-arm64.dmg'],
+  ])
 })
 
 test('the page escapes record text and shows every platform', () => {
