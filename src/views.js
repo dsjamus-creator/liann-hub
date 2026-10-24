@@ -121,6 +121,7 @@ export function vWho(s) {
   ${s.household?.household?.plan === 'family' && s.household.children.length < s.household.household.limits.children
     ? '<button class="prof" id="addprofile"><div class="add">+</div>Add profile<span class="lock muted">A child under 13</span></button>'
     : '<div class="prof" aria-disabled="true" title="Family profiles arrive with Family plans"><div class="add">+</div>Add profile<span class="lock muted">With Family plans</span></div>'}</div>
+  ${s.error ? `<p class="note err" role="alert">${esc(s.error)}</p>` : ''}
   <div><button class="btn ghost" id="signout">Sign out</button></div></div>`
 }
 

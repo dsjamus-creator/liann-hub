@@ -1,4 +1,6 @@
-// Learning with LiANN hub Worker. The site itself is static assets; this code only runs for /comic/*, the comic pages.
+// Learning with LiANN hub Worker. Static assets are served separately; this code handles /comic/* and /session/*.
+import { session } from './session.js'
+import { authHeaders } from './auth-forwarding.js'
 //
 //   POST /comic/sign   body { paths: ["/comic/ep-01/000.webp", ...] }   Authorization: Bearer <Supabase access token>
 //        -> { expires, urls: { "<path>": "<path>?e=..&u=..&s=.." } } plus a short-lived, HttpOnly reader cookie.
@@ -57,7 +59,7 @@ export async function userOf(request, env, fetchImpl = fetch) {
   let a
   try { a = await authSettings(env, fetchImpl) } catch { return undefined }
   let r
-  try { r = await fetchImpl(`${a.supabaseUrl}/auth/v1/user`, { headers: { apikey: a.publishableKey, authorization: `Bearer ${m[1]}` } }) } catch { return undefined }
+  try { r = await fetchImpl(`${a.supabaseUrl}/auth/v1/user`, { headers: authHeaders(request, env, a, m[1]) }) } catch { return undefined }
   if (r.status === 401 || r.status === 403) return null
   if (!r.ok) return undefined
   const u = await r.json().catch(() => null)
@@ -126,6 +128,7 @@ async function page(request, env, url, now) {
 export default {
   async fetch(request, env, ctx, { fetchImpl = fetch, now = Date.now() } = {}) {
     const url = new URL(request.url)
+    if (url.pathname.startsWith('/session/')) return session(request, env, fetchImpl, () => authSettings(env, fetchImpl))
     if (url.pathname === '/comic/sign') return sign(request, env, fetchImpl, now)
     if (url.pathname === '/comic/logout') return logout(request)
     if (url.pathname.startsWith('/comic/')) return page(request, env, url, now)
