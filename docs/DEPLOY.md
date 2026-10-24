@@ -15,6 +15,7 @@ One-time setup, in this repo's **Settings → Secrets and variables → Actions 
 - `CLOUDFLARE_ACCOUNT_ID`: the 32-character ID in the dashboard address (`dash.cloudflare.com/<account id>/home`).
 - `HUB_SIGNING_KEY`: a 64-character lowercase hex value. Generate it once with a secure random-number generator; keep it in Actions secrets, not source. The deploy workflow uploads it as a Cloudflare Worker secret.
 - `HUB_SESSION_KEY`: a **different** 64-character lowercase hex value, generated independently. The deploy workflow uploads it as the `SESSION_KEY` Worker secret. Preserve it across deploys; rotating it signs out existing hub browsers.
+- `HUB_AUTH_SECRET_KEY` is **not configured yet**. It is optional while `AUTH_IP_FORWARDING` is `"0"` in `wrangler.jsonc`. If the director approves privileged Auth IP forwarding after staging review, create a dedicated `sb_secret_` key for this Worker, add it only as this Actions secret, opt the exact identity Supabase project into IP forwarding, and change the flag to `"1"` in a reviewed PR. The Worker then refuses any Auth origin except `https://mznljakkdafbqmapqncd.supabase.co` and requires a valid Cloudflare visitor IP. Never put this key in source, a browser, chat or a URL. The key bypasses RLS; see `docs/SESSION-DESIGN.md`.
 
 Without all four secrets the workflow still runs the tests and says the deploy was skipped.
 

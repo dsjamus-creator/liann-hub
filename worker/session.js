@@ -1,5 +1,6 @@
 // The hub keeps only a short-lived access token in page memory. Supabase refresh tokens
 // are sealed into an HttpOnly, host-only cookie and are exchanged only by this Worker.
+import { authHeaders } from './auth-forwarding.js'
 const COOKIE = '__Host-liann-refresh'
 const COOKIE_AGE = 30 * 24 * 60 * 60
 const AAD = new TextEncoder().encode('liann-hub-refresh-v1')
@@ -62,6 +63,8 @@ export async function session(request, env, fetchImpl, settings) {
   if (!sameOrigin(request)) return json({ error: 'forbidden' }, 403)
   const auth = await authConfig(settings)
   if (!auth) return json({ error: 'auth_unavailable' }, 503)
+  let upstreamHeaders
+  try { upstreamHeaders = authHeaders(request, env, auth) } catch { return json({ error: 'auth_unavailable' }, 503) }
 
   if (path === '/session/verify') {
     if (!/^application\/json(?:\s*;|$)/i.test(request.headers.get('content-type') || '')) return json({ error: 'bad_request' }, 400)
@@ -72,7 +75,7 @@ export async function session(request, env, fetchImpl, settings) {
     const email = String(body?.email || '').trim().toLowerCase(), code = String(body?.code || '')
     if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !/^\d{6,10}$/.test(code)) return json({ error: 'bad_request' }, 400)
     const r = await authCall(fetchImpl, `${auth.supabaseUrl}/auth/v1/verify`, {
-      method: 'POST', headers: { apikey: auth.publishableKey, 'content-type': 'application/json' },
+      method: 'POST', headers: { ...upstreamHeaders, 'content-type': 'application/json' },
       body: JSON.stringify({ email, token: code, type: 'email' }),
     })
     if (!r) return json({ error: 'auth_unavailable' }, 503)
@@ -90,7 +93,7 @@ export async function session(request, env, fetchImpl, settings) {
   if (expected && expected !== current.sessionId) return json({ error: 'session_changed' }, 409)
   if (path === '/session/logout' && !expected) return json({ error: 'session_required' }, 400)
   const r = await authCall(fetchImpl, `${auth.supabaseUrl}/auth/v1/token?grant_type=refresh_token`, {
-    method: 'POST', headers: { apikey: auth.publishableKey, 'content-type': 'application/json' },
+    method: 'POST', headers: { ...upstreamHeaders, 'content-type': 'application/json' },
     body: JSON.stringify({ refresh_token: current.token }),
   })
   if (!r) return json({ error: 'auth_unavailable' }, 503)
@@ -104,7 +107,7 @@ export async function session(request, env, fetchImpl, settings) {
   const tokens = await r.json().catch(() => null)
   if (!tokens?.access_token) return json({ error: 'auth_unavailable' }, 503)
   const logout = await authCall(fetchImpl, `${auth.supabaseUrl}/auth/v1/logout?scope=local`, {
-    method: 'POST', headers: { apikey: auth.publishableKey, authorization: `Bearer ${tokens.access_token}` },
+    method: 'POST', headers: { ...upstreamHeaders, authorization: `Bearer ${tokens.access_token}` },
   })
   if (!logout || !logout.ok) return json({ error: 'logout_unconfirmed' }, 503, {
     // Refresh already rotated the one-use token; keep the new cookie so sign-out can be retried.

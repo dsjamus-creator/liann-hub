@@ -1,5 +1,6 @@
 // Learning with LiANN hub Worker. Static assets are served separately; this code handles /comic/* and /session/*.
 import { session } from './session.js'
+import { authHeaders } from './auth-forwarding.js'
 //
 //   POST /comic/sign   body { paths: ["/comic/ep-01/000.webp", ...] }   Authorization: Bearer <Supabase access token>
 //        -> { expires, urls: { "<path>": "<path>?e=..&u=..&s=.." } } plus a short-lived, HttpOnly reader cookie.
@@ -58,7 +59,7 @@ export async function userOf(request, env, fetchImpl = fetch) {
   let a
   try { a = await authSettings(env, fetchImpl) } catch { return undefined }
   let r
-  try { r = await fetchImpl(`${a.supabaseUrl}/auth/v1/user`, { headers: { apikey: a.publishableKey, authorization: `Bearer ${m[1]}` } }) } catch { return undefined }
+  try { r = await fetchImpl(`${a.supabaseUrl}/auth/v1/user`, { headers: authHeaders(request, env, a, m[1]) }) } catch { return undefined }
   if (r.status === 401 || r.status === 403) return null
   if (!r.ok) return undefined
   const u = await r.json().catch(() => null)

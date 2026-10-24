@@ -17,7 +17,8 @@
     { "binding": "PAGES", "bucket_name": "liann-reader" }
   ],
   "vars": {
-    "PINYIN_API": "https://api.pinyintiles.com"
+    "PINYIN_API": "https://api.pinyintiles.com",
+    "AUTH_IP_FORWARDING": "0"
   },
   "routes": [
     { "pattern": "app.lwliann.com", "custom_domain": true }
