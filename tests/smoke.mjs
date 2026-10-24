@@ -20,6 +20,7 @@ async function mock(context, { student = true, tour = false } = {}) {
     { id: 'ep2', title: 'Episode 2: Long', number: 2, summary: 'A longer book.', cover: PAGE(1), pages: [PAGE(1), PAGE(2), PAGE(3), PAGE(1), PAGE(2), PAGE(3)] },
     { id: 'ep3', title: 'Episode 3: Private', number: 3, summary: 'Protected pages.', cover: PAGE(1), pages: ['comic/ep-03/p1.webp', 'comic/ep-03/p2.webp', 'comic/ep-03/p3.webp'] }] } }))
   seen.signs = []
+  await context.route('**/comic/logout', r => r.fulfill({ status: 204, body: '' }))
   await context.route('**/comic/sign', r => {
     const body = r.request().postDataJSON(); seen.signs.push({ auth: r.request().headers().authorization, paths: body.paths })
     return r.fulfill({ json: { expires: Math.floor(Date.now() / 1000) + 1800, urls: Object.fromEntries(body.paths.map(p => [p, `${p}?e=1&u=abcdef012345&s=${'a'.repeat(40)}`])) } })
@@ -117,16 +118,13 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     assert.match(await page.locator('table.words').innerText(), /一般[\s\S]*ordinary[\s\S]*一半[\s\S]*half/)
     await noOverflow(page); await shot(page, `${tag}-library`)
   })
-  await step(`${tag}: Downloads offers the 20 publicly verified files`, async () => {
+  await step(`${tag}: Downloads withholds private tester builds`, async () => {
     await page.goto(url + '#downloads'); await page.locator('[data-slot]').first().waitFor()
-    assert.equal(await page.locator('[data-slot]').count(), 25, 'the reserved figures slot is hidden from Downloads')
-    assert.equal(await page.locator('[data-slot] a[download]').count(), 20)
+    assert.equal(await page.locator('[data-slot]').count(), 24, 'the reserved figures and comic slots are hidden from Downloads')
+    assert.equal(await page.locator('[data-slot] a[download]').count(), 15)
     assert.equal(await page.locator('[data-slot="lyricsync/extension"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/lyricsync/chrome-edge/0.9.31/LyricSync-v0.9.31-hub-public-20261021.zip?v=9860fee62532')
     assert.equal(await page.locator('[data-slot="dualsubs/extension"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/dual-subs/chrome-edge/0.16.120/dual-subs-v0.16.120-free-hub-public-20261021.zip?v=3dbaeb17ccb1')
-    assert.equal(await page.locator('[data-slot="polyflow/windows"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/polyflow/windows/0.1.0/PolyFlow-Setup-0.1.0.exe')
-    assert.equal(await page.locator('[data-slot="mahjong-tones/test-build"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/mahjong-tones/windows/0.2.0/LiANN-Mahjong-Tones-Windows-0.2.0.zip')
-    assert.equal(await page.locator('[data-slot="alongside/android-test"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/alongside-dashboard/android/0.1.3/AlongSide-Dashboard-0.1.3-debug.apk')
-    assert.equal(await page.locator('[data-slot="alongside/windows"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/alongside-dashboard/windows/0.1.0/AlongSide-Dashboard-Setup-0.1.0.exe')
+    for (const slot of ['polyflow/windows', 'mahjong-tones/test-build', 'alongside/android-test', 'alongside/windows']) assert.equal(await page.locator(`[data-slot="${slot}"] a[download]`).count(), 0)
     assert.equal(await page.locator('[data-slot="kids/stickers/bella"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/kids/stickers/2026-10-14/bella-sticker-1440px-upscaled-full.png?v=5ffdac')
     assert.doesNotMatch(await page.locator('main').innerText(), /signing|redistribution/i)
     await noOverflow(page); await shot(page, `${tag}-downloads`)
@@ -285,9 +283,8 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     } finally { if (await page.locator('.reader').count()) await page.keyboard.press('Escape') }
   })
   await step(`${tag}: Read and Kids pages render their manifest slots`, async () => {
-    await page.goto(url + '#read'); await page.locator('[data-slot="read/episodes"]').waitFor()
-    assert.equal(await page.locator('[data-slot="read/episodes"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/bella-liann/issue-1/Bella_LiANN_Issue_One_BW.pdf?v=c38c05b16322')
-    assert.equal(await page.locator('main a[download]').count(), 1, 'the Issue One PDF is the only download on the Read page')
+    await page.goto(url + '#read'); await page.locator('[data-readep="ep1"]').waitFor()
+    assert.equal(await page.locator('main a[download]').count(), 0, 'the Issue One PDF is not offered')
     await shot(page, `${tag}-read`)
     await page.goto(url + '#kids'); await page.locator('[data-slot="kids/colouring/characters"]').waitFor()
     assert.match(await page.locator('main').innerText(), /Colour the characters[\s\S]*Colour by tone[\s\S]*Adventure Ribbon & Kinetic Shield specular sticker pack/)
@@ -450,28 +447,18 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
   await context.close()
 }
 
-// A shared comic link opens for anyone: no sign-in, no account, the same protections.
+// A shared comic link needs a LiANN account.
 {
   const context = await browser.newContext({ viewport: { width: 1280, height: 860 } })
   const seen = await mock(context)
   const page = await context.newPage()
-  await step('shared comic link (#read/<episode>) opens without signing in', async () => {
+  await step('shared comic link (#read/<episode>) asks for a LiANN account', async () => {
     await page.goto(url + '#read/ep3')
-    await page.locator('.reader').waitFor()
-    await page.waitForFunction(() => document.querySelectorAll('.reader .pg img').length > 0)
-    assert.equal(await page.locator('#f1').count(), 0, 'no sign-in form in the way')
-    assert.equal(seen.signs.length, 1)
-    assert.equal(seen.signs[0].auth, undefined, 'asked for links without an account')
-    assert.match(await page.locator('.reader .pg img').first().getAttribute('src'), /\/comic\/ep-03\/p1\.webp\?e=1&u=abcdef012345&s=a{40}$/)
-    const mark = decodeURIComponent(await page.locator('.reader .wm').evaluate(el => getComputedStyle(el).backgroundImage))
-    assert.match(mark, /Learning with LiANN · [0-9A-F]{8}/, 'a visitor gets a viewing code in the watermark')
-    assert.equal(await page.locator('.reader').evaluate(el => { const e = new MouseEvent('contextmenu', { bubbles: true, cancelable: true }); el.dispatchEvent(e); return e.defaultPrevented }), true)
-    await page.keyboard.press('ArrowRight'); await page.waitForTimeout(500)
-    assert.match(await page.locator('.rcount').innerText(), /^2/)
-  })
-  await step('closing a shared comic leads to the hub sign-in; other links still ask for sign-in', async () => {
-    await page.keyboard.press('Escape')
     await page.locator('#f1').waitFor()
+    assert.equal(await page.locator('.reader').count(), 0)
+    assert.equal(seen.signs.length, 0)
+  })
+  await step('other hub links still ask for sign-in', async () => {
     await page.goto(url + '#library'); await page.reload()
     await page.locator('#f1').waitFor()
     assert.equal(await page.locator('.reader').count(), 0)

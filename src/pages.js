@@ -15,18 +15,22 @@ export function comicPath(href, origin) {
 
 export function createPageSigner({ getToken, fetchImpl = (...a) => fetch(...a), origin = globalThis.location?.origin, now = () => Date.now() }) {
   const links = new Map() // path -> { href, until }
+  let activeToken = null
 
   // The signed address of every page of an episode, in order (pages that are not protected stay as they are).
   // Fetches fresh links first when any is missing or close to expiring.
   async function pagesOf(ep) {
+    const token = await getToken().catch(() => null)
+    if (!token) { links.clear(); activeToken = null; throw new PagesError('Sign in to read Bella & LiANN.', 'signed_out') }
+    if (token !== activeToken) { links.clear(); activeToken = token }
     const paths = ep.raw.map(h => comicPath(h, origin))
     const wanted = [...new Set(paths.filter(Boolean))]
     if (wanted.some(p => !links.has(p) || links.get(p).until - now() < REFRESH_BEFORE_MS)) {
-      const token = await getToken().catch(() => null) // a visitor who is not signed in reads the comic too
       let response
       try { response = await fetchImpl(new URL('/comic/sign', origin).href, { method: 'POST', cache: 'no-store', referrerPolicy: 'no-referrer',
-        headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ paths: wanted }) }) }
+        credentials: 'same-origin', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` }, body: JSON.stringify({ paths: wanted }) }) }
       catch { throw new PagesError('Could not reach the server. Check your connection and try again.', 'network') }
+      if (response.status === 401) { links.clear(); throw new PagesError('Sign in to read Bella & LiANN.', 'signed_out') }
       if (response.status === 429) throw new PagesError('Too many pages opened at once. Wait a minute and try again.', 'slow_down')
       if (!response.ok) throw new PagesError('The comic is unavailable right now.', 'unavailable')
       const body = await response.json().catch(() => ({}))
@@ -44,7 +48,7 @@ export function createPageSigner({ getToken, fetchImpl = (...a) => fetch(...a), 
   return { pagesOf }
 }
 
-// A faint tiled mark laid over the whole reader: the signed-in address, or a viewing code for a visitor who is not signed in.
+// A faint tiled mark laid over the whole reader using the signed-in address.
 // It shows in a screenshot, so a leaked page carries the mark of whoever opened it.
 export function watermarkStyle(email) {
   const text = String(email || 'LiANN').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]))

@@ -1,22 +1,29 @@
 // Learning with LiANN hub Worker. The site itself is static assets; this code only runs for /comic/*, the comic pages.
 //
-//   POST /comic/sign   body { paths: ["/comic/ep-01/000.webp", ...] }   optional Authorization: Bearer <Supabase access token>
-//        -> { expires, urls: { "<path>": "<path>?e=..&u=..&s=.." } }   Anyone can read (the comic links are public); a signed-in
-//        LiANN user's links are tied to their account, everyone else's to a hash of their address. Links last 30 minutes.
+//   POST /comic/sign   body { paths: ["/comic/ep-01/000.webp", ...] }   Authorization: Bearer <Supabase access token>
+//        -> { expires, urls: { "<path>": "<path>?e=..&u=..&s=.." } } plus a short-lived, HttpOnly reader cookie.
 //   GET  /comic/<episode>/<page>.webp?e=..&u=..&s=..                   One page image, read from the private R2 bucket (key reader/<episode>/<page>.webp).
+//        The signed URL and account-bound reader cookie are both required; a copied URL alone is insufficient.
 //
 // The page files are not public: they live in the liann-reader bucket, which has no public address (docs/COMIC-PROTECTION.md).
-// Per-address counters live in this isolate's memory, so they are a brake on bulk copying, not an exact limit.
+// Per-account counters live in this isolate's memory, so they are a brake on bulk copying, not an exact limit.
 
 const SIGN_MS = 30 * 60 * 1000
 const PAGE_PATH = /^\/comic\/([a-z0-9-]{1,40})\/([a-z0-9-]{1,40})\.webp$/
-const SIGN_LIMIT = [120, 10 * 60 * 1000]  // sign requests per reader (account, or address) in 10 minutes
-const PAGE_LIMIT = [1500, 10 * 60 * 1000] // page images per reader in 10 minutes (a classroom can share one address)
+const SIGN_LIMIT = [120, 10 * 60 * 1000]  // sign requests per account in 10 minutes
+const PAGE_LIMIT = [1500, 10 * 60 * 1000] // page images per account in 10 minutes
 const MAX_PATHS = 120
+const READER_COOKIE = 'liann_comic_session'
 
 const enc = new TextEncoder()
 const hex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('')
 const json = (body, status = 200, extra = {}) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', ...extra } })
+const sameTag = (a, b) => {
+  if (a.length !== b.length) return false
+  let diff = 0
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  return diff === 0
+}
 
 export async function hmac(key, text) {
   const k = await crypto.subtle.importKey('raw', enc.encode(key), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
@@ -59,10 +66,10 @@ export async function userOf(request, env, fetchImpl = fetch) {
 
 async function sign(request, env, fetchImpl, now) {
   if (request.method !== 'POST') return json({ error: 'method_not_allowed' }, 405, { allow: 'POST' })
-  // A signed-in user is known by account; everyone else (the comic links are public) by a hash of their address.
   const user = await userOf(request, env, fetchImpl)
-  const who = user ? user.id : `ip:${request.headers.get('cf-connecting-ip') || 'unknown'}`
-  const uid = (await hmac(env.SIGNING_KEY, `reader|${who}`)).slice(0, 12)
+  if (user === undefined) return json({ error: 'auth_unavailable' }, 503)
+  if (!user) return json({ error: 'sign_in_required' }, 401)
+  const uid = (await hmac(env.SIGNING_KEY, `reader|${user.id}`)).slice(0, 12)
   if (!allow(`sign:${uid}`, SIGN_LIMIT, now)) return json({ error: 'slow_down' }, 429, { 'retry-after': '60' })
   let body
   try { body = await request.json() } catch { return json({ error: 'bad_request' }, 400) }
@@ -70,7 +77,27 @@ async function sign(request, env, fetchImpl, now) {
   if (!paths || !paths.length || paths.length > MAX_PATHS || !paths.every(p => typeof p === 'string' && PAGE_PATH.test(p))) return json({ error: 'bad_request' }, 400)
   const expires = Math.floor((now + SIGN_MS) / 1000), urls = {}
   for (const p of new Set(paths)) urls[p] = `${p}?e=${expires}&u=${uid}&s=${await hmac(env.SIGNING_KEY, `${p}|${expires}|${uid}`)}`
-  return json({ expires, urls })
+  const sessionSig = await hmac(env.SIGNING_KEY, `comic-session|${uid}|${expires}`)
+  return json({ expires, urls }, 200, {
+    'set-cookie': `${READER_COOKIE}=${uid}.${expires}.${sessionSig}; Max-Age=1800; Path=/comic/; HttpOnly; Secure; SameSite=Strict`,
+  })
+}
+
+async function hasReaderCookie(request, env, uid, now) {
+  const value = (request.headers.get('cookie') || '').split(';').map(s => s.trim()).find(s => s.startsWith(`${READER_COOKIE}=`))?.slice(READER_COOKIE.length + 1)
+  const match = /^([0-9a-f]{12})\.(\d{10})\.([0-9a-f]{40})$/.exec(value || '')
+  if (!match || match[1] !== uid) return false
+  const expires = Number(match[2])
+  if (expires * 1000 < now || expires * 1000 > now + SIGN_MS + 60000) return false
+  return sameTag(match[3], await hmac(env.SIGNING_KEY, `comic-session|${uid}|${expires}`))
+}
+
+function logout(request) {
+  if (request.method !== 'POST') return json({ error: 'method_not_allowed' }, 405, { allow: 'POST' })
+  return new Response(null, { status: 204, headers: {
+    'cache-control': 'no-store',
+    'set-cookie': `${READER_COOKIE}=; Max-Age=0; Path=/comic/; HttpOnly; Secure; SameSite=Strict`,
+  } })
 }
 
 async function page(request, env, url, now) {
@@ -84,7 +111,8 @@ async function page(request, env, url, now) {
   if (site && site !== 'same-origin') return deny(403)
   const e = Number(url.searchParams.get('e')), u = url.searchParams.get('u') || '', s = url.searchParams.get('s') || ''
   if (!Number.isInteger(e) || e * 1000 < now || e * 1000 > now + SIGN_MS + 60000 || !/^[0-9a-f]{12}$/.test(u) || !/^[0-9a-f]{40}$/.test(s)) return deny(403)
-  if (s !== await hmac(env.SIGNING_KEY, `${url.pathname}|${e}|${u}`)) return deny(403)
+  if (!sameTag(s, await hmac(env.SIGNING_KEY, `${url.pathname}|${e}|${u}`))) return deny(403)
+  if (!await hasReaderCookie(request, env, u, now)) return deny(403)
   if (!allow(`page:${u}`, PAGE_LIMIT, now)) return new Response('Too many pages', { status: 429, headers: { 'retry-after': '60', 'cache-control': 'no-store' } })
   const object = await env.PAGES.get(`reader/${m[1]}/${m[2]}.webp`)
   if (!object) return deny(404)
@@ -99,6 +127,7 @@ export default {
   async fetch(request, env, ctx, { fetchImpl = fetch, now = Date.now() } = {}) {
     const url = new URL(request.url)
     if (url.pathname === '/comic/sign') return sign(request, env, fetchImpl, now)
+    if (url.pathname === '/comic/logout') return logout(request)
     if (url.pathname.startsWith('/comic/')) return page(request, env, url, now)
     return env.ASSETS.fetch(request)
   },
