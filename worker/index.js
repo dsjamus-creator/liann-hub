@@ -1,4 +1,5 @@
-// Learning with LiANN hub Worker. The site itself is static assets; this code only runs for /comic/*, the comic pages.
+// Learning with LiANN hub Worker. Static assets are served separately; this code handles /comic/* and /session/*.
+import { session } from './session.js'
 //
 //   POST /comic/sign   body { paths: ["/comic/ep-01/000.webp", ...] }   Authorization: Bearer <Supabase access token>
 //        -> { expires, urls: { "<path>": "<path>?e=..&u=..&s=.." } } plus a short-lived, HttpOnly reader cookie.
@@ -126,6 +127,7 @@ async function page(request, env, url, now) {
 export default {
   async fetch(request, env, ctx, { fetchImpl = fetch, now = Date.now() } = {}) {
     const url = new URL(request.url)
+    if (url.pathname.startsWith('/session/')) return session(request, env, fetchImpl, () => authSettings(env, fetchImpl))
     if (url.pathname === '/comic/sign') return sign(request, env, fetchImpl, now)
     if (url.pathname === '/comic/logout') return logout(request)
     if (url.pathname.startsWith('/comic/')) return page(request, env, url, now)

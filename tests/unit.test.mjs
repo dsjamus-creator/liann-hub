@@ -57,38 +57,70 @@ test('rendering escapes names from the server', () => {
 })
 
 function fakeServer() {
-  const calls = [], store = new Map()
+  const calls = [], store = new Map(); let active = false
   const storage = { getItem: k => store.get(k) ?? null, setItem: (k, v) => store.set(k, v), removeItem: k => store.delete(k) }
   const reply = (status, body) => ({ ok: status < 400, status, json: async () => body })
   const routes = {
     'GET https://api.test/v1/auth/config': () => reply(200, { authentication: { enabled: true, supabaseUrl: 'https://sb.test', publishableKey: 'pk' } }),
     'POST https://sb.test/auth/v1/otp': () => reply(200, {}),
-    'POST https://sb.test/auth/v1/verify': opts => JSON.parse(opts.body).token === '123456'
-      ? reply(200, { access_token: 'at1', refresh_token: 'rt1', expires_in: 3600, user: { email: 'a@b.c' } }) : reply(403, { error_code: 'otp_expired', msg: 'Token has expired or is invalid' }),
-    'POST https://sb.test/auth/v1/token?grant_type=refresh_token': () => reply(200, { access_token: 'at2', refresh_token: 'rt2', expires_in: 3600 }),
+    'POST https://app.test/session/verify': opts => {
+      if (JSON.parse(opts.body).code !== '123456') return reply(403, { error: 'bad_code' })
+      active = true; return reply(200, { access_token: 'at1', expires_in: 3600, session_id: '00000000-0000-4000-8000-000000000001' })
+    },
+    'POST https://app.test/session/refresh': () => active ? reply(200, { access_token: 'at2', expires_in: 3600, session_id: '00000000-0000-4000-8000-000000000001' }) : reply(401, { error: 'signed_out' }),
+    'POST https://app.test/session/logout': () => { active = false; return reply(204, {}) },
     'GET https://sb.test/auth/v1/user': () => reply(200, { email: 'A@B.C', email_confirmed_at: '2026-10-12' }),
     'GET https://be.test/learning/setlists': opts => opts.headers.Authorization?.startsWith('Bearer ') ? reply(200, { setlists: [{ id: 'x', name: 'L', words: 3 }] }) : reply(401, {}),
   }
-  const fetchImpl = async (url, opts = {}) => { const key = `${opts.method || 'GET'} ${url}`; calls.push(key); return (routes[key] || (() => reply(404, {})))(opts) }
+  const fetchImpl = async (url, opts = {}) => { const key = `${opts.method || 'GET'} ${url}`; calls.push(key); return (routes[key] || (key.startsWith('POST https://sb.test/auth/v1/otp?redirect_to=') ? routes['POST https://sb.test/auth/v1/otp'] : null) || (() => reply(404, {})))(opts) }
   return { calls, store, storage, fetchImpl }
 }
 
-test('email code sign-in stores a session and reads SetLists with a bearer token', async () => {
+test('email code sign-in keeps only a memory access token and reads SetLists with it', async () => {
   const f = fakeServer(); let clock = 1_000_000_000_000
-  const acct = createAccount({ pinyinApi: 'https://api.test', backend: 'https://be.test', fetchImpl: f.fetchImpl, storage: f.storage, now: () => clock })
+  f.store.set('liann-hub-session-v1', JSON.stringify({ access_token: 'old-at', refresh_token: 'old-rt' }))
+  const acct = createAccount({ pinyinApi: 'https://api.test', backend: 'https://be.test', fetchImpl: f.fetchImpl, storage: f.storage, now: () => clock, origin: 'https://app.test' })
+  assert.equal(f.store.has('liann-hub-session-v1'), false, 'legacy browser token is removed on startup')
   await acct.requestCode('a@b.c')
   await assert.rejects(acct.verifyCode('a@b.c', '000000'), /wrong or has expired/)
   assert.deepEqual(await acct.verifyCode('a@b.c', '123456'), { email: 'a@b.c', confirmed: true })
   assert.equal((await acct.setlists())[0].words, 3)
   clock += 2 * 3600 * 1000 // token expired → refreshed once
   assert.equal(await acct.accessToken(), 'at2')
-  assert.ok(f.calls.includes('POST https://sb.test/auth/v1/token?grant_type=refresh_token'))
+  assert.ok(f.calls.includes('POST https://app.test/session/refresh'))
+  assert.equal(f.store.has('liann-hub-session-v1'), false, 'no Supabase token is persisted in page storage')
   await acct.signOut()
   assert.equal(acct.hasSession(), false)
   await assert.rejects(acct.setlists(), /Sign in/)
 })
 
-test('the sign-in email link returns to this site, and the session in the address is accepted', async () => {
+test('failed server sign-out keeps the account visible for a retry', async () => {
+  const f = fakeServer()
+  const fetchImpl = (url, options = {}) => String(url).endsWith('/session/logout')
+    ? Promise.resolve({ ok: false, status: 503, json: async () => ({ error: 'logout_unconfirmed' }) })
+    : f.fetchImpl(url, options)
+  const acct = createAccount({ pinyinApi: 'https://api.test', backend: 'https://be.test', fetchImpl, storage: f.storage, origin: 'https://app.test' })
+  await acct.verifyCode('a@b.c', '123456')
+  await assert.rejects(acct.signOut(), /logout_unconfirmed/)
+  assert.equal(acct.hasSession(), true)
+})
+
+test('a late refresh cannot restore a token after sign-out', async () => {
+  const f = fakeServer(); let clock = 1_000_000_000_000, finishRefresh
+  const fetchImpl = (url, options = {}) => String(url).endsWith('/session/refresh')
+    ? new Promise(resolve => { finishRefresh = resolve }) : f.fetchImpl(url, options)
+  const acct = createAccount({ pinyinApi: 'https://api.test', backend: 'https://be.test', fetchImpl, storage: f.storage, now: () => clock, origin: 'https://app.test' })
+  await acct.verifyCode('a@b.c', '123456')
+  clock += 2 * 3600 * 1000
+  const pending = acct.accessToken()
+  assert.equal(typeof finishRefresh, 'function')
+  await acct.signOut()
+  finishRefresh({ ok: true, status: 200, json: async () => ({ access_token: 'late-token', expires_in: 3600 }) })
+  assert.equal(await pending, null)
+  assert.equal(acct.hasSession(), false)
+})
+
+test('the sign-in email link returns to this site, but its implicit tokens are not adopted by page JavaScript', async () => {
   const f = fakeServer(), sent = []
   const redirect = 'POST https://sb.test/auth/v1/otp?redirect_to=https%3A%2F%2Fapp.test%2F'
   const fetchImpl = async (u, o = {}) => { sent.push(`${o.method || 'GET'} ${u}`); return f.fetchImpl(u, o) }
@@ -102,17 +134,18 @@ test('the sign-in email link returns to this site, and the session in the addres
   assert.equal(acct.acceptLink(''), null)
   assert.equal(acct.hasSession(), false)
   // A sign-in link: the session comes in the fragment and the user is then looked up as usual.
-  assert.deepEqual(acct.acceptLink('#access_token=at9&refresh_token=rt9&expires_in=3600&token_type=bearer&type=magiclink'), { ok: true })
-  assert.equal(acct.hasSession(), true)
-  assert.deepEqual(await acct.user(), { email: 'a@b.c', confirmed: true })
-  // A half-formed fragment is refused rather than stored.
+  const link = acct.acceptLink('#access_token=at9&refresh_token=rt9&expires_in=3600&token_type=bearer&type=magiclink')
+  assert.equal(link.ok, false); assert.match(link.message, /enter the code/)
+  assert.equal(acct.hasSession(), false)
+  assert.equal(f.store.has('liann-hub-session-v1'), false)
+  // A half-formed fragment is also refused rather than stored.
   const acct2 = createAccount({ pinyinApi: 'https://api.test', backend: 'https://be.test', fetchImpl: f.fetchImpl, storage: { getItem: () => null, setItem: () => {}, removeItem: () => {} }, origin: 'https://app.test' })
-  assert.throws(() => acct2.acceptLink('#access_token=at9'), /incomplete/)
+  assert.equal(acct2.acceptLink('#access_token=at9').ok, false)
 })
 
 test('a sign-in link that was already used says so and points at the code', () => {
   const f = fakeServer()
-  const acct = createAccount({ pinyinApi: 'https://api.test', backend: 'https://be.test', fetchImpl: f.fetchImpl, storage: f.storage })
+  const acct = createAccount({ pinyinApi: 'https://api.test', backend: 'https://be.test', fetchImpl: f.fetchImpl, storage: f.storage, origin: 'https://app.test' })
   const used = acct.acceptLink('#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired')
   assert.equal(used.ok, false)
   assert.match(used.message, /already used or has expired.*code/)
@@ -122,12 +155,12 @@ test('a sign-in link that was already used says so and points at the code', () =
 
 test('a missing learner profile leads to AlongSide through a one-time pass, on AlongSide addresses only', async () => {
   const f = fakeServer(), profile = { url: 'https://be.test/student#profile', sessionPass: { url: 'https://be.test/learning/session-pass', next: '/student#profile' } }
-  const acct = createAccount({ pinyinApi: 'https://api.test', backend: 'https://be.test', fetchImpl: f.fetchImpl, storage: f.storage })
+  const acct = createAccount({ pinyinApi: 'https://api.test', backend: 'https://be.test', fetchImpl: f.fetchImpl, storage: f.storage, origin: 'https://app.test' })
   await acct.verifyCode('a@b.c', '123456')
   let sent
   const pass = (url = 'https://be.test/auth/liann/continue#pass=abc') => opts => { sent = opts; return { ok: true, status: 200, json: async () => ({ url, expiresInSeconds: 60 }) } }
   const route = (key, fn) => { const orig = f.fetchImpl; f.fetchImpl = async (u, o = {}) => `${o.method || 'GET'} ${u}` === key ? fn(o) : orig(u, o) }
-  const acct2 = () => createAccount({ pinyinApi: 'https://api.test', backend: 'https://be.test', fetchImpl: (u, o) => f.fetchImpl(u, o), storage: f.storage })
+  const acct2 = () => createAccount({ pinyinApi: 'https://api.test', backend: 'https://be.test', fetchImpl: (u, o) => f.fetchImpl(u, o), storage: f.storage, origin: 'https://app.test' })
 
   route('GET https://be.test/learning/setlists', () => ({ ok: false, status: 403, json: async () => ({ error: 'not_a_student', profile }) }))
   const error = await acct2().setlists().then(() => null, e => e)
@@ -136,7 +169,7 @@ test('a missing learner profile leads to AlongSide through a one-time pass, on A
 
   route('POST https://be.test/learning/session-pass', pass())
   assert.equal(await acct2().profileLink(profile), 'https://be.test/auth/liann/continue#pass=abc')
-  assert.equal(sent.headers.Authorization, 'Bearer at1')
+  assert.equal(sent.headers.Authorization, 'Bearer at2')
   assert.deepEqual(JSON.parse(sent.body), { next: '/student#profile' })
 
   // A reply naming another site is never followed: the pass request stays on AlongSide, and so does the result.
@@ -161,7 +194,7 @@ test('the Library asks for the learner profile instead of showing an error', () 
 
 test('households: switched-off AlongSide hides them; profile SetLists use profileId', async () => {
   const f = fakeServer(), seen = []
-  const acct = createAccount({ pinyinApi: 'https://api.test', backend: 'https://be.test', fetchImpl: (u, o = {}) => { seen.push(`${o.method || 'GET'} ${u}`); return f.fetchImpl(u, o) }, storage: f.storage })
+  const acct = createAccount({ pinyinApi: 'https://api.test', backend: 'https://be.test', fetchImpl: (u, o = {}) => { seen.push(`${o.method || 'GET'} ${u}`); return f.fetchImpl(u, o) }, storage: f.storage, origin: 'https://app.test' })
   await acct.verifyCode('a@b.c', '123456')
   assert.equal(await acct.household(), null, 'a 404 means households are switched off')
   await acct.setlists('11111111-2222-4333-8444-555555555555').catch(() => {})

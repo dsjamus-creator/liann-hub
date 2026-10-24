@@ -1,9 +1,8 @@
-// Email-code sign-in (Supabase, spec D16) and read-only access to the learner's AlongSide SetLists.
-// The flow matches public/shared/lwl-account.js in pinyin-tiles-playtest: the Supabase URL and
-// publishable key come from the Pinyin API at run time, and the backend is called with a bearer token.
-// Tokens stay in this origin's localStorage and are never logged.
+// Email-code sign-in (Supabase, spec D16) and access to the learner's AlongSide SetLists.
+// The Worker stores the rotating refresh token in an HttpOnly cookie. Page JavaScript keeps
+// only the short-lived access token in memory for the backend and protected comic requests.
 
-const SESSION_KEY = 'liann-hub-session-v1'
+const LEGACY_SESSION_KEY = 'liann-hub-session-v1'
 
 export class AccountError extends Error {
   constructor(message, code, status) { super(message); this.code = code; this.status = status }
@@ -11,10 +10,10 @@ export class AccountError extends Error {
 
 export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(...a), storage = globalThis.localStorage, now = () => Date.now(), origin = globalThis.location?.origin }) {
   let authConfig = null
-
-  const read = () => { try { return JSON.parse(storage.getItem(SESSION_KEY) || 'null') } catch { return null } }
-  const write = value => { try { storage.setItem(SESSION_KEY, JSON.stringify(value)); return true } catch { return false } }
-  const clear = () => { try { storage.removeItem(SESSION_KEY) } catch { /* storage blocked */ } }
+  let access = null, refreshing = null, generation = 0, sessionId = null
+  // Old sessions are deliberately not migrated through page JavaScript. The next sign-in uses a fresh code.
+  try { storage.removeItem(LEGACY_SESSION_KEY) } catch { /* storage blocked */ }
+  const clear = () => { generation++; access = null; refreshing = null; sessionId = null; try { storage.removeItem(LEGACY_SESSION_KEY) } catch { /* storage blocked */ } }
 
   async function json(url, options = {}) {
     let response
@@ -36,10 +35,9 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
   }
 
   function store(session) {
-    session.expires_at = Number(session.expires_at) || Math.floor(now() / 1000) + Number(session.expires_in || 3600)
-    if (!session.access_token || !session.refresh_token) throw new AccountError('The sign-in response was incomplete.', 'bad_session')
-    if (!write({ access_token: session.access_token, refresh_token: session.refresh_token, expires_at: session.expires_at, email: session.user?.email || null }))
-      throw new AccountError('This browser blocked storage, so you cannot stay signed in.', 'storage')
+    if (!session?.access_token || !session?.session_id) throw new AccountError('The sign-in response was incomplete.', 'bad_session')
+    sessionId = session.session_id
+    access = { token: session.access_token, expires_at: Number(session.expires_at) || Math.floor(now() / 1000) + Number(session.expires_in || 3600) }
   }
 
   async function requestCode(email) {
@@ -56,29 +54,28 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
 
   async function verifyCode(email, code) {
     if (!/^\d{6,10}$/.test(code)) throw new AccountError('Enter the code from the email.', 'bad_code')
-    const s = await settings()
+    const started = generation
     let session
     try {
-      session = await json(`${s.supabaseUrl}/auth/v1/verify`, {
-        method: 'POST', headers: { 'content-type': 'application/json', apikey: s.publishableKey },
-        body: JSON.stringify({ email, token: code, type: 'email' }),
+      session = await json(`${origin}/session/verify`, {
+        method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email, code }),
       })
     } catch (error) {
       if (error.status === 403 || error.status === 400) throw new AccountError('That code is wrong or has expired. Check the latest email, or send a new code.', 'bad_code', error.status)
       throw error
     }
+    if (started !== generation) throw new AccountError('Sign-in was cancelled. Please try again.', 'cancelled')
+    clear()
     store(session)
     return user()
   }
 
-  // The sign-in link in the email returns here with the session in the address fragment (#access_token=...&refresh_token=...),
-  // or with #error=...&error_code=otp_expired when the link or code was already used. Returns null for any other fragment.
+  // An implicit email link can carry a refresh token in the URL fragment. Never adopt it in page JavaScript;
+  // the app removes the fragment immediately and asks for the email code instead.
   function acceptLink(hash) {
     const q = new URLSearchParams(String(hash || '').replace(/^#/, ''))
-    if (q.get('access_token')) {
-      store({ access_token: q.get('access_token'), refresh_token: q.get('refresh_token'), expires_in: q.get('expires_in'), expires_at: q.get('expires_at') })
-      return { ok: true }
-    }
+    if (q.has('access_token') || q.has('refresh_token')) return { ok: false, code: 'use_code', message: 'For your security, enter the code from the email instead of using its sign-in link. Request a new code if this one has been used.' }
     if (q.get('error') || q.get('error_code')) {
       const used = ['otp_expired', 'access_denied'].includes(q.get('error_code') || q.get('error'))
       return { ok: false, code: q.get('error_code') || q.get('error'), message: used ? 'That sign-in link was already used or has expired. Type the code from the email, or send a new code.' : (q.get('error_description') || 'That sign-in link could not be used.').replace(/\+/g, ' ') }
@@ -87,29 +84,35 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
   }
 
   async function accessToken() {
-    const session = read()
-    if (!session?.access_token) return null
-    if (Number(session.expires_at) > Math.floor(now() / 1000) + 60) return session.access_token
-    const s = await settings()
-    try {
-      const refreshed = await json(`${s.supabaseUrl}/auth/v1/token?grant_type=refresh_token`, {
-        method: 'POST', headers: { 'content-type': 'application/json', apikey: s.publishableKey },
-        body: JSON.stringify({ refresh_token: session.refresh_token }),
-      })
-      store(refreshed)
-      return refreshed.access_token
-    } catch (error) {
-      if (error.status === 400 || error.status === 401) { clear(); return null }
-      throw error
-    }
+    if (access?.expires_at > Math.floor(now() / 1000) + 60) return access.token
+    if (refreshing) return refreshing
+    const started = generation
+    const task = (async () => {
+      try {
+        const refreshed = await json(`${origin}/session/refresh`, {
+          method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json', ...(sessionId ? { 'x-session-id': sessionId } : {}) }, body: '{}',
+        })
+        if (started !== generation) return null
+        store(refreshed)
+        return access.token
+      } catch (error) {
+        if (started !== generation) return null
+        if (error.status === 401 || error.status === 409) { clear(); return null }
+        throw error
+      } finally { if (refreshing === task) refreshing = null }
+    })()
+    refreshing = task
+    return task
   }
 
   async function user() {
     const token = await accessToken()
     if (!token) return null
+    const started = generation
     const s = await settings()
     try {
       const u = await json(`${s.supabaseUrl}/auth/v1/user`, { headers: { apikey: s.publishableKey, Authorization: `Bearer ${token}` } })
+      if (started !== generation) return null
       if (!u.email) return null
       return { email: u.email.toLowerCase(), confirmed: Boolean(u.email_confirmed_at) }
     } catch (error) {
@@ -119,12 +122,17 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
   }
 
   async function signOut() {
-    const token = await accessToken().catch(() => null)
+    const previous = access, priorId = sessionId, started = ++generation
+    access = null; refreshing = null
+    try {
+      await json(`${origin}/session/logout`, {
+        method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json', ...(priorId ? { 'x-session-id': priorId } : {}) }, body: '{}',
+      })
+    } catch (error) {
+      if (started === generation) { access = previous; sessionId = priorId }
+      throw error
+    }
     clear()
-    if (!token || !authConfig) return
-    await fetchImpl(`${authConfig.supabaseUrl}/auth/v1/logout`, {
-      method: 'POST', headers: { apikey: authConfig.publishableKey, Authorization: `Bearer ${token}` }, body: '{}',
-    }).catch(() => {})
   }
 
   async function backendGet(path) {
@@ -183,5 +191,5 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     }
   }
 
-  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, profileLink, household, householdAction, hasSession: () => Boolean(read()?.access_token) }
+  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, forget: clear, setlists, setlistWords, profileLink, household, householdAction, hasSession: () => Boolean(access?.token) }
 }

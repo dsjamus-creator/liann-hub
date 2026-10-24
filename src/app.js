@@ -8,6 +8,7 @@ import { DS, vLoading, vEmail, vCode, vWho, vHub } from './views.js'
 import { mountViewer, stopViewer } from './figures.js'
 
 const account = createAccount({ pinyinApi: config.pinyinApi, backend: config.backend })
+const sessionChannel = typeof BroadcastChannel === 'function' ? new BroadcastChannel('liann-hub-session') : null
 const $ = sel => document.querySelector(sel)
 const store = {
   get(key, fallback) { try { return JSON.parse(localStorage.getItem(key) || 'null') ?? fallback } catch { return fallback } },
@@ -34,12 +35,21 @@ function openFromHash() {
 function applyTheme() { document.documentElement.dataset.ds = S.theme.ds; document.documentElement.dataset.t = S.theme.t; store.set('liann-hub-theme', S.theme) }
 function toast(text) { const el = $('#toast'); el.textContent = text; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => { el.hidden = true }, 2200) }
 function go(view, extra = {}) { Object.assign(S, { error: '', busy: false }, extra, { view }); render(); if (view === 'who' || view === 'hub') loadHousehold() }
+const sameUser = owner => Boolean(owner && S.user === owner)
+const clearedAccountState = () => ({ user: null, recent: [], progress: {}, setlists: null, openList: null, household: undefined, policies: null, learner: null, hhError: '', hhBusy: false })
 
 // Couple and Family plans (One LiANN account C3). null = AlongSide has households switched off; nothing is shown.
 async function loadHousehold() {
-  try { S.household = await account.household() } catch (error) { if (error.code === 'signed_out') return signedOut(); S.household = null }
-  if (S.household?.household?.plan === 'family' && !S.policies)
-    S.policies = (await account.householdAction('GET', '/policies').catch(() => ({}))).policies || null
+  const owner = S.user
+  let household
+  try { household = await account.household() } catch (error) { if (!sameUser(owner)) return; if (error.code === 'signed_out') return signedOut(); household = null }
+  if (!sameUser(owner)) return
+  S.household = household
+  if (household?.household?.plan === 'family' && !S.policies) {
+    const policies = (await account.householdAction('GET', '/policies').catch(() => ({}))).policies || null
+    if (!sameUser(owner)) return
+    S.policies = policies
+  }
   if (S.learner && !S.household?.children?.some(c => c.id === S.learner.id)) { S.learner = null; if (S.view === 'hub') loadLibrary() }
   if (S.view === 'who' || S.view === 'hub') render()
 }
@@ -51,9 +61,11 @@ const HH_ERRORS = { plan_required: 'Starting a household needs a Couple or Famil
   guardian_name_required: 'Enter your name as their parent or guardian.', guardian_agreement_required: 'Tick the box to agree for your child.', family_plan_required: 'Child profiles come with the Family plan.',
   child_limit_reached: 'The Family plan has room for four children.', household_required: 'Start or join a household first.' }
 async function householdDo(method, path, body, done) {
+  const owner = S.user
   S.hhBusy = true; S.hhError = ''; render()
-  try { await account.householdAction(method, path, body); if (done) toast(done) }
-  catch (error) { if (error.code === 'signed_out') return signedOut(); S.hhError = HH_ERRORS[error.code] || HH_ERRORS[error.message] || error.message }
+  try { await account.householdAction(method, path, body); if (!sameUser(owner)) return; if (done) toast(done) }
+  catch (error) { if (!sameUser(owner)) return; if (error.code === 'signed_out') return signedOut(); S.hhError = HH_ERRORS[error.code] || HH_ERRORS[error.message] || error.message }
+  if (!sameUser(owner)) return
   S.hhBusy = false; await loadHousehold()
 }
 
@@ -74,6 +86,7 @@ async function sendCode(email) {
 }
 
 async function enterHub(user) {
+  if (S.user !== user) Object.assign(S, clearedAccountState())
   S.user = user
   S.recent = store.get(accountKey('liann-hub-recent', user), [])
   S.progress = store.get(accountKey('liann-hub-reader', user), {})
@@ -83,10 +96,16 @@ async function enterHub(user) {
 }
 
 async function loadLibrary() {
+  const owner = S.user
   S.setlists = { status: 'loading' }
   if (S.view === 'hub') render()
-  try { S.setlists = { status: 'ok', items: await account.setlists(S.learner?.id) } }
+  try {
+    const items = await account.setlists(S.learner?.id)
+    if (!sameUser(owner)) return
+    S.setlists = { status: 'ok', items }
+  }
   catch (error) {
+    if (!sameUser(owner)) return
     if (error.code === 'signed_out') return signedOut()
     S.setlists = error.code === 'not_a_student' ? { status: 'needs_profile', profile: error.profile } : { status: 'error', error: error.message }
   }
@@ -94,23 +113,28 @@ async function loadLibrary() {
 }
 
 async function openList(id) {
+  const owner = S.user
   const name = S.setlists?.items?.find(l => l.id === id)?.name
   S.openList = { id, name, status: 'loading' }; render()
-  try { const r = await account.setlistWords(id); if (S.openList?.id === id) S.openList = { id, name: r.name || name, status: 'ok', words: r.words } }
-  catch (error) { if (S.openList?.id === id) S.openList = { id, name, status: 'error', error: error.message } }
+  try { const r = await account.setlistWords(id); if (sameUser(owner) && S.openList?.id === id) S.openList = { id, name: r.name || name, status: 'ok', words: r.words } }
+  catch (error) { if (sameUser(owner) && S.openList?.id === id) S.openList = { id, name, status: 'error', error: error.message } }
+  if (!sameUser(owner)) return
   render()
 }
 
 // The tab is opened during the click, so pop-up blockers allow it; the address follows once the pass arrives.
 async function finishProfile() {
+  const owner = S.user
   const tab = window.open('', '_blank')
   S.setlists = { ...S.setlists, opening: true, error: null }; render()
   try {
     const link = await account.profileLink(S.setlists.profile)
+    if (!sameUser(owner)) { if (tab) tab.close(); return }
     if (tab) { tab.opener = null; tab.location.href = link } else location.assign(link)
     S.setlists = { ...S.setlists, opening: false, opened: true }
   } catch (error) {
     if (tab) tab.close()
+    if (!sameUser(owner)) return
     if (error.code === 'signed_out') return signedOut()
     S.setlists = { ...S.setlists, opening: false, error: error.message }
   }
@@ -119,11 +143,19 @@ async function finishProfile() {
 
 async function signedOut() {
   S.reader = null; dropBook()
-  go('loading', { user: null, recent: [], progress: {}, setlists: null, openList: null })
+  go('loading', clearedAccountState())
   let revoked = false
   try { revoked = (await fetch('/comic/logout', { method: 'POST', credentials: 'same-origin', cache: 'no-store' })).ok } catch { /* explain below */ }
   go('email', revoked ? {} : { error: 'Could not confirm comic sign-out. Close this browser and try again.' })
   return revoked
+}
+if (sessionChannel) sessionChannel.onmessage = event => {
+  if (event.data === 'signed-out') { account.forget(); void signedOut() }
+  if (event.data === 'signed-in') {
+    account.forget()
+    S.reader = null; dropBook()
+    go('email', { ...clearedAccountState(), error: 'A different LiANN sign-in was completed in another tab. Sign in again to continue here.' })
+  }
 }
 
 // Comic reader. Progress (last page seen per episode), the one/two-page choice and the magnifier switch stay on this device.
@@ -156,13 +188,16 @@ function wantSpread(r, n) {
 // Protected pages: the hub's Worker hands out short-lived signed links to signed-in users (see src/pages.js).
 const signer = createPageSigner({ getToken: () => account.accessToken() })
 async function signPages(ep) {
-  try { ep.pages = await signer.pagesOf(ep); return true }
-  catch (error) { if (error.code === 'signed_out') await signedOut(); else toast(error.message); return false }
+  const owner = S.user
+  try { const pages = await signer.pagesOf(ep); if (!sameUser(owner)) return false; ep.pages = pages; return true }
+  catch (error) { if (!sameUser(owner)) return false; if (error.code === 'signed_out') await signedOut(); else toast(error.message); return false }
 }
-setInterval(() => { const ep = S.reader && S.comics?.find(e => e.id === S.reader.id); if (ep) signer.pagesOf(ep).then(p => { ep.pages = p }, () => {}) }, 120000)
+setInterval(() => { const owner = S.user, ep = S.reader && S.comics?.find(e => e.id === S.reader.id); if (ep) signer.pagesOf(ep).then(p => { if (sameUser(owner) && S.reader?.id === ep.id) ep.pages = p }, () => {}) }, 120000)
 async function openReader(id) {
+  const owner = S.user
   const ep = S.comics?.find(e => e.id === id); if (!ep) return
   if (!await signPages(ep)) return
+  if (!sameUser(owner)) return
   const saved = S.progress[id]
   S.reader = { id, i: Number.isInteger(saved) && saved < ep.pages.length - 1 ? clampPage(saved, ep.pages.length) : 0, z: 1, mode: prefs.mode || 'auto', lens: prefs.lens !== false, flip: null, can3d: webglOK() && ep.pages.length > 1 }
   S.reader.spread = wantSpread(S.reader, ep.pages.length)
@@ -355,7 +390,7 @@ function bind() {
     const submit = async () => {
       if (S.busy) return
       S.busy = true; S.error = ''; f2.querySelector('[type=submit]').disabled = true
-      try { const user = await account.verifyCode(S.email, code()); if (!user) throw new Error('Sign-in did not complete. Try again.'); go('who', { user }) }
+      try { const user = await account.verifyCode(S.email, code()); if (!user) throw new Error('Sign-in did not complete. Try again.'); sessionChannel?.postMessage('signed-in'); go('who', { ...clearedAccountState(), user }) }
       catch (error) { S.busy = false; S.error = error.message; render() }
     }
     ins.forEach((el, i) => {
@@ -391,7 +426,10 @@ function bind() {
     const ok = $('#hhagree').checked
     householdDo('POST', '/children', { name: $('#hhcname').value, dateOfBirth: $('#hhcdob').value, guardianName: $('#hhgname').value,
       agreements: { terms: ok, privacy: ok } }, 'Child profile added') }
-  document.querySelectorAll('#signout').forEach(b => { b.onclick = async () => { await account.signOut(); if (await signedOut()) toast('Signed out') } })
+  document.querySelectorAll('#signout').forEach(b => { b.onclick = async () => {
+    try { await account.signOut(); sessionChannel?.postMessage('signed-out'); if (await signedOut()) toast('Signed out') }
+    catch { S.error = 'Could not confirm account sign-out. Check your connection and try again.'; render() }
+  } })
 
   document.querySelectorAll('[data-nav]').forEach(b => { b.onclick = () => {
     S.page = b.dataset.nav; S.openList = null; S.appf = b.dataset.f || 'All'; S.more = false; S.notif = false
@@ -457,17 +495,18 @@ window.addEventListener('hashchange', () => { if (S.view === 'hub') { S.page = p
 async function start() {
   // Returning from the sign-in link in the email: take the session out of the address before the hub reads it as a page.
   let linkError = ''
-  if (/^#(access_token|error)=/.test(location.hash)) {
-    try { const link = account.acceptLink(location.hash); if (link && !link.ok) linkError = link.message }
-    catch (error) { linkError = error.message }
+  const fragment = new URLSearchParams(location.hash.slice(1))
+  if (['access_token', 'refresh_token', 'error', 'error_code'].some(key => fragment.has(key))) {
+    const signInHash = location.hash
     history.replaceState(null, '', location.pathname + location.search)
+    try { const link = account.acceptLink(signInHash); if (link && !link.ok) linkError = link.message }
+    catch (error) { linkError = error.message }
   }
   applyTheme(); render()
   loadComics(config.comicsManifest).then(c => { S.comics = c }, () => { S.comics = [] }).finally(() => { if (S.view === 'hub') { render(); openFromHash() } })
   loadDownloads(config.downloadsManifest).then(d => { S.downloads = d }, e => { S.downloads = e }).finally(() => { if (S.view === 'hub') render() })
   // A shared comic link opens after the reader signs in with a LiANN account.
   const gate = extra => go('email', extra)
-  if (!account.hasSession()) return gate(linkError ? { error: linkError } : undefined)
   try { const user = await account.user(); user ? enterHub(user) : gate(linkError ? { error: linkError } : undefined) }
   catch (error) { gate({ error: error.message }) }
 }

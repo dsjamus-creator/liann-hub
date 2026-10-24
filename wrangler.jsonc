@@ -1,5 +1,5 @@
 {
-  // Learning with LiANN hub at https://app.lwliann.com: static assets, plus a small Worker that runs only for /comic/*
+  // Learning with LiANN hub at https://app.lwliann.com: static assets, plus a Worker for /comic/* and /session/*
   // (the protected comic pages). `npx wrangler deploy` uploads the site and attaches app.lwliann.com as a Custom Domain,
   // which creates the DNS record and HTTPS certificate in the lwliann.com zone. See docs/DEPLOY.md and docs/COMIC-PROTECTION.md.
   "$schema": "./node_modules/wrangler/config-schema.json",
@@ -10,7 +10,7 @@
     "directory": "./",
     "binding": "ASSETS",
     "not_found_handling": "404-page",
-    "run_worker_first": ["/comic/*"]
+    "run_worker_first": ["/comic/*", "/session/*"]
   },
   // The comic page files: a private bucket with no public address (no r2.dev, no custom domain). Only this Worker reads it.
   "r2_buckets": [

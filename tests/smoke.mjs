@@ -9,11 +9,13 @@ const server = await serve(0)
 const url = `http://127.0.0.1:${server.address().port}/`
 const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || '/opt/pw-browsers/chromium' })
 const LIST = '11111111-2222-4333-8444-555555555555'
+const SESSION_COOKIE = 'liann-mock-session'
 let failures = 0
 const shot = async (page, name) => { if (process.env.SHOTS) await page.waitForTimeout(400), await page.screenshot({ path: `${process.env.SHOTS}/${name}.png`, fullPage: true }) }
+const seedSession = (context, email = 'ann.mingen@example.com') => context.addCookies([{ name: SESSION_COOKIE, value: encodeURIComponent(email), url }])
 
 async function mock(context, { student = true, tour = false } = {}) {
-  const seen = { auth: [] }
+  const seen = { auth: [], session: [] }
   if (!tour) await context.addInitScript(() => localStorage.setItem('liann-hub-tour-done', 'true'))
   const PAGE = n => `https://downloads.lwliann.com/comics/ep1/page-${n}.jpg`
   await context.route('**/data/comics.json', r => r.fulfill({ json: { episodes: [{ id: 'ep1', title: 'Episode 1: Flight', number: 1, summary: 'Bella takes off.', cover: PAGE(1), pages: [PAGE(1), PAGE(2), PAGE(3)] },
@@ -24,6 +26,24 @@ async function mock(context, { student = true, tour = false } = {}) {
   await context.route('**/comic/sign', r => {
     const body = r.request().postDataJSON(); seen.signs.push({ auth: r.request().headers().authorization, paths: body.paths })
     return r.fulfill({ json: { expires: Math.floor(Date.now() / 1000) + 1800, urls: Object.fromEntries(body.paths.map(p => [p, `${p}?e=1&u=abcdef012345&s=${'a'.repeat(40)}`])) } })
+  })
+  const sessionFrom = request => (request.headers().cookie || '').split(';').map(x => x.trim()).find(x => x.startsWith(`${SESSION_COOKIE}=`))?.slice(SESSION_COOKIE.length + 1)
+  const sessionBody = () => ({ access_token: 'at', expires_at: Math.floor(Date.now() / 1000) + 3600, session_id: '00000000-0000-4000-8000-000000000001' })
+  await context.route('**/session/verify', r => {
+    seen.session.push('/session/verify')
+    const body = r.request().postDataJSON()
+    if (body.code !== '246810') return r.fulfill({ status: 403, json: { error: 'invalid_code' } })
+    return r.fulfill({ json: sessionBody(), headers: { 'set-cookie': `${SESSION_COOKIE}=${encodeURIComponent(body.email)}; Path=/; HttpOnly; SameSite=Strict`, 'cache-control': 'no-store' } })
+  })
+  await context.route('**/session/refresh', r => {
+    seen.session.push('/session/refresh')
+    return sessionFrom(r.request())
+      ? r.fulfill({ json: sessionBody(), headers: { 'cache-control': 'no-store' } })
+      : r.fulfill({ status: 401, json: { error: 'sign_in_required' }, headers: { 'cache-control': 'no-store' } })
+  })
+  await context.route('**/session/logout', r => {
+    seen.session.push('/session/logout')
+    return r.fulfill({ status: 204, body: '', headers: { 'set-cookie': `${SESSION_COOKIE}=; Max-Age=0; Path=/; HttpOnly; SameSite=Strict`, 'cache-control': 'no-store' } })
   })
   await context.route(/\/comic\/ep-03\/p\d\.webp\?/, r => r.fulfill({ path: fileURLToPath(new URL('./fixtures/page-1.jpg', import.meta.url)), contentType: 'image/jpeg' }))
   await context.route(/downloads\.lwliann\.com\/comics\/ep1\/page-(\d)\.jpg/, r => r.fulfill({ path: fileURLToPath(new URL(`./fixtures/page-${r.request().url().match(/page-(\d)/)[1]}.jpg`, import.meta.url)), contentType: 'image/jpeg', headers: { 'access-control-allow-origin': '*' } }))
@@ -67,9 +87,10 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
   const seen = await mock(context)
   const page = await context.newPage(), errors = []
   page.on('pageerror', e => errors.push(e.message))
-  // The wrong-code step deliberately gets a 403 from /verify; Chromium logs that as a console error.
+  // Wrong codes and unsigned visits deliberately get 403/401 from the mock session endpoints.
   // Households switched off: AlongSide answers /learning/household with 404, which the hub reads as "no households".
-  page.on('console', m => { if (m.type() === 'error' && !(/status of 403/.test(m.text()) && m.location().url.endsWith('/auth/v1/verify'))
+  page.on('console', m => { if (m.type() === 'error' && !(/status of 403/.test(m.text()) && m.location().url.endsWith('/session/verify'))
+    && !(/status of 401/.test(m.text()) && m.location().url.endsWith('/session/refresh'))
     && !(/status of 404/.test(m.text()) && m.location().url.includes('/learning/household'))) errors.push(m.text()) })
   await page.goto(url)
 
@@ -94,6 +115,9 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     await page.locator('#c0').evaluate(el => { el.value = '246810'; el.dispatchEvent(new Event('input', { bubbles: true })) })
     await page.locator('#pick').waitFor()
     assert.match(await page.locator('.who').innerText(), /Ann Mingen/)
+    assert.ok(seen.session.includes('/session/verify'))
+    assert.equal(await page.evaluate(() => localStorage.getItem('liann-hub-session-v1')), null, 'no access or refresh token is persisted in localStorage')
+    assert.ok((await context.cookies(url)).some(c => c.name === SESSION_COOKIE && c.httpOnly), 'the refresh session is held in an HttpOnly cookie')
   })
   await step(`${tag}: hub home opens web Mahjong Tones`, async () => {
     await page.click('#pick')
@@ -339,6 +363,8 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     await page.goto(url + '#plan'); await page.locator('#signout').click()
     await page.locator('#f1').waitFor()
     assert.equal(await page.evaluate(() => localStorage.getItem('liann-hub-session-v1')), null)
+    assert.ok(seen.session.includes('/session/logout'))
+    assert.ok(!(await context.cookies(url)).some(c => c.name === SESSION_COOKIE), 'session cookie is cleared')
     await page.reload(); await page.locator('#f1').waitFor()
   })
   await step(`${tag}: no console errors`, async () => assert.deepEqual(errors, [], JSON.stringify(errors)))
@@ -348,7 +374,7 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
 {
   const context = await browser.newContext({ viewport: { width: 1280, height: 860 } })
   await mock(context, { tour: true })
-  await context.addInitScript(() => localStorage.setItem('liann-hub-session-v1', JSON.stringify({ access_token: 'at', refresh_token: 'rt', expires_at: 9999999999 })))
+  await seedSession(context)
   const page = await context.newPage()
   await step('Figures page draws the 3D view from the hub’s own three.js (or says plainly when WebGL is missing)', async () => {
     await page.goto(url + '#figures'); await page.locator('#fig3d').waitFor()
@@ -369,7 +395,7 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
   // the page host sends no CORS headers: the flat reader must still show the pages, and the 3D option must not be offered
   const context = await browser.newContext({ viewport: { width: 1280, height: 860 } })
   await mock(context, { tour: false })
-  await context.addInitScript(() => localStorage.setItem('liann-hub-session-v1', JSON.stringify({ access_token: 'at', refresh_token: 'rt', expires_at: 9999999999 })))
+  await seedSession(context)
   // a host without CORS: plain image requests work, CORS-mode requests (they carry an Origin header) fail
   await context.route(/downloads\.lwliann\.com\/comics\/ep1\/page-(\d)\.jpg/, r => r.request().headers().origin ? r.abort() : r.fulfill({ path: fileURLToPath(new URL(`./fixtures/page-${r.request().url().match(/page-(\d)/)[1]}.jpg`, import.meta.url)), contentType: 'image/jpeg' }))
   const page = await context.newPage()
@@ -384,7 +410,7 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
 
 {
   const context = await browser.newContext()
-  await context.addInitScript(() => localStorage.setItem('liann-hub-session-v1', JSON.stringify({ access_token: 'at', refresh_token: 'rt', expires_at: 9999999999 })))
+  await seedSession(context)
   const page = await context.newPage()
   const seen = await mock(context, { student: false })
   await context.route('https://lwl-backend-mhgo.onrender.com/auth/liann/continue', r => r.fulfill({ contentType: 'text/html', body: '<title>AlongSide</title>' }))
@@ -402,7 +428,7 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
 {
   // One LiANN account C3: a Family household with a child profile (AlongSide has households switched on).
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } })
-  await context.addInitScript(() => localStorage.setItem('liann-hub-session-v1', JSON.stringify({ access_token: 'at', refresh_token: 'rt', expires_at: 9999999999 })))
+  await seedSession(context)
   await mock(context)
   const CHILD = '99999999-8888-4777-8666-555555555555', posts = []
   const state = { household: { id: 'h1', plan: 'family', role: 'owner', limits: { adults: 2, children: 4 } },
@@ -451,6 +477,7 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
 {
   const context = await browser.newContext({ viewport: { width: 1280, height: 860 } })
   await mock(context)
+  await seedSession(context, 'first@example.com')
   let activeEmail = 'first@example.com'
   let releaseComicLogout, signalComicLogout
   let delayFirstLogout = true
@@ -492,6 +519,7 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
   }
   await step('reading position is scoped to the signed-in adult account', async () => {
     await page.goto(url + '#read'); await page.locator('[data-readep="ep1"]').waitFor()
+    assert.equal(await page.evaluate(() => localStorage.getItem('liann-hub-session-v1')), null, 'the old stored token is removed during the session upgrade')
     assert.equal(await page.locator('[data-readep="ep1"]').innerText(), 'Read', 'do not assign legacy shared progress to the first account')
     await page.locator('[data-readep="ep1"]').click(); await page.locator('#rnext').click()
     await page.waitForFunction(() => document.querySelector('.rcount')?.textContent.includes('2–3'))
@@ -509,6 +537,58 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     await page.goto(url + '#read'); await page.locator('[data-readep="ep1"]').waitFor()
     assert.match(await page.locator('[data-readep="ep1"]').innerText(), /Continue from page 2/, 'the first account keeps its own position')
   })
+  await context.close()
+}
+
+// A slow reply started for one adult must never be rendered after another adult takes over the tab.
+{
+  const context = await browser.newContext({ viewport: { width: 1280, height: 860 } })
+  await mock(context)
+  await seedSession(context, 'first@example.com')
+  let activeEmail = 'first@example.com'
+  await context.route('https://demo.supabase.co/auth/v1/user', r => r.fulfill({ json: { email: activeEmail, email_confirmed_at: '2026-10-12T00:00:00Z' } }))
+  let startedList, startedHouse, releaseList, releaseHouse
+  const listStarted = new Promise(resolve => { startedList = resolve })
+  const houseStarted = new Promise(resolve => { startedHouse = resolve })
+  const listGate = new Promise(resolve => { releaseList = resolve })
+  const houseGate = new Promise(resolve => { releaseHouse = resolve })
+  await context.route('https://lwl-backend-mhgo.onrender.com/learning/setlists', async route => {
+    const first = activeEmail === 'first@example.com'
+    if (first) { startedList(); await listGate }
+    await route.fulfill({ json: { setlists: [{ id: LIST, name: first ? 'First account private list' : 'Second account own list', words: 1 }] } })
+  })
+  await context.route('https://lwl-backend-mhgo.onrender.com/learning/household', async route => {
+    const first = activeEmail === 'first@example.com'
+    if (first) {
+      startedHouse(); await houseGate
+      return route.fulfill({ json: { household: { id: 'first-household', plan: 'couple', role: 'owner', limits: { adults: 2, children: 0 } },
+        members: [{ email: 'first@example.com', role: 'owner', me: true, accountId: 'first' }], children: [], invites: [], invitations: [] } })
+    }
+    return route.fulfill({ status: 404, json: {} })
+  })
+  const page = await context.newPage()
+  await step('late Library and household replies from the first adult cannot enter the second adult view', async () => {
+    await page.goto(url + '#library')
+    await page.getByText('Loading your SetLists…').waitFor()
+    await Promise.all([listStarted, houseStarted])
+    await page.locator('[data-nav="plan"]').first().click()
+    await page.locator('#signout').click()
+    await page.locator('#f1').waitFor()
+    await page.fill('#em', 'second@example.com'); await page.click('#f1 [type=submit]'); await page.locator('#f2').waitFor()
+    activeEmail = 'second@example.com'
+    await page.locator('#c0').evaluate(el => { el.value = '246810'; el.dispatchEvent(new Event('input', { bubbles: true })) })
+    await page.locator('#pick').waitFor(); await page.click('#pick')
+    await page.goto(url + '#library'); await page.getByText('Second account own list').waitFor()
+    releaseList(); releaseHouse()
+    // Allow both deliberately delayed fetch completions and their render tasks to settle.
+    await page.waitForTimeout(300)
+    assert.equal(await page.getByText('First account private list').count(), 0)
+    assert.match(await page.locator('main').innerText(), /Second account own list/)
+    await page.goto(url + '#plan'); await page.locator('main .sec').first().waitFor()
+    assert.doesNotMatch(await page.locator('main').innerText(), /first@example\.com|First account private list/)
+    assert.match(await page.locator('main').innerText(), /Learner · no charge/)
+  })
+  releaseList(); releaseHouse()
   await context.close()
 }
 
@@ -531,16 +611,27 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
   await context.close()
 }
 
-// The sign-in link in the email comes back to the hub with the session in the address (Supabase implicit flow).
+// Old implicit links may still arrive from email, but the hub must reject them instead of persisting their tokens.
 {
   const context = await browser.newContext({ viewport: { width: 1280, height: 860 } })
-  const seen = await mock(context)
+  await mock(context)
   const page = await context.newPage()
-  await step('the email sign-in link signs the person in and clears the address', async () => {
+  await step('an implicit email link is cleared and asks for an email code', async () => {
     await page.goto(url + '#access_token=at&refresh_token=rt&expires_in=3600&token_type=bearer&type=magiclink')
-    await page.locator('#pick, .hello').first().waitFor()
+    await page.locator('#f1').waitFor()
     assert.equal(await page.evaluate(() => location.hash), '', 'the tokens are not left in the address bar')
-    assert.equal(await page.locator('#f1').count(), 0, 'no sign-in form: the link signed in')
+    assert.match(await page.getByRole('alert').innerText(), /code/i)
+    assert.equal(await page.evaluate(() => localStorage.getItem('liann-hub-session-v1')), null)
+    assert.ok(!(await context.cookies(url)).some(c => c.name === SESSION_COOKIE))
+  })
+  await step('a reordered implicit-token fragment is also cleared before sign-in', async () => {
+    await page.goto(url + '#token_type=bearer&refresh_token=rt&access_token=at&expires_in=3600')
+    await page.reload() // a second email link is a fresh document load, not a same-document hash change
+    await page.locator('#f1').waitFor()
+    assert.equal(await page.evaluate(() => location.hash), '')
+    assert.match(await page.getByRole('alert').innerText(), /code/i)
+    assert.equal(await page.evaluate(() => localStorage.getItem('liann-hub-session-v1')), null)
+    assert.ok(!(await context.cookies(url)).some(c => c.name === SESSION_COOKIE))
   })
   await context.close()
   const context2 = await browser.newContext({ viewport: { width: 1280, height: 860 } })
