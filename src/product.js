@@ -98,13 +98,20 @@ function applyStoredTheme() {
   } catch { /* storage blocked: keep the page's own theme */ }
 }
 
+// Products that stay documented apart (DEPLOYMENT-AND-STOREFRONT-PLAN §4.5): Dual Subs and PolyFlow never list
+// each other under "Also from". Dual Subs and AlongSide may.
+export const APART = [['dual-subs', 'polyflow']]
+export function alsoFrom(products, slug) {
+  return products.filter(p => p.id !== slug && !APART.some(pair => pair.includes(slug) && pair.includes(p.id)))
+}
+
 export async function mount(root = document.getElementById('root'), slug = document.documentElement.dataset.product) {
   applyStoredTheme()
   const [products, downloads] = await Promise.all([loadProducts(), loadDownloads(config.downloadsManifest).catch(() => [])])
   const product = products.find(p => p.id === slug)
   if (!product) { root.innerHTML = `<div class="gate"><div class="card"><h1>That app isn't here</h1><p class="muted" style="margin:0"><a href="/#apps">See every app</a></p></div></div>`; return }
   document.title = `${product.name} · Learning with LiANN`
-  root.innerHTML = productHTML(product, downloads, detectOS(), products.filter(p => p.id !== slug))
+  root.innerHTML = productHTML(product, downloads, detectOS(), alsoFrom(products, slug))
 }
 
 if (typeof document !== 'undefined' && document.documentElement.dataset.product) mount().catch(e => { document.getElementById('root').innerHTML = `<div class="gate"><div class="card"><p class="err">${esc(e.message)}</p></div></div>` })

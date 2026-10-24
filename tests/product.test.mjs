@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { readFile, access } from 'node:fs/promises'
 import { APPS } from '../src/config.js'
 import { parseManifest } from '../src/downloads.js'
-import { detectOS, orderPlatforms, platformModel, productHTML, STORES } from '../src/product.js'
+import { alsoFrom, detectOS, orderPlatforms, platformModel, productHTML, STORES } from '../src/product.js'
 
 const BASE = 'https://app.lwliann.com/data/downloads.json'
 const products = JSON.parse(await readFile(new URL('../data/products.json', import.meta.url), 'utf8')).products
@@ -73,4 +73,12 @@ test('the page escapes record text and shows every platform', () => {
   assert.ok(html.includes('href="https://example.com/?a=1&amp;b=2"'))
   assert.match(html, /data-os="android"[\s\S]*data-os="web"/, 'the android visitor sees Android first')
   assert.ok(html.includes('Coming to Google Play') && html.includes('Privacy notice') && html.includes('mailto:a@b.c') && html.includes('href="/polyflow"'))
+})
+
+test('Dual Subs and PolyFlow never list each other under Also from; everything else does', () => {
+  const ids = slug => alsoFrom(products, slug).map(p => p.id)
+  assert.ok(!ids('dual-subs').includes('polyflow') && !ids('polyflow').includes('dual-subs'))
+  assert.ok(ids('dual-subs').includes('alongside') && ids('polyflow').includes('lyricsync'))
+  assert.ok(!ids('polyflow').includes('polyflow'), 'a page never lists itself')
+  assert.equal(ids('pinyin-tiles').length, products.length - 1)
 })
