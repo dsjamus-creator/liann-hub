@@ -31,7 +31,7 @@ test('the Worker sends the secret key and forwarded IP only to the pinned verifi
   const request = new Request('https://app.lwliann.com/session/verify', { method: 'POST', headers: {
     origin: 'https://app.lwliann.com', 'sec-fetch-site': 'same-origin', 'cf-connecting-ip': '192.0.2.15', 'content-type': 'application/json',
   }, body: JSON.stringify({ email: 'ann@example.com', code: '246810' }) })
-  const response = await worker.fetch(request, { PINYIN_API: 'https://api.test', AUTH_IP_FORWARDING: '1', AUTH_SECRET_KEY: key, SESSION_KEY: 'a'.repeat(64) }, {}, { fetchImpl })
+  const response = await worker.fetch(request, { PINYIN_API: 'https://api.test', AUTH_IP_FORWARDING: '1', AUTH_SECRET_KEY: key, SESSION_KEY: 'a'.repeat(64), SESSION_VERIFY_LIMITER: { limit: async () => ({ success: true }) } }, {}, { fetchImpl })
   assert.equal(response.status, 200)
   assert.equal(seen.length, 2)
   assert.deepEqual(seen[1].headers, { apikey: key, 'sb-forwarded-for': '192.0.2.15', 'content-type': 'application/json' })

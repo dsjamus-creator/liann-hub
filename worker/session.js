@@ -1,6 +1,6 @@
 // The hub keeps only a short-lived access token in page memory. Supabase refresh tokens
 // are sealed into an HttpOnly, host-only cookie and are exchanged only by this Worker.
-import { authHeaders } from './auth-forwarding.js'
+import { authHeaders, visitorIp } from './auth-forwarding.js'
 const COOKIE = '__Host-liann-refresh'
 const COOKIE_AGE = 30 * 24 * 60 * 60
 const AAD = new TextEncoder().encode('liann-hub-refresh-v1')
@@ -39,6 +39,20 @@ async function unseal(request, env) {
 const setCookie = value => `${COOKIE}=${value}; Max-Age=${COOKIE_AGE}; Path=/; HttpOnly; Secure; SameSite=Strict`
 const sameOrigin = request => request.headers.get('origin') === new URL(request.url).origin && !['cross-site', 'same-site'].includes(request.headers.get('sec-fetch-site'))
 
+async function rateGate(request, env, path, sessionId = null) {
+  const limiter = path === '/session/verify' ? env.SESSION_VERIFY_LIMITER
+    : path === '/session/refresh' ? env.SESSION_REFRESH_LIMITER : env.SESSION_LOGOUT_LIMITER
+  if (!limiter || typeof limiter.limit !== 'function') return json({ error: 'auth_unavailable' }, 503)
+  try {
+    const key = path === '/session/logout' ? sessionId : visitorIp(request)
+    if (!key) return json({ error: 'auth_unavailable' }, 503)
+    const { success } = await limiter.limit({ key })
+    return success ? null : json({ error: 'slow_down' }, 429, { 'retry-after': '60' })
+  } catch {
+    return json({ error: 'auth_unavailable' }, 503)
+  }
+}
+
 async function authCall(fetchImpl, url, init) {
   try { return await fetchImpl(url, init) } catch { return null }
 }
@@ -61,6 +75,10 @@ export async function session(request, env, fetchImpl, settings) {
   if (!['/session/verify', '/session/refresh', '/session/logout'].includes(path)) return json({ error: 'not_found' }, 404)
   if (request.method !== 'POST') return json({ error: 'method_not_allowed' }, 405, { allow: 'POST' })
   if (!sameOrigin(request)) return json({ error: 'forbidden' }, 403)
+  if (path !== '/session/logout') {
+    const rateResponse = await rateGate(request, env, path)
+    if (rateResponse) return rateResponse
+  }
   const auth = await authConfig(settings)
   if (!auth) return json({ error: 'auth_unavailable' }, 503)
   let upstreamHeaders
@@ -92,6 +110,10 @@ export async function session(request, env, fetchImpl, settings) {
   const expected = request.headers.get('x-session-id')
   if (expected && expected !== current.sessionId) return json({ error: 'session_changed' }, 409)
   if (path === '/session/logout' && !expected) return json({ error: 'session_required' }, 400)
+  if (path === '/session/logout') {
+    const rateResponse = await rateGate(request, env, path, current.sessionId)
+    if (rateResponse) return rateResponse
+  }
   const r = await authCall(fetchImpl, `${auth.supabaseUrl}/auth/v1/token?grant_type=refresh_token`, {
     method: 'POST', headers: { ...upstreamHeaders, 'content-type': 'application/json' },
     body: JSON.stringify({ refresh_token: current.token }),

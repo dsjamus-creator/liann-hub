@@ -6,6 +6,9 @@ const ORIGIN = 'https://app.lwliann.com'
 const env = {
   PINYIN_API: 'https://api.test', SESSION_KEY: 'a'.repeat(64), SIGNING_KEY: 'b'.repeat(64),
   ASSETS: { fetch: async () => new Response('asset') },
+  SESSION_VERIFY_LIMITER: { limit: async () => ({ success: true }) },
+  SESSION_REFRESH_LIMITER: { limit: async () => ({ success: true }) },
+  SESSION_LOGOUT_LIMITER: { limit: async () => ({ success: true }) },
 }
 const calls = []
 const fetchImpl = async (url, init = {}) => {
@@ -24,7 +27,7 @@ const fetchImpl = async (url, init = {}) => {
   throw new Error(`unexpected URL ${url}`)
 }
 const call = (path, { method = 'POST', origin = ORIGIN, cookie = '', body = '{}', contentType = 'application/json', site = 'same-origin', sessionId = '' } = {}) => worker.fetch(new Request(ORIGIN + path, {
-  method, headers: { origin, cookie, 'content-type': contentType, 'sec-fetch-site': site, ...(sessionId ? { 'x-session-id': sessionId } : {}) }, body: method === 'POST' ? body : undefined,
+  method, headers: { origin, cookie, 'content-type': contentType, 'sec-fetch-site': site, 'cf-connecting-ip': '192.0.2.10', ...(sessionId ? { 'x-session-id': sessionId } : {}) }, body: method === 'POST' ? body : undefined,
 }), env, {}, { fetchImpl })
 const login = () => call('/session/verify', { body: JSON.stringify({ email: 'ann@example.com', code: '246810' }) })
 
@@ -86,7 +89,7 @@ test('sign-out revokes only this Supabase session and clears the browser cookie'
 test('an unconfirmed Supabase logout keeps the rotated cookie available for retry', async () => {
   const signedIn = await login(), original = signedIn.headers.get('set-cookie').split(';')[0], sessionId = (await signedIn.json()).session_id
   const request = new Request(`${ORIGIN}/session/logout`, { method: 'POST', headers: {
-    origin: ORIGIN, cookie: original, 'content-type': 'application/json', 'sec-fetch-site': 'same-origin', 'x-session-id': sessionId,
+    origin: ORIGIN, cookie: original, 'content-type': 'application/json', 'sec-fetch-site': 'same-origin', 'cf-connecting-ip': '192.0.2.10', 'x-session-id': sessionId,
   }, body: '{}' })
   const failedLogout = (url, init) => url.endsWith('/logout?scope=local')
     ? Promise.resolve(new Response(null, { status: 503 })) : fetchImpl(url, init)
@@ -94,4 +97,46 @@ test('an unconfirmed Supabase logout keeps the rotated cookie available for retr
   assert.equal(r.status, 503)
   assert.match(r.headers.get('set-cookie'), /^__Host-liann-refresh=v1\./)
   assert.notEqual(r.headers.get('set-cookie').split(';')[0], original)
+})
+
+test('session abuse brakes use separate validated client IP buckets and stop before Auth', async () => {
+  const counts = new Map(), seen = []
+  const limitedEnv = {
+    ...env,
+    SESSION_VERIFY_LIMITER: { limit: async ({ key }) => {
+      seen.push(key)
+      const next = (counts.get(key) || 0) + 1
+      counts.set(key, next)
+      return { success: next <= 2 }
+    } },
+    SESSION_REFRESH_LIMITER: { limit: async ({ key }) => ({ success: key !== '192.0.2.10' }) },
+    SESSION_LOGOUT_LIMITER: { limit: async ({ key }) => { seen.push(`logout:${key}`); return { success: false } } },
+  }
+  const request = (path, ip = '192.0.2.10') => new Request(ORIGIN + path, {
+    method: 'POST', headers: { origin: ORIGIN, 'sec-fetch-site': 'same-origin', 'content-type': 'application/json', ...(ip ? { 'cf-connecting-ip': ip } : {}) },
+    body: JSON.stringify({ email: 'ann@example.com', code: '111111' }),
+  })
+  const run = (path, ip) => worker.fetch(request(path, ip), limitedEnv, {}, { fetchImpl })
+  assert.equal((await run('/session/verify')).status, 403)
+  assert.equal((await run('/session/verify')).status, 403)
+  const before = calls.length
+  const denied = await run('/session/verify')
+  assert.equal(denied.status, 429)
+  assert.equal(denied.headers.get('retry-after'), '60')
+  assert.equal(calls.length, before, 'denied request never reaches Supabase')
+  assert.equal((await run('/session/verify', '192.0.2.11')).status, 403)
+  assert.deepEqual(seen, ['192.0.2.10', '192.0.2.10', '192.0.2.10', '192.0.2.11'])
+  assert.equal((await run('/session/refresh')).status, 429, 'refresh uses its own limiter')
+  const signedIn = await login(), cookie = signedIn.headers.get('set-cookie').split(';')[0], sessionId = (await signedIn.json()).session_id
+  const logoutRequest = new Request(ORIGIN + '/session/logout', { method: 'POST', headers: {
+    origin: ORIGIN, cookie, 'x-session-id': sessionId, 'sec-fetch-site': 'same-origin', 'cf-connecting-ip': '192.0.2.10',
+  } })
+  const beforeLogout = calls.length
+  assert.equal((await worker.fetch(logoutRequest, limitedEnv, {}, { fetchImpl })).status, 429, 'the sealed session has its own logout limit')
+  assert.deepEqual(seen.at(-1), `logout:${sessionId}`, 'the client cannot select the logout key')
+  assert.equal(calls.length, beforeLogout, 'limited logout never calls Auth')
+  const allowedLogout = await worker.fetch(logoutRequest, { ...limitedEnv, SESSION_LOGOUT_LIMITER: { limit: async () => ({ success: true }) } }, {}, { fetchImpl })
+  assert.equal(allowedLogout.status, 204, 'logout remains available despite refresh saturation on the same IP')
+  assert.equal((await run('/session/verify', '')).status, 503, 'missing trusted client IP fails closed')
+  assert.equal((await worker.fetch(request('/session/verify'), { ...env, SESSION_VERIFY_LIMITER: null }, {}, { fetchImpl })).status, 503)
 })

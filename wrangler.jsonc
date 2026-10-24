@@ -16,6 +16,13 @@
   "r2_buckets": [
     { "binding": "PAGES", "bucket_name": "liann-reader" }
   ],
+  // Separate per-IP and per-session, per-location abuse brakes for the same-origin session endpoints.
+  // Supabase's forwarded-IP Auth limit remains the authoritative verification limit.
+  "ratelimits": [
+    { "name": "SESSION_VERIFY_LIMITER", "namespace_id": "26102401", "simple": { "limit": 10, "period": 60 } },
+    { "name": "SESSION_REFRESH_LIMITER", "namespace_id": "26102402", "simple": { "limit": 60, "period": 60 } },
+    { "name": "SESSION_LOGOUT_LIMITER", "namespace_id": "26102403", "simple": { "limit": 5, "period": 60 } }
+  ],
   "vars": {
     "PINYIN_API": "https://api.pinyintiles.com",
     "AUTH_IP_FORWARDING": "0"

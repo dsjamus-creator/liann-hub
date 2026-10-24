@@ -6,6 +6,8 @@ The hub runs on a Cloudflare Worker named `liann-hub`. lwliann.com's DNS is alre
 
 The Worker handles `/comic/*` (protected comic pages) and `/session/*` (email-code verification, refresh and local sign-out). See `docs/COMIC-PROTECTION.md`. It needs the private `liann-reader` R2 bucket and separate `SIGNING_KEY` and `SESSION_KEY` Worker secrets. A deployment preserves the keys, so short-lived links and signed-in browser sessions remain valid across code releases. The session refresh token is encrypted into a host-only HttpOnly cookie; page JavaScript keeps only an access token in memory. Existing browser-stored sessions are discarded at rollout, so users enter a new email code once.
 
+The draft configuration adds three Worker Rate Limiting bindings for `/session/verify` (per IP), `/session/refresh` (per IP) and `/session/logout` (per sealed session ID). They require no secret and return 429 before an Auth call when a limit is reached. Cloudflare documents these counters as approximate and per location, so keep Supabase Auth limits and test shared-network behaviour before release. There is no separate staging Wrangler target in this repo yet: `wrangler.jsonc` and the Actions workflow deploy to **production**. Do not run either deployment command for a staging exercise. A staging deployment needs an isolated Worker name/host, R2 bucket, session and signing keys, identity project, Pinyin Auth config and browser endpoints.
+
 ## Automatic deploys (GitHub Actions)
 
 `.github/workflows/deploy.yml` runs the unit and browser tests, then deploys, on every push to `main`. You can also start it by hand: **Actions → Deploy hub → Run workflow**. Nothing is deployed if a test fails.

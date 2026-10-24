@@ -2,7 +2,7 @@
 // supplied by the browser with the secret key. This module must stay Worker-only.
 const IDENTITY_ORIGIN = 'https://mznljakkdafbqmapqncd.supabase.co'
 
-function visitorIp(request) {
+export function visitorIp(request) {
   const ip = request.headers.get('cf-connecting-ip') || ''
   if (ip.length < 3 || ip.length > 45 || !/^[0-9a-fA-F:.]+$/.test(ip)) throw new Error('visitor IP unavailable')
   if (ip.includes(':')) {
