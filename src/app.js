@@ -13,13 +13,14 @@ const store = {
   get(key, fallback) { try { return JSON.parse(localStorage.getItem(key) || 'null') ?? fallback } catch { return fallback } },
   set(key, value) { try { localStorage.setItem(key, JSON.stringify(value)) } catch { /* storage blocked */ } },
 }
+const accountKey = (key, user) => user?.email ? `${key}:${encodeURIComponent(user.email.trim().toLowerCase())}` : null
 
 const theme = store.get('liann-hub-theme', null)
 const viewId = () => 'Learning with LiANN · ' + [...crypto.getRandomValues(new Uint8Array(4))].map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase()
 const S = { viewId: viewId(),
   view: 'loading', email: '', user: null, page: pageFromHash(), appf: 'All', slim: false, appear: false, notif: false,
   theme: theme && DS.some(d => d[0] === theme.ds) && /^(light|dark)$/.test(theme.t) ? theme : { ds: 'liann', t: 'dark' },
-  recent: store.get('liann-hub-recent', []), downloads: null, comics: null, reader: null, progress: store.get('liann-hub-reader', {}), setlists: null, openList: null, query: '', busy: false, error: '', fix: '',
+  recent: [], downloads: null, comics: null, reader: null, progress: {}, setlists: null, openList: null, query: '', busy: false, error: '', fix: '',
   household: undefined, learner: null, hhError: '', hhBusy: false,
 }
 
@@ -74,6 +75,8 @@ async function sendCode(email) {
 
 async function enterHub(user) {
   S.user = user
+  S.recent = store.get(accountKey('liann-hub-recent', user), [])
+  S.progress = store.get(accountKey('liann-hub-reader', user), {})
   go('hub')
   openFromHash()
   loadLibrary()
@@ -117,7 +120,7 @@ async function finishProfile() {
 function signedOut() {
   void fetch('/comic/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {})
   S.reader = null; dropBook()
-  go('email', { user: null, setlists: null, openList: null })
+  go('email', { user: null, recent: [], progress: {}, setlists: null, openList: null })
 }
 
 // Comic reader. Progress (last page seen per episode), the one/two-page choice and the magnifier switch stay on this device.
@@ -190,7 +193,9 @@ function showPage(to, dir) {
   r.i = clampPage(to, n)
   r.flip = dir && !(r.z > 1) && !r.d3 && !reduceMotion() ? { dir, from } : null
   if (r.d3 && book) book.goTo(spreadIndexOf(r.i, n))
-  S.progress = { ...S.progress, [ep.id]: r.i }; store.set('liann-hub-reader', S.progress)
+  S.progress = { ...S.progress, [ep.id]: r.i }
+  const progressKey = accountKey('liann-hub-reader', S.user)
+  if (progressKey) store.set(progressKey, S.progress)
   render()
 }
 // Turn one page (single view) or one spread (two-page view).
@@ -390,7 +395,11 @@ function bind() {
     history.replaceState(null, '', '#' + S.page); render(); const m = $('#main'); if (m) m.scrollTop = 0
   } })
   document.querySelectorAll('[data-appf]').forEach(b => { b.onclick = () => { S.appf = b.dataset.appf; render() } })
-  document.querySelectorAll('[data-open]').forEach(a => { a.onclick = () => { S.recent = [a.dataset.open, ...S.recent.filter(x => x !== a.dataset.open)].slice(0, 3); store.set('liann-hub-recent', S.recent) } })
+  document.querySelectorAll('[data-open]').forEach(a => { a.onclick = () => {
+    S.recent = [a.dataset.open, ...S.recent.filter(x => x !== a.dataset.open)].slice(0, 3)
+    const recentKey = accountKey('liann-hub-recent', S.user)
+    if (recentKey) store.set(recentKey, S.recent)
+  } })
   document.querySelectorAll('[data-list]').forEach(b => { b.onclick = () => { S.page = 'library'; openList(b.dataset.list) } })
   const cl = $('#closelist'); if (cl) cl.onclick = () => { S.openList = null; render() }
   const rl = $('#retrylib'); if (rl) rl.onclick = loadLibrary

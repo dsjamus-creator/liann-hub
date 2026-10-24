@@ -447,6 +447,52 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
   await context.close()
 }
 
+// Two adults using the same browser must not inherit one another's reading position.
+{
+  const context = await browser.newContext({ viewport: { width: 1280, height: 860 } })
+  await mock(context)
+  let activeEmail = 'first@example.com'
+  await context.route('https://demo.supabase.co/auth/v1/user', r => r.fulfill({ json: { email: activeEmail, email_confirmed_at: '2026-10-12T00:00:00Z' } }))
+  await context.addInitScript(() => {
+    if (!localStorage.getItem('test-initialized')) {
+      localStorage.setItem('liann-hub-session-v1', JSON.stringify({ access_token: 'at', refresh_token: 'rt', expires_at: 9999999999 }))
+      localStorage.setItem('liann-hub-reader', JSON.stringify({ ep1: 1 })) // legacy device-wide position must not be assigned to either adult
+      localStorage.setItem('test-initialized', 'true')
+    }
+  })
+  const page = await context.newPage()
+  const signIn = async email => {
+    await page.fill('#em', email); await page.click('#f1 [type=submit]'); await page.locator('#f2').waitFor()
+    activeEmail = email
+    await page.locator('#c0').evaluate(el => { el.value = '246810'; el.dispatchEvent(new Event('input', { bubbles: true })) })
+    await page.locator('#pick').waitFor(); await page.click('#pick')
+    await page.locator('#me').waitFor()
+  }
+  const signOut = async () => {
+    await page.goto(url + '#plan'); await page.locator('#signout').click(); await page.locator('#f1').waitFor()
+  }
+  await step('reading position is scoped to the signed-in adult account', async () => {
+    await page.goto(url + '#read'); await page.locator('[data-readep="ep1"]').waitFor()
+    assert.equal(await page.locator('[data-readep="ep1"]').innerText(), 'Read', 'do not assign legacy shared progress to the first account')
+    await page.locator('[data-readep="ep1"]').click(); await page.locator('#rnext').click()
+    await page.waitForFunction(() => document.querySelector('.rcount')?.textContent.includes('2–3'))
+    await page.locator('#rclose').click()
+    assert.match(await page.locator('[data-readep="ep1"]').innerText(), /Continue from page 2/)
+    await signOut()
+    await signIn('second@example.com')
+    await page.goto(url + '#read'); await page.locator('[data-readep="ep1"]').waitFor()
+    assert.equal(await page.locator('[data-readep="ep1"]').innerText(), 'Read', 'the second account starts at the beginning')
+    await page.locator('[data-readep="ep1"]').click()
+    assert.equal(await page.locator('.rcount').innerText(), '1 / 3')
+    await page.locator('#rclose').click()
+    await signOut()
+    await signIn('first@example.com')
+    await page.goto(url + '#read'); await page.locator('[data-readep="ep1"]').waitFor()
+    assert.match(await page.locator('[data-readep="ep1"]').innerText(), /Continue from page 2/, 'the first account keeps its own position')
+  })
+  await context.close()
+}
+
 // A shared comic link needs a LiANN account.
 {
   const context = await browser.newContext({ viewport: { width: 1280, height: 860 } })
