@@ -21,8 +21,8 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-      - name: Audit production dependencies
-        run: npm audit --omit=dev --audit-level=high
+      - name: Audit all dependencies
+        run: npm audit --audit-level=high
 
   secret-scan:
     runs-on: ubuntu-latest
