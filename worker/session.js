@@ -70,7 +70,7 @@ async function tokenResult(response, sessionId, env, newSignIn = false) {
   return result
 }
 
-export async function session(request, env, fetchImpl, settings) {
+export async function session(request, env, fetchImpl, settings, makeAuthHeaders = authHeaders) {
   const path = new URL(request.url).pathname
   if (!['/session/verify', '/session/refresh', '/session/logout'].includes(path)) return json({ error: 'not_found' }, 404)
   if (request.method !== 'POST') return json({ error: 'method_not_allowed' }, 405, { allow: 'POST' })
@@ -82,7 +82,7 @@ export async function session(request, env, fetchImpl, settings) {
   const auth = await authConfig(settings)
   if (!auth) return json({ error: 'auth_unavailable' }, 503)
   let upstreamHeaders
-  try { upstreamHeaders = authHeaders(request, env, auth) } catch { return json({ error: 'auth_unavailable' }, 503) }
+  try { upstreamHeaders = makeAuthHeaders(request, env, auth) } catch { return json({ error: 'auth_unavailable' }, 503) }
 
   if (path === '/session/verify') {
     if (!/^application\/json(?:\s*;|$)/i.test(request.headers.get('content-type') || '')) return json({ error: 'bad_request' }, 400)
