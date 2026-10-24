@@ -117,10 +117,13 @@ async function finishProfile() {
   render()
 }
 
-function signedOut() {
-  void fetch('/comic/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {})
+async function signedOut() {
   S.reader = null; dropBook()
-  go('email', { user: null, recent: [], progress: {}, setlists: null, openList: null })
+  go('loading', { user: null, recent: [], progress: {}, setlists: null, openList: null })
+  let revoked = false
+  try { revoked = (await fetch('/comic/logout', { method: 'POST', credentials: 'same-origin', cache: 'no-store' })).ok } catch { /* explain below */ }
+  go('email', revoked ? {} : { error: 'Could not confirm comic sign-out. Close this browser and try again.' })
+  return revoked
 }
 
 // Comic reader. Progress (last page seen per episode), the one/two-page choice and the magnifier switch stay on this device.
@@ -154,7 +157,7 @@ function wantSpread(r, n) {
 const signer = createPageSigner({ getToken: () => account.accessToken() })
 async function signPages(ep) {
   try { ep.pages = await signer.pagesOf(ep); return true }
-  catch (error) { if (error.code === 'signed_out') { signedOut(); S.error = error.message; render() } else toast(error.message); return false }
+  catch (error) { if (error.code === 'signed_out') await signedOut(); else toast(error.message); return false }
 }
 setInterval(() => { const ep = S.reader && S.comics?.find(e => e.id === S.reader.id); if (ep) signer.pagesOf(ep).then(p => { ep.pages = p }, () => {}) }, 120000)
 async function openReader(id) {
@@ -388,7 +391,7 @@ function bind() {
     const ok = $('#hhagree').checked
     householdDo('POST', '/children', { name: $('#hhcname').value, dateOfBirth: $('#hhcdob').value, guardianName: $('#hhgname').value,
       agreements: { terms: ok, privacy: ok } }, 'Child profile added') }
-  document.querySelectorAll('#signout').forEach(b => { b.onclick = async () => { await account.signOut(); toast('Signed out'); signedOut() } })
+  document.querySelectorAll('#signout').forEach(b => { b.onclick = async () => { await account.signOut(); if (await signedOut()) toast('Signed out') } })
 
   document.querySelectorAll('[data-nav]').forEach(b => { b.onclick = () => {
     S.page = b.dataset.nav; S.openList = null; S.appf = b.dataset.f || 'All'; S.more = false; S.notif = false

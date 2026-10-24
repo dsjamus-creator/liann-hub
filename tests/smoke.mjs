@@ -452,6 +452,17 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
   const context = await browser.newContext({ viewport: { width: 1280, height: 860 } })
   await mock(context)
   let activeEmail = 'first@example.com'
+  let releaseComicLogout, signalComicLogout
+  let delayFirstLogout = true
+  const comicLogoutStarted = new Promise(resolve => { signalComicLogout = resolve })
+  await context.route('**/comic/logout', async route => {
+    if (delayFirstLogout) {
+      signalComicLogout()
+      await new Promise(resolve => { releaseComicLogout = resolve })
+      delayFirstLogout = false
+    }
+    await route.fulfill({ status: 204, body: '' })
+  })
   await context.route('https://demo.supabase.co/auth/v1/user', r => r.fulfill({ json: { email: activeEmail, email_confirmed_at: '2026-10-12T00:00:00Z' } }))
   await context.addInitScript(() => {
     if (!localStorage.getItem('test-initialized')) {
@@ -469,7 +480,15 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     await page.locator('#me').waitFor()
   }
   const signOut = async () => {
-    await page.goto(url + '#plan'); await page.locator('#signout').click(); await page.locator('#f1').waitFor()
+    await page.goto(url + '#plan'); await page.locator('#signout').click()
+    if (delayFirstLogout) {
+      await comicLogoutStarted
+      try {
+        assert.equal(await page.locator('#f1').count(), 0, 'the sign-in gate must wait for comic-cookie revocation')
+        assert.match(await page.locator('#root').innerText(), /Loading/)
+      } finally { releaseComicLogout() }
+    }
+    await page.locator('#f1').waitFor()
   }
   await step('reading position is scoped to the signed-in adult account', async () => {
     await page.goto(url + '#read'); await page.locator('[data-readep="ep1"]').waitFor()

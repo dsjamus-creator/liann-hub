@@ -49,6 +49,7 @@ test('a signed link requires its account cookie, an image request, and a current
   assert.equal(await r.text(), 'IMG')
   assert.equal(r.headers.get('content-type'), 'image/webp')
   assert.match(r.headers.get('cache-control'), /private/)
+  assert.match(r.headers.get('cache-control'), /no-store/, 'protected pages must not remain in a shared browser cache after sign-out')
   assert.equal(r.headers.get('cross-origin-resource-policy'), 'same-origin')
   assert.equal((await call(link, { headers: { cookie } })).status, 200, 'older browsers send no fetch metadata')
   assert.equal((await call(link, { headers: { ...img, 'sec-fetch-dest': 'document' } })).status, 403, '"open image in new tab"')
