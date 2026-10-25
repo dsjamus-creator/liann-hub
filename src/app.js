@@ -23,6 +23,9 @@ const S = { viewId: viewId(),
   recent: [], downloads: null, comics: null, reader: null, progress: {}, setlists: null, openList: null, query: '', busy: false, error: '', fix: '',
   household: undefined, learner: null, hhError: '', hhBusy: false,
   faq: undefined,
+  // Plans, sharing and teaching. acct: undefined while loading, null when AlongSide does not answer yet (nothing new is shown).
+  acct: undefined, shares: null, share: null, shareError: '', shareBusy: false, join: null,
+  teacher: undefined, tpolicies: undefined, tform: null, tError: '', tBusy: false, cls: null,
 }
 
 function hashParts() { const [k, arg] = location.hash.slice(1).split('/'); try { return [k, arg ? decodeURIComponent(arg) : ''] } catch { return [k, ''] } }
@@ -34,7 +37,7 @@ function openFromHash() {
 }
 function applyTheme() { document.documentElement.dataset.ds = S.theme.ds; document.documentElement.dataset.t = S.theme.t; store.set('liann-hub-theme', S.theme) }
 function toast(text) { const el = $('#toast'); el.textContent = text; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => { el.hidden = true }, 2200) }
-function go(view, extra = {}) { Object.assign(S, { error: '', busy: false }, extra, { view }); render(); if (view === 'who' || view === 'hub') loadHousehold() }
+function go(view, extra = {}) { Object.assign(S, { error: '', busy: false }, extra, { view }); render(); if (view === 'who' || view === 'hub') loadHousehold(); if (view === 'hub') loadAccount(true) }
 
 // Couple and Family plans (One LiANN account C3). null = AlongSide has households switched off; nothing is shown.
 async function loadHousehold() {
@@ -56,6 +59,136 @@ async function householdDo(method, path, body, done) {
   try { await account.householdAction(method, path, body); if (done) toast(done) }
   catch (error) { if (error.code === 'signed_out') return signedOut(); S.hhError = HH_ERRORS[error.code] || HH_ERRORS[error.message] || error.message }
   S.hhBusy = false; await loadHousehold()
+}
+
+// What this account may do (GET /learning/account): the plans it holds, and whether it may share SetLists or teach. null means this
+// AlongSide does not have the route yet; the hub then shows none of the sharing or teaching screens.
+async function loadAccount(first) {
+  // A failed check is not "no plan": it shows as unchecked, with a way to try again, and never as Free.
+  try { S.acct = await account.summary() } catch (error) { if (error.code === 'signed_out') return signedOut(); if (!S.acct) S.acct = false }
+  if (S.view === 'hub') render()
+  if (!S.acct?.registered) return
+  if (first) loadShares()
+  if (S.acct.capabilities.teachStudents) loadTeacher()
+}
+
+// A refusal that needs a plan says so and points to the plans page. The address in the reply is never followed.
+const PLAN_MESSAGES = { share: 'Sharing a SetList needs a plan. Your own SetLists stay free.', teach: 'Teaching a class needs a Teacher plan.' }
+const SHARE_ERRORS = { valid_email_required: 'Enter one email address.', cannot_share_with_yourself: 'That is your own email.', not_your_setlist: 'That SetList is not yours to share.',
+  already_shared: 'You have already shared this SetList with that email. They can still accept it.', setlist_unavailable: 'That SetList is no longer available.',
+  not_found: 'That share is no longer available.', learner_profile_required: 'Finish your learner profile first.' }
+
+async function loadShares() {
+  try { S.shares = await account.shares() } catch (error) { if (error.code === 'signed_out') return signedOut(); S.shares = null }
+  if (S.view === 'hub') render()
+}
+function startShare(id) {
+  const l = S.setlists?.items?.find(x => x.id === id); if (!l) return
+  S.share = { id, name: l.name || 'SetList', email: '', busy: false, error: '', plan: false }; render(); $('#shareemail')?.focus()
+}
+async function sendShare(email) {
+  const f = S.share; if (!f || f.busy) return
+  Object.assign(f, { email, busy: true, error: '', plan: false }); render()
+  try { await account.shareSetlist(f.id, email); S.share = null; toast('Shared. They receive their own copy.'); loadShares() }
+  catch (error) {
+    if (error.code === 'signed_out') return signedOut()
+    f.busy = false
+    if (error.code === 'plan_required') Object.assign(f, { plan: true, error: PLAN_MESSAGES.share }); else f.error = SHARE_ERRORS[error.code] || error.message
+  }
+  render()
+}
+async function acceptShare(id) {
+  S.shareBusy = true; S.shareError = ''; render()
+  try { await account.acceptShare(id); toast('Added to your Library'); await loadShares(); loadLibrary() }
+  catch (error) {
+    if (error.code === 'signed_out') return signedOut()
+    if (error.code === 'learner_profile_required') { S.setlists = { status: 'needs_profile', profile: error.body?.profile }; S.shareError = 'Finish your learner profile, then accept the list.' }
+    else S.shareError = SHARE_ERRORS[error.code] || error.message
+  }
+  S.shareBusy = false; render()
+}
+async function revokeShare(id) {
+  try { await account.revokeShare(id); toast('Share withdrawn') }
+  catch (error) { if (error.code === 'signed_out') return signedOut(); S.shareError = SHARE_ERRORS[error.code] || error.message }
+  loadShares()
+}
+
+const CLASS_ERRORS = { class_code_unknown: 'That code is not in use.', class_code_no_match: 'Your teacher has not listed this email.', class_code_required: 'Enter the class code.',
+  not_a_student: 'Finish your learner profile first, then enter the code.' }
+async function joinClass(code) {
+  const j = S.join = { code, busy: true, error: '', done: '' }; render()
+  try {
+    const r = await account.joinClass(code)
+    S.join = { code: '', busy: false, error: '', done: `You joined “${r.className}”${r.teacher ? ` with ${r.teacher}` : ''}.` }; toast('You joined the class')
+  } catch (error) {
+    if (error.code === 'signed_out') return signedOut()
+    Object.assign(j, { busy: false, error: CLASS_ERRORS[error.code] || error.message })
+    if (error.code === 'not_a_student') S.setlists = { status: 'needs_profile', profile: error.body?.profile }
+  }
+  render()
+}
+
+// Teachers: a Teacher plan (or founder or staff) starts a class, lists each student by email, and hands out the class code.
+async function loadTeacher() {
+  try { S.teacher = await account.teacherMe() } catch (error) { if (error.code === 'signed_out') return signedOut(); if (S.teacher === undefined) S.teacher = null }
+  if (S.teacher && !S.teacher.teacher?.onboarded && S.tpolicies === undefined) {
+    S.tpolicies = false
+    account.teacherPolicies().then(p => { S.tpolicies = p }, () => { S.tpolicies = null }).finally(() => { if (S.view === 'hub' && S.page === 'plan') render() })
+  }
+  if (S.view === 'hub') render()
+}
+const TEACH_ERRORS = { name_required: 'Enter your name.', already_a_tutor: 'This account is a LiANN tutor. Use AlongSide for your students.', plan_required: PLAN_MESSAGES.teach,
+  'agreement_required:terms': 'Tick the box to agree to the Terms and Privacy Promise.', 'agreement_required:privacy': 'Tick the box to agree to the Terms and Privacy Promise.' }
+const SEAT_ERRORS = { name_required: 'enter the student’s name', student_email_required: 'enter their email', student_email_invalid: 'that email is not valid',
+  guardian_email_required: 'enter the parent or guardian’s email', guardian_email_invalid: 'that email is not valid', guardian_email_matches_student: 'the parent or guardian needs a different email from the student' }
+async function teacherDo(work) {
+  S.tBusy = true; S.tError = ''; render()
+  try { await work() } catch (error) { if (error.code === 'signed_out') return signedOut(); S.tError = TEACH_ERRORS[error.code] || error.message }
+  S.tBusy = false; render()
+}
+const blankRows = () => [0, 1, 2].map(() => ({ name: '', minor: false, email: '' }))
+async function openClass(id) {
+  S.cls = { id, status: 'loading', rows: blankRows() }; render()
+  try { const r = await account.classDetail(id); if (S.cls?.id === id) Object.assign(S.cls, { status: 'ok', cls: r.class, seats: r.seats || [] }) }
+  catch (error) { if (error.code === 'signed_out') return signedOut(); if (S.cls?.id === id) Object.assign(S.cls, { status: 'error', error: error.message }) }
+  render()
+}
+async function classDo(work) {
+  const k = S.cls; if (!k || k.busy) return
+  k.busy = true; k.error = ''; render()
+  try { await work() } catch (error) { if (error.code === 'signed_out') return signedOut(); k.error = TEACH_ERRORS[error.code] || error.message }
+  k.busy = false; render()
+}
+async function refreshClass() {
+  const k = S.cls; if (!k) return
+  const [r, mine] = await Promise.all([account.classDetail(k.id), account.teacherMe()])
+  if (S.cls === k) Object.assign(k, { cls: r.class, seats: r.seats || [] })
+  if (mine) S.teacher = mine
+}
+function addSeats() {
+  const k = S.cls, rows = k.rows.filter(r => r.name.trim() || r.email.trim())
+  if (!rows.length) { k.error = 'Add at least one student.'; return render() }
+  const bad = rows.findIndex(x => !x.name.trim() || !x.email.trim())
+  if (bad >= 0) {
+    const row = rows[bad]
+    k.error = `Student ${k.rows.indexOf(row) + 1}: ${SEAT_ERRORS[!row.name.trim() ? 'name_required' : row.minor ? 'guardian_email_required' : 'student_email_required']}.`
+    return render()
+  }
+  const students = rows.map(x => ({ name: x.name.trim(), isMinor: x.minor, ...(x.minor ? { guardianEmail: x.email.trim() } : { studentEmail: x.email.trim() }) }))
+  return classDo(async () => {
+    try {
+      const out = await account.addSeats(k.id, students)
+      k.rows = blankRows(); toast(`${out.added} added${out.skipped ? `, ${out.skipped} already listed` : ''}`)
+      await refreshClass()
+    } catch (error) {
+      if (error.body?.index !== undefined && SEAT_ERRORS[error.code]) throw Object.assign(new Error(`Student ${k.rows.indexOf(rows[error.body.index]) + 1}: ${SEAT_ERRORS[error.code]}.`), { code: 'seat' })
+      throw error
+    }
+  })
+}
+async function copyCode() {
+  const code = S.cls?.cls?.code; if (!code) return
+  try { await navigator.clipboard.writeText(code); toast('Code copied') } catch { toast('Select the code and copy it') }
 }
 
 // The support widget keeps its own state (a chat in progress, a half-written message), so it is created once and moved
@@ -146,7 +279,7 @@ async function finishProfile() {
 
 async function signedOut() {
   S.reader = null; dropBook()
-  go('loading', { user: null, recent: [], progress: {}, setlists: null, openList: null })
+  go('loading', { user: null, recent: [], progress: {}, setlists: null, openList: null, acct: undefined, shares: null, share: null, shareError: '', join: null, teacher: undefined, tpolicies: undefined, tform: null, tError: '', cls: null })
   let revoked = false
   try { revoked = (await fetch('/comic/logout', { method: 'POST', credentials: 'same-origin', cache: 'no-store' })).ok } catch { /* explain below */ }
   go('email', revoked ? {} : { error: 'Could not confirm comic sign-out. Close this browser and try again.' })
@@ -418,11 +551,56 @@ function bind() {
     const ok = $('#hhagree').checked
     householdDo('POST', '/children', { name: $('#hhcname').value, dateOfBirth: $('#hhcdob').value, guardianName: $('#hhgname').value,
       agreements: { terms: ok, privacy: ok } }, 'Child profile added') }
+
+  // Library: share a SetList, accept one, withdraw one, join a class. Plan page: the teacher's classes.
+  document.querySelectorAll('[data-sharelist]').forEach(b => { b.onclick = () => startShare(b.dataset.sharelist) })
+  const shf = $('#sharef'); if (shf) { shf.onsubmit = e => { e.preventDefault(); sendShare($('#shareemail').value.trim()) }; $('#sharecancel').onclick = () => { S.share = null; render() } }
+  document.querySelectorAll('[data-acceptshare]').forEach(b => { b.onclick = () => acceptShare(b.dataset.acceptshare) })
+  document.querySelectorAll('[data-revokeshare]').forEach(b => { b.onclick = () => revokeShare(b.dataset.revokeshare) })
+  const rp = $('#retryplan'); if (rp) rp.onclick = () => { S.acct = undefined; render(); loadAccount(true) }
+  const jf = $('#joinf'); if (jf) jf.onsubmit = e => { e.preventDefault(); joinClass($('#classcode').value.trim()) }
+  const tob = $('#tonboard'); if (tob) tob.onsubmit = e => {
+    e.preventDefault()
+    const name = $('#tname').value.trim(), agreed = $('#tagree').checked
+    S.tform = { name, agreed }
+    if (!name) { S.tError = TEACH_ERRORS.name_required; return render() }
+    if (!agreed) { S.tError = TEACH_ERRORS['agreement_required:terms']; return render() }
+    teacherDo(async () => { await account.teacherOnboard(name); S.tform = null; toast('You are set up to teach'); await loadTeacher() })
+  }
+  const ncl = $('#newclass'); if (ncl) ncl.onsubmit = e => {
+    e.preventDefault()
+    const name = $('#cname').value.trim()
+    if (!name) { S.tError = 'Enter a name for the class.'; return render() }
+    teacherDo(async () => { const r = await account.createClass(name); toast('Class created'); await loadTeacher(); openClass(r.class.id) })
+  }
+  document.querySelectorAll('[data-openclass]').forEach(b => { b.onclick = () => openClass(b.dataset.openclass) })
+  const cc = $('#closeclass'); if (cc) cc.onclick = () => { S.cls = null; render() }
+  const cpc = $('#copycode'); if (cpc) cpc.onclick = copyCode
+  document.querySelectorAll('[data-row]').forEach(el => {
+    const row = S.cls?.rows?.[Number(el.dataset.row)]; if (!row) return
+    const update = () => {
+      if (el.dataset.f === 'minor') {
+        row.minor = el.value === '1'
+        const em = document.querySelector(`input[data-row="${el.dataset.row}"][data-f="email"]`); if (em) em.placeholder = row.minor ? 'Parent or guardian’s email' : 'Their email'
+      } else row[el.dataset.f] = el.value
+    }
+    el.oninput = update; el.onchange = update
+  })
+  const moreRows = $('#seatmore'); if (moreRows) moreRows.onclick = () => { S.cls.rows.push({ name: '', minor: false, email: '' }); render() }
+  const asf = $('#addseats'); if (asf) asf.onsubmit = e => { e.preventDefault(); addSeats() }
+  document.querySelectorAll('[data-seatwithdraw]').forEach(b => { b.onclick = () => classDo(async () => { await account.withdrawSeat(S.cls.id, b.dataset.seatwithdraw); toast('Seat withdrawn'); await refreshClass() }) })
+  const arc = $('#archiveclass'); if (arc) arc.onclick = () => {
+    if (confirm('Archive this class? The code stops working and students who have not joined are withdrawn. Students who already joined stay on your roster.'))
+      classDo(async () => { await account.archiveClass(S.cls.id); S.cls = null; toast('Class archived'); await loadTeacher() })
+  }
   document.querySelectorAll('#signout').forEach(b => { b.onclick = async () => { await account.signOut(); if (await signedOut()) { supportRoot = null; toast('Signed out') } } })
 
   document.querySelectorAll('[data-nav]').forEach(b => { b.onclick = () => {
     S.page = b.dataset.nav; S.openList = null; S.appf = b.dataset.f || 'All'; S.more = false; S.notif = false
     history.replaceState(null, '', '#' + S.page); render(); const m = $('#main'); if (m) m.scrollTop = 0
+    // A plan granted since sign-in, or a SetList someone has just sent, shows without signing in again.
+    if (S.view === 'hub' && (S.page === 'plan' || (S.page === 'library' && S.acct === false))) loadAccount(S.acct === false)
+    if (S.view === 'hub' && S.page === 'library' && S.acct?.registered) loadShares()
   } })
   document.querySelectorAll('[data-appf]').forEach(b => { b.onclick = () => { S.appf = b.dataset.appf; render() } })
   document.querySelectorAll('[data-open]').forEach(a => { a.onclick = () => {

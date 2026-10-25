@@ -349,3 +349,11 @@ a.btn{display:inline-block;text-decoration:none;text-align:center}
 .faqa p{margin:0}.faqa ol{margin:0;padding-left:1.2rem;display:grid;gap:4px}
 #support-mount .lwls{max-width:none}
 .pmodes{display:inline-flex;gap:6px;align-items:center}.pmodes .chip{cursor:pointer;min-height:36px}.ptop .plinks{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+
+/* Plans, sharing and teaching: class codes, the seat table and the lists of shares. */
+.classcode{font:800 1.2rem ui-monospace,Menlo,Consolas,monospace;letter-spacing:.14em;padding:.3rem .65rem;border:2px dashed var(--line);border-radius:10px;width:fit-content}
+.classcode.big{font-size:clamp(1.6rem,6vw,2.4rem);padding:.45rem .9rem}
+.sentlist{margin:0;padding-left:1.1rem;display:grid;gap:8px}
+.seatrow{display:grid;gap:8px;grid-template-columns:1fr}
+.seatrow input,.seatrow select{border:2px solid var(--line);background:var(--main);color:var(--fg);border-radius:12px;padding:.6rem .75rem;min-width:0;font:inherit}
+@media (min-width:720px){.seatrow{grid-template-columns:1.2fr 9.5rem 1.6fr}}

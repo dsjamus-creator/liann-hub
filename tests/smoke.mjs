@@ -9,6 +9,9 @@ const server = await serve(0)
 const url = `http://127.0.0.1:${server.address().port}/`
 const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || '/opt/pw-browsers/chromium' })
 const LIST = '11111111-2222-4333-8444-555555555555'
+const ACCOUNT_FREE = { email: 'ann.mingen@example.com', registered: true, accountType: 'registered',
+  plans: { household: null, teacher: false, organisation: false, staff: false },
+  capabilities: { authorboard: false, polyflowStudio: true, saveAssets: true, saveCurricula: true, saveSetlists: true, saveCuratedWords: true, runHousehold: false, teachStudents: false, runOrganisation: false, shareSetlists: false } }
 let failures = 0
 const shot = async (page, name) => { if (process.env.SHOTS) await page.waitForTimeout(400), await page.screenshot({ path: `${process.env.SHOTS}/${name}.png`, fullPage: true }) }
 
@@ -62,6 +65,9 @@ async function mock(context, { student = true, tour = false } = {}) {
   await context.route('https://lwl-backend-mhgo.onrender.com/learning/**', r => {
     assert.equal(r.request().headers().authorization, 'Bearer at')
     const p = new URL(r.request().url()).pathname
+    // A registered account on the free tier: nothing to share with, no plan held. (Neither route needs a learner profile.)
+    if (p === '/learning/account') return r.fulfill({ json: ACCOUNT_FREE })
+    if (p === '/learning/setlists/shares') return r.fulfill({ json: { ok: true, incoming: [], outgoing: [] } })
     if (!student && p === '/learning/session-pass') { seen.pass = r.request().postDataJSON(); return r.fulfill({ json: { url: 'https://lwl-backend-mhgo.onrender.com/auth/liann/continue#pass=test-pass', expiresInSeconds: 60 } }) }
     if (!student) return r.fulfill({ status: 403, json: { error: 'not_a_student', profile: { url: 'https://lwl-backend-mhgo.onrender.com/student#profile', sessionPass: { url: 'https://lwl-backend-mhgo.onrender.com/learning/session-pass', next: '/student#profile' } } } })
     if (p === '/learning/setlists') return r.fulfill({ json: { ok: true, setlists: [{ id: LIST, name: 'Tone pairs I miss', words: 2, source_product: 'liann-mahjong-tones' }] } })
@@ -619,6 +625,281 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     assert.equal(await page2.evaluate(() => location.hash), '')
   })
   await context2.close()
+}
+
+// ---- Plans, sharing and teaching (owner decisions, 24 Oct 2026: individuals never pay; payment gates sharing) ----
+// A signed-in context whose AlongSide answers the new routes as the real one will (lwl-backend #177 to #179). `handle` answers the new
+// paths; anything it leaves alone falls through to the default mock (SetLists and so on).
+const BACKEND = 'https://lwl-backend-mhgo.onrender.com'
+const account = (over = {}) => ({ ...ACCOUNT_FREE, ...over, plans: { ...ACCOUNT_FREE.plans, ...(over.plans || {}) }, capabilities: { ...ACCOUNT_FREE.capabilities, ...(over.capabilities || {}) } })
+async function planContext(viewport, handle, { permissions = [], allow = /status of 40[034]/ } = {}) {
+  const context = await browser.newContext({ viewport, permissions })
+  await context.addInitScript(() => localStorage.setItem('liann-hub-session-v1', JSON.stringify({ access_token: 'at', refresh_token: 'rt', expires_at: 9999999999 })))
+  await mock(context)
+  const seen = []
+  await context.route(`${BACKEND}/learning/**`, async r => {
+    const req = r.request(), path = new URL(req.url()).pathname
+    let body = null; if (req.method() !== 'GET') { try { body = req.postDataJSON() } catch { body = null } }
+    assert.equal(req.headers().authorization, 'Bearer at', `${req.method()} ${path} carries the bearer token`)
+    const out = await handle({ path, method: req.method(), body })
+    if (!out) return r.fallback()
+    seen.push({ method: req.method(), path, body })
+    return r.fulfill({ status: out[0], json: out[1] })
+  })
+  const page = await context.newPage(), errors = []
+  page.on('pageerror', e => errors.push(e.message))
+  // A refusal from AlongSide (the plan needed, a wrong class code) is an expected 4xx that Chromium also logs; anything else is a failure.
+  page.on('console', m => { if (m.type() === 'error' && !(allow.test(m.text()) && m.location().url.startsWith(`${BACKEND}/learning/`))) errors.push(m.text()) })
+  return { context, page, seen, errors }
+}
+const mainText = page => page.locator('main').innerText()
+
+for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 }]) {
+  const tag = viewport.width < 500 ? 'phone' : 'desktop'
+
+  {
+    // A free account: everything personal is free; sharing is labelled, and the refusal leads to the plans page.
+    const { context, page, seen, errors } = await planContext(viewport, ({ path, method, body }) => {
+      if (path === '/learning/account') return [200, ACCOUNT_FREE]
+      if (path === `/learning/setlists/${LIST}/shares`) return [403, { error: 'plan_required', plan: { url: 'https://app.lwliann.com/#plan' } }]
+      if (path === '/learning/class-code') {
+        if (body.code === 'WRNG-CODE') return [403, { error: 'class_code_unknown' }]
+        if (body.code === 'NOMA-TCH2') return [403, { error: 'class_code_no_match' }]
+        return [200, { ok: true, teacher: 'Ms Teach', className: 'Year 7 Mandarin' }]
+      }
+      return null
+    })
+    await step(`${tag}: free account: the Plan page marks Free as current, says plans are for sharing, and sells nothing`, async () => {
+      await page.goto(url + '#plan'); await page.getByRole('heading', { name: 'Plans' }).waitFor()
+      await page.locator('main .c', { hasText: 'Individual learners, 13+' }).getByText('Current plan').waitFor()
+      const text = await mainText(page)
+      assert.equal((text.match(/Current plan/g) || []).length, 1)
+      assert.match(text, /Everything an individual does in their own account is free\. Plans are for sharing: a household, a class, an organisation\./)
+      assert.doesNotMatch(text, /\b(buy|purchase|subscribe|checkout)\b/i, 'no plan can be bought yet')
+      assert.equal(await page.locator('#teacher').count(), 0, 'no Teacher section without a Teacher plan')
+      await page.click('[data-planf="Tutors"]')
+      const teacher = page.locator('main .c', { hasText: 'Teachers who are not LiANN tutors' })
+      assert.match(await teacher.innerText(), /Price to be set/); assert.equal(await teacher.getByText('Current plan').count(), 0)
+      assert.equal(await teacher.locator('button:not([disabled])').count(), 0)
+      await page.click('[data-planf="Organisations"]')
+      assert.match(await page.locator('main .c', { hasText: 'PolyFlow Performance' }).innerText(), /Price to be set/)
+      await noOverflow(page); await shot(page, `${tag}-plan-free`)
+    })
+    await step(`${tag}: free account: Share is labelled, the refusal says why and leads to the plans page`, async () => {
+      await page.goto(url + '#library'); await page.locator('[data-list]').waitFor()
+      const share = page.locator(`[data-sharelist="${LIST}"]`)
+      assert.match(await share.innerText(), /Share · needs a plan/, 'the action stays visible so the boundary can be discovered')
+      await share.click(); await page.locator('#sharef').waitFor()
+      const form = await page.locator('#sharef').innerText()
+      assert.match(form, /They receive their own copy\. Your list stays yours\./); assert.doesNotMatch(form, /\blink|\blive\b/i)
+      await page.fill('#shareemail', 'friend@example.com'); await page.click('#sharef [type=submit]')
+      await page.getByText('Sharing a SetList needs a plan. Your own SetLists stay free.').waitFor()
+      assert.deepEqual(seen.find(x => x.path.endsWith('/shares')).body, { email: 'friend@example.com' })
+      await noOverflow(page); await shot(page, `${tag}-share-needs-plan`)
+      await page.getByRole('button', { name: 'See plans' }).click()
+      await page.getByRole('heading', { name: 'Plans' }).waitFor()
+      assert.equal(await page.evaluate(() => location.hash), '#plan'); assert.equal(await page.evaluate(() => location.origin), url.replace(/\/$/, ''), 'the hub never leaves for the address in the reply')
+    })
+    await step(`${tag}: joining a class: unknown code, a code for another address, then a listed address`, async () => {
+      await page.goto(url + '#library'); await page.locator('#joinf').waitFor()
+      for (const [code, text] of [['WRNG-CODE', 'That code is not in use.'], ['NOMA-TCH2', 'Your teacher has not listed this email.'], ['ABCD-EFGH', 'You joined “Year 7 Mandarin” with Ms Teach.']]) {
+        await page.fill('#classcode', code); await page.click('#joinf [type=submit]'); await page.getByText(text).waitFor()
+      }
+      assert.deepEqual(seen.filter(x => x.path === '/learning/class-code').map(x => x.body.code), ['WRNG-CODE', 'NOMA-TCH2', 'ABCD-EFGH'])
+      await noOverflow(page); await shot(page, `${tag}-join-class`)
+    })
+    await step(`${tag}: free account: no console errors`, async () => { assert.deepEqual(errors, []) })
+    await context.close()
+  }
+
+  {
+    // A Family plan holder: sharing works, an incoming list is accepted as a copy, and a list that needs a profile asks for one.
+    const IN1 = 'aaaaaaaa-1111-4222-8333-444444444441', IN2 = 'aaaaaaaa-1111-4222-8333-444444444442', OUT1 = 'bbbbbbbb-1111-4222-8333-444444444441'
+    const state = { incoming: [{ id: IN1, name: '<b>Greetings</b>', words: 3, from: 'friend@example.com' }, { id: IN2, name: 'Food', words: 5, from: 'pal@example.com' }],
+      outgoing: [{ id: OUT1, setlistId: LIST, name: 'Tone pairs I miss', words: 2, email: 'old@example.com', state: 'pending' }, { id: 'bbbbbbbb-1111-4222-8333-444444444442', setlistId: LIST, name: 'Tone pairs I miss', words: 2, email: 'done@example.com', state: 'accepted' }],
+      lists: [{ id: LIST, name: 'Tone pairs I miss', words: 2, source_product: 'liann-mahjong-tones' }], needProfile: false }
+    const { context, page, seen, errors } = await planContext(viewport, ({ path, method, body }) => {
+      if (path === '/learning/account') return [200, account({ plans: { household: 'family' }, capabilities: { shareSetlists: true, runHousehold: true } })]
+      if (path === '/learning/setlists' && method === 'GET') return [200, { ok: true, setlists: state.lists }]
+      if (path === '/learning/setlists/shares') return [200, { ok: true, incoming: state.incoming, outgoing: state.outgoing }]
+      if (path === `/learning/setlists/${LIST}/shares`) { state.outgoing.unshift({ id: 'cccccccc-1111-4222-8333-444444444441', setlistId: LIST, name: 'Tone pairs I miss', words: 2, email: body.email, state: 'pending' }); return [201, { ok: true, share: { id: 'x', email: body.email, words: 2 } }] }
+      if (path === `/learning/setlists/shares/${IN1}/accept`) { state.incoming = state.incoming.filter(x => x.id !== IN1); state.lists = [...state.lists, { id: 'dddddddd-1111-4222-8333-444444444441', name: '<b>Greetings</b>', words: 3, source_product: 'alongside' }]; return [201, { ok: true, setlist: { id: 'x', name: 'Greetings', words: 3 } }] }
+      if (path === `/learning/setlists/shares/${IN2}/accept`) return [403, { error: 'learner_profile_required', profile: { url: `${BACKEND}/student#profile`, sessionPass: { url: `${BACKEND}/learning/session-pass`, next: '/student#profile' } } }]
+      if (path === `/learning/setlists/shares/${OUT1}/revoke`) { state.outgoing = state.outgoing.map(x => x.id === OUT1 ? { ...x, state: 'revoked' } : x); return [200, { ok: true, revoked: true }] }
+      return null
+    })
+    await step(`${tag}: plan holder: the Plan page marks the held plan and no other`, async () => {
+      await page.goto(url + '#plan')
+      await page.locator('main .c', { hasText: '3–6 profiles' }).getByText('Current plan').waitFor()
+      assert.match(await page.locator('main .c').first().innerText(), /Family plan[\s\S]*Plan active/)
+      assert.equal(await page.locator('main .c', { hasText: 'Individual learners, 13+' }).getByText('Current plan').count(), 0, 'Free is not the current plan for a plan holder')
+      assert.equal((((await mainText(page)).match(/Current plan/g)) || []).length, 1)
+    })
+    await step(`${tag}: plan holder: a list sent to you shows as text, is accepted as a copy, and a list that needs a profile says so`, async () => {
+      await page.goto(url + '#library'); await page.locator('#sharedwithyou').waitFor()
+      const strip = page.locator('#sharedwithyou')
+      assert.equal(await strip.locator('b').count(), 0, 'a list name cannot inject markup')
+      assert.match(await strip.innerText(), /<b>Greetings<\/b>[\s\S]*3 words · from friend@example\.com[\s\S]*Food[\s\S]*5 words · from pal@example\.com/)
+      assert.match(await strip.innerText(), /Accepting adds your own copy to your Library\./)
+      await noOverflow(page); await shot(page, `${tag}-library-shared`)
+      await page.click(`[data-acceptshare="${IN1}"]`)
+      await page.locator('[data-share]', { hasText: '<b>Greetings</b>' }).waitFor({ state: 'detached' })
+      await page.getByText('Tone pairs I miss').first().waitFor()
+      assert.ok(seen.some(x => x.path === `/learning/setlists/shares/${IN1}/accept` && x.method === 'POST'))
+      state.needProfile = true
+      await page.click(`[data-acceptshare="${IN2}"]`)
+      await page.getByText('Finish your learner profile, then accept the list.').waitFor()
+      await page.locator('#finishprofile').waitFor()
+    })
+    await step(`${tag}: plan holder: share a list, see it as waiting, and withdraw one`, async () => {
+      await page.reload(); await page.locator('[data-list]').first().waitFor()
+      const share = page.locator(`[data-sharelist="${LIST}"]`)
+      assert.equal((await share.innerText()).trim(), 'Share', 'a plan holder sees a plain Share')
+      await share.click(); await page.fill('#shareemail', 'new@example.com'); await page.click('#sharef [type=submit]')
+      await page.locator('#sharef').waitFor({ state: 'detached' })
+      await page.locator('.sentlist li', { hasText: 'new@example.com' }).getByText('Waiting').waitFor()
+      assert.match(await page.locator('.sentlist').innerText(), /done@example\.com[\s\S]*Accepted/)
+      await page.locator('.sentlist li', { hasText: 'old@example.com' }).getByRole('button', { name: 'Withdraw' }).click()
+      await page.locator('.sentlist li', { hasText: 'old@example.com' }).getByText('Withdrawn').waitFor()
+      assert.equal(await page.locator('.sentlist li', { hasText: 'done@example.com' }).getByRole('button', { name: 'Withdraw' }).count(), 0, 'an accepted copy is never taken back')
+      await noOverflow(page); await shot(page, `${tag}-library-sent`)
+    })
+    await step(`${tag}: plan holder: no console errors`, async () => { assert.deepEqual(errors, []) })
+    await context.close()
+  }
+
+  {
+    // A teacher: onboarding with the Terms shown in full, a class with its code, students listed by email, a seat withdrawn, a class archived.
+    const CLS = 'eeeeeeee-1111-4222-8333-444444444441', SEAT1 = 'ffffffff-1111-4222-8333-444444444441'
+    const T = { teacher: null, classes: [], seats: [], rejectNext: false }
+    const { context, page, seen, errors } = await planContext(viewport, ({ path, method, body }) => {
+      if (path === '/learning/account') return [200, account({ plans: { teacher: true }, capabilities: { teachStudents: true, shareSetlists: true } })]
+      if (path === '/learning/teacher/policies') return [200, { ok: true, policies: [{ slug: 'terms', title: 'Terms', version: 3, body_text: 'The terms in full.' }, { slug: 'privacy', title: 'Privacy Promise', version: 2, body_text: 'The privacy promise in full.' }] }]
+      if (path === '/learning/teacher/me') return [200, { email: 'ann.mingen@example.com', plan: { teacher: true, exempt: false, active: true }, liannTutor: false, teacher: T.teacher, classes: T.classes }]
+      if (path === '/learning/teacher/onboard') { T.teacher = { id: 't1', fullName: body.fullName, onboarded: true }; return [200, { ok: true, teacherId: 't1' }] }
+      if (path === '/learning/teacher/classes' && method === 'POST') { T.classes = [{ id: CLS, name: body.name, code: 'ABCD-EFGH', pending: 0, joined: 0 }]; return [201, { ok: true, class: T.classes[0] }] }
+      if (path === `/learning/teacher/classes/${CLS}` && method === 'GET') return [200, { ok: true, class: { id: CLS, name: T.classes[0].name, code: 'ABCD-EFGH' }, seats: T.seats }]
+      if (path === `/learning/teacher/classes/${CLS}/students` && method === 'POST') {
+        if (T.rejectNext) { T.rejectNext = false; return [400, { error: 'guardian_email_matches_student', index: 1 }] }
+        T.seats = body.students.map((x, i) => ({ id: i ? 'ffffffff-1111-4222-8333-44444444444' + (i + 1) : SEAT1, name: x.name, to: x.guardianEmail || x.studentEmail, isMinor: x.isMinor, status: 'pending', joinedAt: null }))
+        T.classes[0].pending = T.seats.length; return [201, { ok: true, added: T.seats.length, skipped: 0 }]
+      }
+      if (path === `/learning/teacher/classes/${CLS}/students/${SEAT1}` && method === 'DELETE') { T.seats = T.seats.filter(x => x.id !== SEAT1); T.classes[0].pending = T.seats.length; return [200, { ok: true }] }
+      if (path === `/learning/teacher/classes/${CLS}` && method === 'DELETE') { T.classes = []; return [200, { ok: true, archived: true }] }
+      return null
+    }, { permissions: ['clipboard-read', 'clipboard-write'] })
+    await step(`${tag}: teacher: onboarding shows the Terms in full and needs the box ticked`, async () => {
+      await page.goto(url + '#plan'); await page.locator('#tonboard').waitFor()
+      await page.locator('#tonboard details.policy summary', { hasText: 'Terms (version 3)' }).click()
+      await page.getByText('The terms in full.').waitFor()
+      assert.match(await page.locator('#tonboard').innerText(), /Lessons, bookings and payouts are for LiANN tutors, not for teachers\./)
+      await page.fill('#tname', 'Ms Teach'); await page.click('#tonboard [type=submit]')
+      await page.getByText('Tick the box to agree to the Terms and Privacy Promise.').waitFor()
+      await page.check('#tagree'); await page.click('#tonboard [type=submit]')
+      await page.getByRole('heading', { name: 'Your classes' }).waitFor()
+      assert.deepEqual(seen.find(x => x.path === '/learning/teacher/onboard').body, { fullName: 'Ms Teach', agreements: { terms: true, privacy: true } })
+      await noOverflow(page); await shot(page, `${tag}-teacher-onboarded`)
+    })
+    await step(`${tag}: teacher: a class has a code, students are listed by email, a child by a guardian`, async () => {
+      await page.fill('#cname', 'Year 7 Mandarin'); await page.click('#newclass [type=submit]')
+      await page.locator('#theclasscode').waitFor()
+      assert.equal(await page.locator('#theclasscode').innerText(), 'ABCD-EFGH')
+      assert.match(await page.locator('#teacher').innerText(), /Students sign in with the email you listed \(for a child, the parent or guardian’s email\) and enter this code\./)
+      await page.click('#copycode'); await page.getByText('Code copied').waitFor()
+      assert.equal(await page.evaluate(() => navigator.clipboard.readText()), 'ABCD-EFGH')
+      await page.fill('[data-row="0"][data-f="name"]', 'Adult A'); await page.fill('[data-row="0"][data-f="email"]', 'adult@example.com')
+      await page.fill('[data-row="1"][data-f="name"]', 'Kid K'); await page.selectOption('[data-row="1"][data-f="minor"]', '1')
+      assert.match(await page.locator('[data-row="1"][data-f="email"]').getAttribute('placeholder'), /Parent or guardian/)
+      await page.fill('[data-row="1"][data-f="email"]', 'adult@example.com')
+      T.rejectNext = true; await page.click('#addseats [type=submit]')
+      await page.getByText('Student 2: the parent or guardian needs a different email from the student.').waitFor()
+      assert.equal(await page.inputValue('[data-row="1"][data-f="email"]'), 'adult@example.com', 'what was typed is kept after a refusal')
+      await page.fill('[data-row="1"][data-f="email"]', 'parent@example.com'); await page.click('#addseats [type=submit]')
+      await page.locator('.sentlist li', { hasText: 'Kid K' }).waitFor()
+      assert.deepEqual(seen.filter(x => x.path.endsWith('/students') && x.method === 'POST').pop().body.students,
+        [{ name: 'Adult A', isMinor: false, studentEmail: 'adult@example.com' }, { name: 'Kid K', isMinor: true, guardianEmail: 'parent@example.com' }])
+      assert.match(await page.locator('.sentlist li', { hasText: 'Kid K' }).innerText(), /child, via parent@example\.com · Waiting/)
+      await noOverflow(page); await shot(page, `${tag}-teacher-class`)
+    })
+    await step(`${tag}: teacher: withdraw a seat, archive the class`, async () => {
+      await page.locator('.sentlist li', { hasText: 'Adult A' }).getByRole('button', { name: 'Withdraw' }).click()
+      await page.locator('.sentlist li', { hasText: 'Adult A' }).waitFor({ state: 'detached' })
+      page.once('dialog', d => d.accept())
+      await page.click('#archiveclass')
+      await page.getByRole('heading', { name: 'Your classes' }).waitFor()
+      assert.equal(await page.locator('[data-class]').count(), 0)
+      assert.ok(seen.some(x => x.method === 'DELETE' && x.path === `/learning/teacher/classes/${CLS}`))
+    })
+    await step(`${tag}: teacher: no console errors`, async () => { assert.deepEqual(errors, []) })
+    await context.close()
+  }
+}
+
+{
+  // Founder, LiANN tutor, and an AlongSide that does not have the new routes yet.
+  const founder = await planContext({ width: 1280, height: 860 }, ({ path }) => {
+    if (path === '/learning/account') return [200, account({ accountType: 'founder', capabilities: { shareSetlists: true, teachStudents: true, runHousehold: true, runOrganisation: true } })]
+    if (path === '/learning/teacher/policies') return [200, { ok: true, policies: [] }]
+    if (path === '/learning/teacher/me') return [200, { email: 'ann.mingen@example.com', plan: { teacher: false, exempt: true, active: true }, liannTutor: false, teacher: null, classes: [] }]
+    return null
+  })
+  await step('founder: the Plan page says so, and teaching is open without a plan; with no policy text the website is linked', async () => {
+    await founder.page.goto(url + '#plan'); await founder.page.locator('#tonboard').waitFor()
+    assert.match(await founder.page.locator('main .c').first().innerText(), /Founder[\s\S]*Every plan is open to this account/)
+    assert.match(await founder.page.locator('#tonboard').innerText(), /The full text is on the website: Terms and Privacy Promise\./)
+    assert.equal(await founder.page.locator('#tonboard a[href="https://lwliann.com/terms"]').count(), 1)
+    assert.deepEqual(founder.errors, [])
+  })
+  await founder.context.close()
+
+  const tutor = await planContext({ width: 1280, height: 860 }, ({ path }) => {
+    if (path === '/learning/account') return [200, account({ accountType: 'tutor', capabilities: { shareSetlists: true, teachStudents: true } })]
+    if (path === '/learning/teacher/me') return [200, { email: 'ann.mingen@example.com', plan: { teacher: false, exempt: false, active: false }, liannTutor: true, teacher: null, classes: [] }]
+    return null
+  })
+  await step('a LiANN tutor sees nothing teacher-specific in the hub', async () => {
+    await tutor.page.goto(url + '#plan'); await tutor.page.getByRole('heading', { name: 'Plans' }).waitFor()
+    await tutor.page.waitForTimeout(300)
+    assert.equal(await tutor.page.locator('#teacher').count(), 0)
+    assert.match(await tutor.page.locator('main .c').first().innerText(), /LiANN tutor/)
+    assert.deepEqual(tutor.errors, [])
+  })
+  await tutor.context.close()
+
+  // The plan check fails (a cold or busy backend): the hub says so and never calls the account Free; Try again recovers.
+  let probeOk = false
+  const flaky = await planContext({ width: 1280, height: 860 }, ({ path }) => {
+    if (path === '/learning/account') return probeOk ? [200, account({ plans: { household: 'family' }, capabilities: { shareSetlists: true } })] : [503, { error: 'access_check_unavailable' }]
+    return null
+  }, { allow: /status of (40[034]|503)/ })
+  await step('a failed plan check says so, is never shown as Free, offers no sharing, and recovers on Try again', async () => {
+    await flaky.page.goto(url + '#plan'); await flaky.page.getByText('Could not be checked').waitFor()
+    assert.equal(await flaky.page.getByText('Current plan').count(), 0, 'no plan is marked while the check has failed')
+    assert.doesNotMatch(await flaky.page.locator('main .c').first().innerText(), /Free/)
+    await flaky.page.goto(url + '#library'); await flaky.page.reload(); await flaky.page.locator('[data-list]').waitFor()
+    assert.equal(await flaky.page.locator('[data-sharelist], #joinf').count(), 0)
+    probeOk = true
+    await flaky.page.click('[data-nav="plan"]'); await flaky.page.locator('main .c', { hasText: '3–6 profiles' }).getByText('Current plan').waitFor()
+    assert.match(await flaky.page.locator('main .c').first().innerText(), /Family plan/)
+    assert.deepEqual(flaky.errors, [])
+  })
+  await flaky.context.close()
+
+  // An older AlongSide answers 404 to the new routes: the hub looks exactly as before, with Free as the current plan.
+  const context = await browser.newContext({ viewport: { width: 1280, height: 860 } })
+  await context.addInitScript(() => localStorage.setItem('liann-hub-session-v1', JSON.stringify({ access_token: 'at', refresh_token: 'rt', expires_at: 9999999999 })))
+  await mock(context)
+  await context.route(`${BACKEND}/learning/account`, r => r.fulfill({ status: 404, json: {} }))
+  const page = await context.newPage(), errors = []
+  page.on('pageerror', e => errors.push(e.message))
+  await step('an AlongSide without the new routes: Free is current, and there is no Share, no Join a class, no Teacher', async () => {
+    await page.goto(url + '#plan'); await page.getByRole('heading', { name: 'Plans' }).waitFor()
+    await page.locator('main .c', { hasText: 'Individual learners, 13+' }).getByText('Current plan').waitFor()
+    await page.goto(url + '#library'); await page.locator('[data-list]').waitFor()
+    assert.equal(await page.locator('[data-sharelist], #joinf, #sharedwithyou').count(), 0)
+    assert.deepEqual(errors, [])
+  })
+  await context.close()
 }
 
 await browser.close(); server.close()

@@ -3,6 +3,10 @@ import { APPS, NAV, CODE_LENGTH, appUrl } from './config.js'
 import { formatBytes } from './downloads.js'
 import { clampPage, visiblePages } from './comics.js'
 import { watermarkStyle } from './pages.js'
+import { esc } from './esc.js'
+import { planSummary, isCurrentPlan, sharedStrip, shareForm, sentList, joinCard, teacherSection } from './sharing.js'
+
+export { esc }
 
 const I = {
   home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h5v-6h4v6h5V9.5"/>',
@@ -23,8 +27,6 @@ const I = {
   palette: '<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.8 1.8-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7H16a5 5 0 0 0 5-5c0-4-4-7.2-9-7.2z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/>',
 }
 export const ico = (n, s = 22) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n]}</svg>`
-
-export function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])) }
 
 export const DS = [['liann', 'LiANN', 'Canonical sage, coral and porcelain', ['#FBF6EE', '#8A9B7E', '#C24837']],
   ['amberline', 'Amberline', 'Warm parchment and amber', ['#FBF9F5', '#B07C2D', '#2E8B7B']],
@@ -152,10 +154,10 @@ function matches(q, ...fields) { const n = q.trim().toLowerCase(); return !n || 
 const SOURCES = { 'pinyin-tiles': 'Pinyin Tiles', 'pinyin-puzzle': 'Pinyin Puzzle', 'liann-mahjong-tones': 'Mahjong Tones', lyricsync: 'LyricSync', 'dual-subs': 'Dual Subs', dualsubs: 'Dual Subs', polyflow: 'PolyFlow', alongside: 'AlongSide', multiboard: 'MultiBoard', authorboard: 'AuthorBoard', transapp: 'TransApp' }
 export const sourceName = id => SOURCES[id] || id || ''
 
-function setlistCard(l) {
+function setlistCard(l, share) {
   const words = Number(l.words) || 0
   const from = l.source_name || sourceName(l.source_product)
-  return `<div class="c">${art('setlist')}<div class="h"><div class="tile">${esc((l.name || '表').trim()[0] || '表')}</div><div><div class="t">${esc(l.name || 'SetList')}</div><div class="s">${words} word${words === 1 ? '' : 's'}${from ? ` · ${esc(from)}` : ''}</div></div></div><div class="acts"><button class="btn ghost" data-list="${esc(l.id)}">Open</button></div></div>`
+  return `<div class="c">${art('setlist')}<div class="h"><div class="tile">${esc((l.name || '表').trim()[0] || '表')}</div><div><div class="t">${esc(l.name || 'SetList')}</div><div class="s">${words} word${words === 1 ? '' : 's'}${from ? ` · ${esc(from)}` : ''}</div></div></div><div class="acts"><button class="btn ghost" data-list="${esc(l.id)}">Open</button>${share ? `<button class="btn ghost" data-sharelist="${esc(l.id)}">Share${share.can ? '' : ' · needs a plan'}</button>` : ''}</div></div>`
 }
 
 function pHome(s) {
@@ -199,11 +201,13 @@ function pLibrary(s) {
       : o.status === 'error' ? `<div class="empty err">${esc(o.error)}</div>` : '<div class="empty">Loading words…</div>'
     return `<section class="sec"><div class="sechead"><h2>${esc(o.name || 'SetList')}</h2><button class="link" id="closelist">Back to Library</button></div><div class="c">${rows}</div></section>`
   }
-  const body = L.status === 'ok' ? (L.items.length ? `<div class="grid">${L.items.map(setlistCard).join('')}</div>` : '<div class="empty">No SetLists yet. Save words in Pinyin Tiles, Pinyin Puzzle or Mahjong Tones while signed in, and they appear here.</div>')
+  // Sharing belongs to the signed-in adult's own Library, and only where AlongSide answers the plan probe.
+  const own = Boolean(s.acct && !s.learner)
+  const body = L.status === 'ok' ? (L.items.length ? `<div class="grid">${L.items.map(l => setlistCard(l, own ? { can: s.acct.capabilities.shareSetlists } : null)).join('')}</div>` : '<div class="empty">No SetLists yet. Save words in Pinyin Tiles, Pinyin Puzzle or Mahjong Tones while signed in, and they appear here.</div>')
     : L.status === 'needs_profile' ? profileCard(L)
     : L.status === 'error' ? `<div class="empty"><p style="margin:0 0 10px">${esc(L.error)}</p><button class="btn ghost" id="retrylib">Try again</button></div>` : '<div class="empty">Loading your SetLists…</div>'
   const whose = s.learner ? `${esc(s.learner.name)}\u2019s SetLists from every game, kept in AlongSide` : 'Your SetLists from every game, kept in AlongSide'
-  return `<section class="sec"><div class="sechead"><h2>Library</h2><span class="muted">${whose}</span></div>${body}</section>`
+  return `${own ? sharedStrip(s) : ''}<section class="sec"><div class="sechead"><h2>Library</h2><span class="muted">${whose}</span></div>${body}</section>${own ? `${shareForm(s)}${sentList(s)}${joinCard(s)}` : ''}`
 }
 
 const PRODUCT_GLYPH = { 'dual-subs': '字', lyricsync: '歌', polyflow: '琴', 'mahjong-tones': '声', 'alongside-mobile': '伴', 'alongside-dashboard': '伴', 'pinyin-tiles': '拼', 'pinyin-puzzle': '谜', 'bella-liann': '漫', kids: '小', figures: '偶' }
@@ -362,19 +366,21 @@ function pShop(s) {
 }
 
 const PLANS = [
-  { g: 'Learners', n: 'Free', who: 'Individual learners, 13+', price: 'Free', f: ['Pinyin games and Bella &amp; LiANN comics', 'AlongSide classroom', 'Your SetLists from every game'], cur: 1 },
-  { g: 'Learners', n: 'Couple', who: 'Two adults', price: 'Price to be set', f: ['2 profiles, each with its own progress', 'Everything in Free', 'One bill'] },
-  { g: 'Learners', n: 'Family', who: 'A couple with 1–4 children', price: 'Price to be set', f: ['3–6 profiles: two adults and up to four children', 'Everything in Couple', 'Optional PIN on each profile', 'One bill'] },
+  { key: 'free', g: 'Learners', n: 'Free', who: 'Individual learners, 13+', price: 'Free', f: ['Pinyin games and Bella &amp; LiANN comics', 'AlongSide classroom', 'Your SetLists from every game'] },
+  { key: 'couple', g: 'Learners', n: 'Couple', who: 'Two adults', price: 'Price to be set', f: ['2 profiles, each with its own progress', 'Everything in Free', 'One bill'] },
+  { key: 'family', g: 'Learners', n: 'Family', who: 'A couple with 1–4 children', price: 'Price to be set', f: ['3–6 profiles: two adults and up to four children', 'Everything in Couple', 'Optional PIN on each profile', 'One bill'] },
   { g: 'Tutors', n: 'Tutor', who: 'Private tutors', price: 'Monthly or yearly · price to be set', f: ['Everything in Free', 'Full import to MultiBoard', 'Author lessons in AuthorBoard'] },
   { g: 'Tutors', n: 'Tutor + introduced students', who: 'Tutors who take students we introduce', price: 'A percentage of the tuition fee (to be set)', f: ['Everything in Tutor', 'AlongSide messaging with students', 'Students pay tuition in AlongSide'] },
+  { key: 'teacher', g: 'Tutors', n: 'Teacher', who: 'Teachers who are not LiANN tutors', price: 'Price to be set', f: ['List your own students, or give a class a code', 'Each student joins with the email you list for them', 'SetLists for your students'] },
   { g: 'Organisations', n: 'School', who: 'One school: teachers and classes', price: 'Licence · price to be set', f: ['Licences for teachers and classes', 'School sign-in and class lists', 'Invoice billing'] },
   { g: 'Organisations', n: 'Institution', who: 'Universities, language schools, academies', price: 'Licence · price to be set', f: ['Licences across several sites', 'Single sign-on and course-platform links', 'Reports across sites'] },
-  { g: 'Organisations', n: 'Education Department', who: 'Regional or national education authorities', price: 'Licence · price to be set', f: ['Licences for many schools at once', 'Central reports', 'Purchase-order buying'] }]
+  { g: 'Organisations', n: 'Education Department', who: 'Regional or national education authorities', price: 'Licence · price to be set', f: ['Licences for many schools at once', 'Central reports', 'Purchase-order buying'] },
+  { key: 'organisation', g: 'Organisations', n: 'PolyFlow Performance', who: 'A group that shares PolyFlow documents', price: 'Price to be set', f: ['Start a PolyFlow organisation', 'Accept documents shared by other organisations', 'Anyone can join an organisation for free'] }]
 
-const planCard = x => `<div class="c" style="${x.cur ? 'border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)' : ''}"><div class="t" style="font-size:1.15rem">${x.n}</div><div class="s">${x.who}</div>
+const planCard = (x, a) => { const cur = isCurrentPlan(x.key, a); return `<div class="c" style="${cur ? 'border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)' : ''}"><div class="t" style="font-size:1.15rem">${x.n}</div><div class="s">${x.who}</div>
   <div style="font-weight:900;color:var(--accent)">${x.price}</div>
   <ul style="margin:0;padding-left:1.1rem;display:grid;gap:4px;color:var(--muted);font-size:.9rem">${x.f.map(i => `<li>${i}</li>`).join('')}</ul>
-  <div class="acts">${x.cur ? '<span class="status">Current plan</span>' : '<button class="btn ghost" disabled>Coming soon</button>'}</div></div>`
+  <div class="acts">${cur ? '<span class="status">Current plan</span>' : '<button class="btn ghost" disabled>Coming soon</button>'}</div></div>` }
 
 // Couple and Family plans (One LiANN account C3). Shown only when AlongSide has households switched on.
 function householdSection(s) {
@@ -413,15 +419,16 @@ function pPlan(s) {
   return `<section class="sec"><div class="sechead"><h2>Plan</h2></div><div class="grid">
   ${s.household?.household
     ? `<div class="c"><div class="t">${s.household.household.plan === 'family' ? 'Family' : 'Couple'} plan</div><div class="s">${s.household.household.role === 'owner' ? 'Plan holder' : 'Member of a household'}</div><div class="d">Every adult keeps their own LiANN account and SetLists.${s.household.household.plan === 'family' ? ' Children under 13 learn on their own profile.' : ''}</div></div>`
-    : '<div class="c"><div class="t">Free</div><div class="s">Learner · no charge</div><div class="d">Pinyin games, Bella &amp; LiANN and your SetLists from every game.</div></div>'}
+    : (p => `<div class="c"><div class="t">${p.t}</div><div class="s">${p.s}</div><div class="d">${p.d}</div>${s.acct === false ? '<div class="acts"><button class="btn ghost" id="retryplan">Try again</button></div>' : ''}</div>`)(planSummary(s.acct))}
   <div class="c"><div class="t">LiANN account</div><div class="s">${esc(s.user.email)}</div><div class="d">You sign in with a code sent to this email. The same account works in every game and in AlongSide.</div><div class="acts"><button class="btn ghost" id="signout">Sign out</button></div></div>
   ${s.household ? '' : '<div class="c"><div class="t">Profiles</div><div class="s">1 profile</div><div class="d">Separate profiles for each learner arrive with Couple and Family plans.</div></div>'}
   <div class="c"><div class="t">Appearance</div><div class="s">${esc(DS.find(d => d[0] === th.ds)[1])} · ${th.t === 'dark' ? 'Dark' : 'Light'}</div><div class="d">LiANN, Amberline, Steelline, Cadence or Ivoryline, in light or dark.</div><div class="acts"><button class="btn ghost" id="apbtn2">Change</button></div></div></div></section>
   ${s.household ? householdSection(s) : ''}
+  ${teacherSection(s)}
   <section class="sec"><div class="sechead"><h2>Plans</h2><span class="muted" style="font-size:.85rem">Prices to be set</span></div>
   <div class="chips" style="justify-content:flex-start">${['Learners', 'Tutors', 'Organisations'].map(c => `<button class="chip" data-planf="${c}" aria-pressed="${pf === c}">${c}</button>`).join('')}</div>
-  <div class="grid">${PLANS.filter(x => x.g === pf).map(planCard).join('')}</div>
-  <p class="muted" style="margin:0;font-size:.85rem">Learners use the hub free, or choose a Couple or Family plan. Tutors subscribe monthly or yearly. Schools, institutions and education departments buy licences.</p></section>`
+  <div class="grid">${PLANS.filter(x => x.g === pf).map(x => planCard(x, s.acct)).join('')}</div>
+  <p class="muted" style="margin:0;font-size:.85rem">Everything an individual does in their own account is free. Plans are for sharing: a household, a class, an organisation.</p></section>`
 }
 
 // Notification menu: pending household invitations are the only live items today; everything else is "all caught up".
