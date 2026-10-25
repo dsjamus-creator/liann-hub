@@ -94,7 +94,7 @@ export function productHTML(product, downloads, os, others = []) {
     <nav class="plinks"><a href="/#apps">All apps</a><a href="/#downloads">Downloads</a>${THEME_SWITCH}</nav></header>
   <main class="pmain">
     <section class="hero${product.app ? '' : ' solo'}">${product.app ? `<div class="pic">${art(product.app)}</div>` : ''}
-      <div class="txt"><div class="eyebrow">${esc(product.kind)}</div><h1>${esc(product.name)}</h1><p class="lead">${esc(product.oneLine)}</p><p class="muted">${esc(product.audience)}</p></div></section>
+      <div class="txt"><div class="eyebrow">${esc(product.kind)}</div><h1>${product.app ? esc(product.name) : `<span class="l3" aria-hidden="true"><span class="a">Learning with</span> <span class="b">LiANN</span></span><span class="vh">${esc(product.name)}</span>`}</h1><p class="lead">${esc(product.oneLine)}</p><p class="muted">${esc(product.audience)}</p></div></section>
     <section class="sec"><div class="sechead"><h2>Get it</h2><span class="muted" style="font-size:.85rem">${deviceCaption}</span></div>
       <div class="grid prows">${rows.map(m => row(m, product.glyph)).join('')}</div>
       <p class="muted" style="margin:0;font-size:.85rem">Every file is listed from a signed-off manifest with its version and size. Store listings open here as they go live.</p></section>
