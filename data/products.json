@@ -172,6 +172,30 @@
       ],
       "privacyUrl": "",
       "support": "enquiries@lwliann.com"
+    },
+    {
+      "id": "hub",
+      "app": null,
+      "name": "LiANN HUB",
+      "glyph": "⌂",
+      "kind": "Hub · web, Windows and Mac",
+      "oneLine": "Your Learning with LiANN apps, games, Library and downloads in one place.",
+      "audience": "Learners, parents and tutors.",
+      "points": [
+        "Home, Apps, Library, Read, Figures, Discover, Kids, Shop, Downloads and Plan in one hub.",
+        "Sign in with a six-digit code sent to your email; there is no password.",
+        "Open your AlongSide SetLists in the Library after signing in.",
+        "The Windows and Mac apps open the same hub in their own window; external app links open in your browser."
+      ],
+      "platforms": [
+        { "os": "web", "url": "https://app.lwliann.com/", "status": "ok" },
+        { "os": "windows", "slot": "hub/windows", "status": "soon", "note": "Windows installer. The preview build is unsigned; Windows may ask you to confirm the publisher." },
+        { "os": "mac", "label": "Mac — Intel", "slot": "hub/mac-x64", "status": "soon", "note": "Intel disk image. The preview build is unsigned and not notarised." },
+        { "os": "mac", "label": "Mac — Apple silicon", "slot": "hub/mac-arm64", "status": "soon", "note": "Apple silicon disk image. The preview build is unsigned and not notarised." }
+      ],
+      "links": [["Learning with LiANN", "https://lwliann.com/"]],
+      "privacyUrl": "",
+      "support": "enquiries@lwliann.com"
     }
   ]
 }

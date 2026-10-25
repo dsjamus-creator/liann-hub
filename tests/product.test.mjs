@@ -15,10 +15,12 @@ test('every product has a page shell, an app card and manifest slots that exist'
     assert.match(shell, new RegExp(`data-product="${p.id}"`), `${p.id}.html names its product`)
     assert.ok(shell.includes('src/product.js'), `${p.id}.html loads the product module`)
     assert.ok(shell.includes(`https://app.lwliann.com/${p.id}`), `${p.id}.html carries its canonical address`)
-    const app = APPS.find(a => a.id === p.app)
-    assert.ok(app, `${p.id} → app card ${p.app}`)
-    assert.equal(app.page, p.id, `${app.id}.page points back at the product`)
-    assert.equal(app.g, p.glyph, `${p.id} glyph matches the card`)
+    if (p.app) {
+      const app = APPS.find(a => a.id === p.app)
+      assert.ok(app, `${p.id} → app card ${p.app}`)
+      assert.equal(app.page, p.id, `${app.id}.page points back at the product`)
+      assert.equal(app.g, p.glyph, `${p.id} glyph matches the card`)
+    } else assert.equal(p.id, 'hub', 'only the hub itself has a product page without an Apps card')
     for (const pl of p.platforms) {
       if (pl.slot) assert.ok(manifest.some(d => d.slot === pl.slot), `${p.id} ${pl.os} → slot ${pl.slot}`)
       if (pl.store) assert.ok(STORES[pl.store], `${p.id} ${pl.os} store ${pl.store}`)
@@ -43,9 +45,12 @@ test('the visitor platform comes from the user agent, and their row goes first',
   assert.deepEqual(orderPlatforms(poly.platforms, 'other').map(p => p.os), ['web', 'android', 'windows'])
   const dual = products.find(p => p.id === 'dual-subs')
   assert.equal(orderPlatforms(dual.platforms, 'mac')[0].os, 'chrome', 'a desktop visitor sees the browser rows first')
+  const hub = products.find(p => p.id === 'hub')
+  assert.equal(orderPlatforms(hub.platforms, 'windows')[0].os, 'windows')
+  assert.deepEqual(orderPlatforms(hub.platforms, 'mac').map(p => p.slot || p.os), ['hub/mac-x64', 'hub/mac-arm64', 'web', 'hub/windows'])
 })
 
-test('a platform row offers Open, a store badge or a checked file from the same record', () => {
+test('a platform row offers Open, a store badge or a checked file from the same record', async () => {
   const poly = products.find(p => p.id === 'polyflow')
   const windows = platformModel(poly.platforms.find(p => p.os === 'windows'), manifest)
   assert.equal(windows.status.text, 'Version 0.1.1 · Download')
@@ -63,6 +68,19 @@ test('a platform row offers Open, a store badge or a checked file from the same 
   assert.equal(live.status.text, 'Ready'); assert.equal(live.buttons[0].href, 'https://play.google.com/store/apps/details?id=com.lwliann.polyflow'); assert.equal(live.buttons[0].primary, true, 'a live store badge is the primary action')
   const waiting = platformModel({ os: 'windows', slot: 'nope/none', status: 'soon' }, manifest)
   assert.equal(waiting.status.text, 'Waiting for the latest file'); assert.equal(waiting.status.cls, 'up'); assert.equal(waiting.buttons[0].disabled, true)
+  const hub = products.find(p => p.id === 'hub')
+  for (const slot of ['hub/windows', 'hub/mac-x64', 'hub/mac-arm64']) {
+    const row = platformModel(hub.platforms.find(p => p.slot === slot), manifest)
+    assert.equal(row.status.text, 'Waiting for the latest file')
+    assert.equal(row.buttons[0].disabled, true, `${slot} has no public installer without a file, size and checksum`)
+  }
+  assert.deepEqual(hub.platforms.filter(p => p.os === 'mac').map(p => platformModel(p, manifest).label), ['Mac — Intel', 'Mac — Apple silicon'])
+  assert.match(productHTML(hub, manifest, 'mac'), /Your device options: Mac/)
+  const macFiles = JSON.parse(await readFile(new URL('../data/downloads.json', import.meta.url), 'utf8')).filter(d => d.product === 'liann-hub' && d.platform.startsWith('Mac'))
+  assert.deepEqual(macFiles.map(d => [d.hubSlot, d.notes.match(/LiANN-HUB-0\.1\.0-(?:x64|arm64)\.dmg/)?.[0]]), [
+    ['hub/mac-x64', 'LiANN-HUB-0.1.0-x64.dmg'],
+    ['hub/mac-arm64', 'LiANN-HUB-0.1.0-arm64.dmg'],
+  ])
 })
 
 test('the page escapes record text and shows every platform', () => {

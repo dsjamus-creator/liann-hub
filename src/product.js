@@ -51,7 +51,7 @@ export function platformModel(p, downloads) {
   else if (file?.available) status = { cls: '', text: `Version ${file.version || '—'} · Download` }
   else if (p.slot) status = { cls: 'up', text: 'Waiting for the latest file' }
   else status = { cls: '', text: 'Coming soon' }
-  return { os: p.os, label: OS[p.os] || p.os, sub, status, note: p.note || '', buttons }
+  return { os: p.os, label: p.label || OS[p.os] || p.os, sub, status, note: p.note || '', buttons }
 }
 
 const button = b => {
@@ -86,14 +86,16 @@ function bindThemeSwitch(host, root = document.documentElement) {
 
 export function productHTML(product, downloads, os, others = []) {
   const rows = orderPlatforms(product.platforms, os).map(p => platformModel(p, downloads))
+  const deviceRows = rows.filter(r => r.os === os)
+  const deviceCaption = deviceRows.length > 1 ? `Your device options: ${esc(OS[os] || os)}` : deviceRows.length ? `Your device first: ${esc(deviceRows[0].label)}` : 'Every platform'
   const links = (product.links || []).map(([t, h]) => `<li><a href="${esc(h)}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join('')
   return `<div class="product fade">
   <header class="ptop"><a class="plock" href="/" aria-label="Learning with LiANN hub">${LOCKUP}</a>
     <nav class="plinks"><a href="/#apps">All apps</a><a href="/#downloads">Downloads</a>${THEME_SWITCH}</nav></header>
   <main class="pmain">
-    <section class="hero"><div class="pic">${art(product.app)}</div>
+    <section class="hero"><div class="pic">${art(product.app || product.id)}</div>
       <div class="txt"><div class="eyebrow">${esc(product.kind)}</div><h1>${esc(product.name)}</h1><p class="lead">${esc(product.oneLine)}</p><p class="muted">${esc(product.audience)}</p></div></section>
-    <section class="sec"><div class="sechead"><h2>Get it</h2><span class="muted" style="font-size:.85rem">${rows[0] && rows[0].os === os ? `Your device first: ${esc(rows[0].label)}` : 'Every platform'}</span></div>
+    <section class="sec"><div class="sechead"><h2>Get it</h2><span class="muted" style="font-size:.85rem">${deviceCaption}</span></div>
       <div class="grid prows">${rows.map(m => row(m, product.glyph)).join('')}</div>
       <p class="muted" style="margin:0;font-size:.85rem">Every file is listed from a signed-off manifest with its version and size. Store listings open here as they go live.</p></section>
     <section class="sec"><div class="sechead"><h2>What it does</h2></div><ul class="points">${(product.points || []).map(t => `<li>${esc(t)}</li>`).join('')}</ul></section>
