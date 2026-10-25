@@ -331,6 +331,7 @@ a.btn{display:inline-block;text-decoration:none;text-align:center}
 .product .hero{display:grid;grid-template-columns:1.1fr 1fr;gap:28px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden}
 .product .hero .pic .cart{height:280px;margin:0;border-bottom:0}
 .product .hero .txt{padding:24px 28px 28px;display:grid;gap:10px}
+.product .hero.solo{grid-template-columns:1fr;gap:0;border-left:4px solid var(--accent)}.product .hero.solo .txt{padding:clamp(18px,2.6vw,28px) clamp(24px,5vw,56px);max-width:none;display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:clamp(24px,5vw,64px);row-gap:6px;align-items:center}.product .hero.solo .eyebrow{grid-column:1/-1}.product .hero.solo h1{grid-column:1;grid-row:2/4;font-size:clamp(2.2rem,5vw,3.6rem);white-space:nowrap}.product .hero.solo .lead{grid-column:2;grid-row:2;max-width:56ch;margin:0}.product .hero.solo .muted{grid-column:2;grid-row:3;margin:0}@media (max-width:720px){.product .hero.solo .txt{grid-template-columns:1fr}.product .hero.solo h1{grid-column:1;grid-row:auto;white-space:normal}.product .hero.solo .lead,.product .hero.solo .muted{grid-column:1;grid-row:auto}}
 .product .hero h1{margin:0;font-family:var(--disp);font-weight:var(--dispw);font-size:clamp(2rem,4vw,3rem);letter-spacing:-.01em;text-wrap:balance}
 .product .hero .lead{margin:0;font-size:1.15rem;font-weight:700}
 .prows .prow .d:empty{display:none}
@@ -341,3 +342,13 @@ a.btn{display:inline-block;text-decoration:none;text-align:center}
 @media (max-width:720px){.product .hero{grid-template-columns:1fr}.product .hero .pic .cart{height:200px}.pmain{border-radius:0}.plinks a{padding:.35rem .6rem}.ptop .strap{font-size:12px}}
 
 .pmodes{display:inline-flex;gap:6px;align-items:center}.pmodes .chip{cursor:pointer;min-height:36px}.ptop .plinks{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+
+/* The 3D wordmark: extruded Nunito in the canonical sage and coral. Walls are stacked 1px offsets; a thin light edge and a soft ground shadow finish it. */
+.l3{--face-a:#86997A;--side-a:#4A5740;--edge-a:#A9BB9D;--c-face:#EF725D;--c-side:#A63F2E;--edge-b:#F59A8A;--sh:rgba(0,0,0,.55);font-family:"Nunito",ui-rounded,system-ui,sans-serif;font-weight:900;letter-spacing:-.045em;line-height:1.1;display:inline-block}
+:root[data-t="light"] .l3{--face-a:#6F8462;--side-a:#3E4B36;--edge-a:#93A787;--c-face:#E2604B;--c-side:#9C3727;--edge-b:#EE8F7E;--sh:rgba(40,30,20,.35)}
+.l3 .a{color:var(--face-a);text-shadow:-1px -1px 0 var(--edge-a),0.5px 0.5px 0 var(--side-a),1px 1px 0 var(--side-a),1.5px 1.5px 0 var(--side-a),2px 2px 0 var(--side-a),2.5px 2.5px 0 var(--side-a),3px 4.5px 6px var(--sh)}
+.l3 .b{color:var(--c-face);text-shadow:-1px -1px 0 var(--edge-b),0.5px 0.5px 0 var(--c-side),1px 1px 0 var(--c-side),1.5px 1.5px 0 var(--c-side),2px 2px 0 var(--c-side),2.5px 2.5px 0 var(--c-side),3px 4.5px 6px var(--sh)}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+.product .hero.solo h1{font-size:clamp(28px,4.2vw,50px);padding:0 10px 12px 0;margin-top:6px}
+@media (max-width:720px){.product .hero.solo h1 .l3{white-space:normal}}
+@media (prefers-reduced-motion:reduce){.l3 *{transition:none}}

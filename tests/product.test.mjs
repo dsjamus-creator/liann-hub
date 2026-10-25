@@ -114,3 +114,20 @@ test('every product page offers Light and Dark, and the choice is stored under t
   assert.doesNotThrow(() => setThemeMode('dark', root, { getItem() { throw new Error('blocked') }, setItem() { throw new Error('blocked') } }))
   assert.equal(root.dataset.t, 'dark', 'blocked storage still switches the page')
 })
+
+test('a product without app art (the hub) gets a full-width hero with no picture box', () => {
+  const hub = products.find(p => p.id === 'hub')
+  assert.equal(hub.app, null)
+  const html = productHTML(hub, manifest, 'other', [])
+  assert.ok(html.includes('class="hero solo"') && !html.includes('class="pic"'))
+  const poly = productHTML(products.find(p => p.id === 'polyflow'), manifest, 'other', [])
+  assert.ok(poly.includes('class="hero"') && poly.includes('class="pic"'), 'app pages keep their picture')
+})
+
+test('the hub hero heading is the 3D wordmark and still reads LiANN HUB to assistive technology', () => {
+  const html = productHTML(products.find(p => p.id === 'hub'), manifest, 'other', [])
+  const h1 = html.match(/<h1>([\s\S]*?)<\/h1>/)[1]
+  assert.ok(h1.includes('class="l3" aria-hidden="true"') && h1.includes('>Learning with<') && h1.includes('>LiANN<'))
+  assert.match(h1, /<span class="vh">LiANN HUB<\/span>/)
+  assert.match(productHTML(products.find(p => p.id === 'polyflow'), manifest, 'other', []), /<h1>PolyFlow<\/h1>/, 'app pages keep a plain heading')
+})
