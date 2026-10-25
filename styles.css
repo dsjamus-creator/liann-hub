@@ -346,8 +346,8 @@ a.btn{display:inline-block;text-decoration:none;text-align:center}
 /* The 3D wordmark: extruded Nunito in the canonical sage and coral. Walls are stacked 1px offsets; a thin light edge and a soft ground shadow finish it. */
 .l3{--face-a:#86997A;--side-a:#4A5740;--edge-a:#A9BB9D;--c-face:#EF725D;--c-side:#A63F2E;--edge-b:#F59A8A;--sh:rgba(0,0,0,.55);font-family:"Nunito",ui-rounded,system-ui,sans-serif;font-weight:900;letter-spacing:-.045em;line-height:1.1;display:inline-block}
 :root[data-t="light"] .l3{--face-a:#6F8462;--side-a:#3E4B36;--edge-a:#93A787;--c-face:#E2604B;--c-side:#9C3727;--edge-b:#EE8F7E;--sh:rgba(40,30,20,.35)}
-.l3 .a{color:var(--face-a);text-shadow:-1px -1px 0 var(--edge-a),1px 1px 0 var(--side-a),2px 2px 0 var(--side-a),3px 3px 0 var(--side-a),4px 4px 0 var(--side-a),5px 5px 0 var(--side-a),6px 9px 12px var(--sh)}
-.l3 .b{color:var(--c-face);text-shadow:-1px -1px 0 var(--edge-b),1px 1px 0 var(--c-side),2px 2px 0 var(--c-side),3px 3px 0 var(--c-side),4px 4px 0 var(--c-side),5px 5px 0 var(--c-side),6px 9px 12px var(--sh)}
+.l3 .a{color:var(--face-a);text-shadow:-1px -1px 0 var(--edge-a),0.5px 0.5px 0 var(--side-a),1px 1px 0 var(--side-a),1.5px 1.5px 0 var(--side-a),2px 2px 0 var(--side-a),2.5px 2.5px 0 var(--side-a),3px 4.5px 6px var(--sh)}
+.l3 .b{color:var(--c-face);text-shadow:-1px -1px 0 var(--edge-b),0.5px 0.5px 0 var(--c-side),1px 1px 0 var(--c-side),1.5px 1.5px 0 var(--c-side),2px 2px 0 var(--c-side),2.5px 2.5px 0 var(--c-side),3px 4.5px 6px var(--sh)}
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
 .product .hero.solo h1{font-size:clamp(28px,4.2vw,50px);padding:0 10px 12px 0;margin-top:6px}
 @media (max-width:720px){.product .hero.solo h1 .l3{white-space:normal}}
