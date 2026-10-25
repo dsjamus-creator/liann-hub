@@ -93,7 +93,7 @@ export function productHTML(product, downloads, os, others = []) {
   <header class="ptop"><a class="plock" href="/" aria-label="Learning with LiANN hub">${LOCKUP}</a>
     <nav class="plinks"><a href="/#apps">All apps</a><a href="/#downloads">Downloads</a>${THEME_SWITCH}</nav></header>
   <main class="pmain">
-    <section class="hero"><div class="pic">${art(product.app || product.id)}</div>
+    <section class="hero${product.app ? '' : ' solo'}">${product.app ? `<div class="pic">${art(product.app)}</div>` : ''}
       <div class="txt"><div class="eyebrow">${esc(product.kind)}</div><h1>${esc(product.name)}</h1><p class="lead">${esc(product.oneLine)}</p><p class="muted">${esc(product.audience)}</p></div></section>
     <section class="sec"><div class="sechead"><h2>Get it</h2><span class="muted" style="font-size:.85rem">${deviceCaption}</span></div>
       <div class="grid prows">${rows.map(m => row(m, product.glyph)).join('')}</div>

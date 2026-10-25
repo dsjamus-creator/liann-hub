@@ -114,3 +114,12 @@ test('every product page offers Light and Dark, and the choice is stored under t
   assert.doesNotThrow(() => setThemeMode('dark', root, { getItem() { throw new Error('blocked') }, setItem() { throw new Error('blocked') } }))
   assert.equal(root.dataset.t, 'dark', 'blocked storage still switches the page')
 })
+
+test('a product without app art (the hub) gets a full-width hero with no picture box', () => {
+  const hub = products.find(p => p.id === 'hub')
+  assert.equal(hub.app, null)
+  const html = productHTML(hub, manifest, 'other', [])
+  assert.ok(html.includes('class="hero solo"') && !html.includes('class="pic"'))
+  const poly = productHTML(products.find(p => p.id === 'polyflow'), manifest, 'other', [])
+  assert.ok(poly.includes('class="hero"') && poly.includes('class="pic"'), 'app pages keep their picture')
+})
