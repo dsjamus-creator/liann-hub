@@ -331,7 +331,7 @@ a.btn{display:inline-block;text-decoration:none;text-align:center}
 .product .hero{display:grid;grid-template-columns:1.1fr 1fr;gap:28px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden}
 .product .hero .pic .cart{height:280px;margin:0;border-bottom:0}
 .product .hero .txt{padding:24px 28px 28px;display:grid;gap:10px}
-.product .hero.solo{grid-template-columns:1fr;gap:0;border-left:4px solid var(--accent)}.product .hero.solo .txt{padding:clamp(20px,3vw,32px) clamp(24px,5vw,56px);max-width:none}.product .hero.solo h1{font-size:clamp(2.4rem,5.5vw,4rem)}.product .hero.solo .lead{max-width:46ch}
+.product .hero.solo{grid-template-columns:1fr;gap:0;border-left:4px solid var(--accent)}.product .hero.solo .txt{padding:clamp(18px,2.6vw,28px) clamp(24px,5vw,56px);max-width:none;display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:clamp(24px,5vw,64px);row-gap:6px;align-items:center}.product .hero.solo .eyebrow{grid-column:1/-1}.product .hero.solo h1{grid-column:1;grid-row:2/4;font-size:clamp(2.2rem,5vw,3.6rem);white-space:nowrap}.product .hero.solo .lead{grid-column:2;grid-row:2;max-width:56ch;margin:0}.product .hero.solo .muted{grid-column:2;grid-row:3;margin:0}@media (max-width:720px){.product .hero.solo .txt{grid-template-columns:1fr}.product .hero.solo h1{grid-column:1;grid-row:auto;white-space:normal}.product .hero.solo .lead,.product .hero.solo .muted{grid-column:1;grid-row:auto}}
 .product .hero h1{margin:0;font-family:var(--disp);font-weight:var(--dispw);font-size:clamp(2rem,4vw,3rem);letter-spacing:-.01em;text-wrap:balance}
 .product .hero .lead{margin:0;font-size:1.15rem;font-weight:700}
 .prows .prow .d:empty{display:none}
