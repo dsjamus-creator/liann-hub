@@ -136,7 +136,7 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
   // Couple and Family plans (One LiANN account C3). A 404 means AlongSide has households switched off.
   async function backendCall(method, path, body) {
     const token = await accessToken()
-    if (!token) throw new AccountError('Sign in again to manage your household.', 'signed_out')
+    if (!token) throw new AccountError('Sign in again to continue.', 'signed_out')
     return json(`${backend}${path}`, { method, headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
       body: body === undefined ? undefined : JSON.stringify(body) })
   }
@@ -183,5 +183,48 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     }
   }
 
-  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, profileLink, household, householdAction, hasSession: () => Boolean(read()?.access_token) }
+  // Plans, sharing and teaching (owner, 24 Oct 2026: individuals never pay; payment gates sharing). Every route below sits under
+  // /learning, which AlongSide opens to this site with a bearer token. A 404 means that AlongSide does not have the route yet,
+  // and the hub then simply shows nothing new.
+  const UUID = /^[0-9a-f-]{36}$/i
+  const need = (id, what) => { if (!UUID.test(String(id))) throw new AccountError(`Unknown ${what}.`, 'bad_id'); return encodeURIComponent(id) }
+  const missing = promise => promise.catch(error => { if (error.status === 404) return null; throw error })
+
+  // What this account may do: the plans it holds and the sharing it may start. null: AlongSide does not answer yet.
+  async function summary() {
+    const a = await missing(backendGet('/learning/account'))
+    if (!a) return null
+    const p = a.plans || {}, c = a.capabilities || {}
+    return {
+      email: a.email, registered: a.registered !== false, accountType: String(a.accountType || 'registered'),
+      plans: { household: p.household === 'couple' || p.household === 'family' ? p.household : null, teacher: p.teacher === true, organisation: p.organisation === true, staff: p.staff === true },
+      capabilities: { shareSetlists: c.shareSetlists === true, teachStudents: c.teachStudents === true, runHousehold: c.runHousehold === true, runOrganisation: c.runOrganisation === true },
+    }
+  }
+
+  // Sharing a SetList with someone else: they receive their own copy, never a live view of yours.
+  async function shares() {
+    const r = await backendGet('/learning/setlists/shares')
+    return { incoming: Array.isArray(r.incoming) ? r.incoming : [], outgoing: Array.isArray(r.outgoing) ? r.outgoing : [] }
+  }
+  const shareSetlist = async (id, email) => backendCall('POST', `/learning/setlists/${need(id, 'SetList')}/shares`, { email })
+  const acceptShare = async id => backendCall('POST', `/learning/setlists/shares/${need(id, 'share')}/accept`)
+  const revokeShare = async id => backendCall('POST', `/learning/setlists/shares/${need(id, 'share')}/revoke`)
+
+  // Teachers and classes. The teacher is a fenced tutors row on AlongSide; students are listed by email address (a child's
+  // by the parent or guardian's), and a class code opens nothing for any other address.
+  const teach = (method, path, body) => backendCall(method, `/learning/teacher${path}`, body)
+  const teacherMe = () => missing(backendGet('/learning/teacher/me'))
+  const teacherPolicies = async () => (await missing(backendGet('/learning/teacher/policies')))?.policies || null
+  const teacherOnboard = fullName => teach('POST', '/onboard', { fullName, agreements: { terms: true, privacy: true } })
+  const classes = async () => (await backendGet('/learning/teacher/classes')).classes || []
+  const classDetail = async id => backendGet(`/learning/teacher/classes/${need(id, 'class')}`)
+  const createClass = name => teach('POST', '/classes', { name })
+  const addSeats = async (id, students) => teach('POST', `/classes/${need(id, 'class')}/students`, { students })
+  const withdrawSeat = async (classId, seatId) => teach('DELETE', `/classes/${need(classId, 'class')}/students/${need(seatId, 'seat')}`)
+  const archiveClass = async id => teach('DELETE', `/classes/${need(id, 'class')}`)
+  // A learner joins a class with its code; it works only for an address the teacher listed.
+  const joinClass = code => backendCall('POST', '/learning/class-code', { code })
+
+  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, profileLink, household, householdAction, summary, shares, shareSetlist, acceptShare, revokeShare, teacherMe, teacherPolicies, teacherOnboard, classes, classDetail, createClass, addSeats, withdrawSeat, archiveClass, joinClass, hasSession: () => Boolean(read()?.access_token) }
 }
