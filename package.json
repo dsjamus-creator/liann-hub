@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node scripts/serve.mjs",
-    "test": "node --test tests/unit.test.mjs tests/protect.test.mjs tests/security.test.mjs tests/product.test.mjs tests/pwa.test.mjs",
+    "test": "node --test tests/unit.test.mjs tests/protect.test.mjs tests/security.test.mjs tests/product.test.mjs tests/pwa.test.mjs tests/android.test.mjs",
     "test:smoke": "node tests/smoke.mjs",
     "check": "npm test && npm run test:smoke",
     "deploy": "wrangler deploy",
