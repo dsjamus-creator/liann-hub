@@ -7,6 +7,12 @@ drawn from the hub's own design: the porcelain tile with its Han glyph and accen
 `--accent #DE5A4F`, `--muted #B7AFA2`). Output goes to `store-assets/<product>/<store>/`, which
 `.assetsignore` keeps out of the deployed site.
 
+The committed Google Play icons and feature graphics for PolyFlow and AlongSide are curated
+listing artwork. `build.mjs` leaves these files intact when refreshing the other store assets.
+PolyFlow also has a Georgia typography variant in `store-assets/polyflow/google-play/polyflow-georgia/`.
+Each listing icon is a full square with an opaque background; each feature graphic fills 1,024 × 500
+without an outer frame.
+
 ```
 node scripts/store-assets/build.mjs             # all products
 node scripts/store-assets/build.mjs polyflow    # one product

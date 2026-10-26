@@ -16,6 +16,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..', '..');
 const { products } = JSON.parse(readFileSync(join(here, 'products.json'), 'utf8'));
 const only = process.argv[2];
+// These Play listing images are curated separately; keep the committed artwork when refreshing screenshots.
+const curatedPlayListing = new Set(['polyflow', 'alongside']);
 
 // Tokens lifted from styles.css (:root and [data-ds="liann"]).
 const T = {
@@ -136,8 +138,10 @@ for (const p of products) {
   const base = join(root, 'store-assets', p.id);
   if (p.stores.includes('google-play')) {
     const d = join(base, 'google-play');
-    await render(icon(p, 512, { square: true }), 512, 512, join(d, 'icon-512.png')); // Play applies its own mask to full-bleed artwork
-    await render(feature(p), 1024, 500, join(d, 'feature-1024x500.png'));
+    if (!curatedPlayListing.has(p.id)) {
+      await render(icon(p, 512, { square: true }), 512, 512, join(d, 'icon-512.png')); // Play applies its own mask to full-bleed artwork
+      await render(feature(p), 1024, 500, join(d, 'feature-1024x500.png'));
+    }
     await render(adaptiveFg(p), 432, 432, join(d, 'adaptive-foreground-432.png'), { omitBackground: true });
     await render(adaptiveBg(), 432, 432, join(d, 'adaptive-background-432.png'));
     for (const [i, [name, caption]] of p.phone.entries()) {
