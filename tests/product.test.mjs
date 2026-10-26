@@ -65,16 +65,14 @@ test('a platform row offers Open, a store badge or a checked file from the same 
   assert.equal(live.status.text, 'Ready'); assert.equal(live.buttons[0].href, 'https://play.google.com/store/apps/details?id=com.lwliann.polyflow'); assert.equal(live.buttons[0].primary, true, 'a live store badge is the primary action')
   const waiting = platformModel({ os: 'windows', slot: 'nope/none', status: 'soon' }, manifest)
   assert.equal(waiting.status.text, 'Waiting for the latest file'); assert.equal(waiting.status.cls, 'up'); assert.equal(waiting.buttons[0].disabled, true)
-  for (const slot of ['hub/windows', 'hub/mac-x64', 'hub/mac-arm64']) {
+  const hubFiles = { 'hub/windows': /\/hub\/windows\/0\.1\.0\/LiANN-HUB-Setup-0\.1\.0\.exe\?v=/, 'hub/mac-x64': /\/hub\/mac-x64\/0\.1\.0\/LiANN-HUB-0\.1\.0-x64\.dmg\?v=/, 'hub/mac-arm64': /\/hub\/mac-arm64\/0\.1\.0\/LiANN-HUB-0\.1\.0-arm64\.dmg\?v=/ }
+  for (const [slot, href] of Object.entries(hubFiles)) {
     const entry = manifest.find(d => d.slot === slot)
     assert.ok(entry, `${slot} is listed on the Downloads page`)
-    assert.equal(entry.available, false, `${slot} has no public installer without a file, size and checksum`)
+    assert.equal(entry.available, true, `${slot} has a file, size and checksum`)
+    assert.match(entry.href, href)
+    assert.match(entry.href, /^https:\/\/downloads\.lwliann\.com\//)
   }
-  const macFiles = JSON.parse(await readFile(new URL('../data/downloads.json', import.meta.url), 'utf8')).filter(d => d.product === 'liann-hub' && d.platform.startsWith('Mac'))
-  assert.deepEqual(macFiles.map(d => [d.hubSlot, d.notes.match(/LiANN-HUB-0\.1\.0-(?:x64|arm64)\.dmg/)?.[0]]), [
-    ['hub/mac-x64', 'LiANN-HUB-0.1.0-x64.dmg'],
-    ['hub/mac-arm64', 'LiANN-HUB-0.1.0-arm64.dmg'],
-  ])
 })
 
 test('the page escapes record text and shows every platform', () => {
