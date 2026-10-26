@@ -46,7 +46,6 @@ const decor = () => `<div class="decor" aria-hidden="true">${DECOR.map(([k, x, y
 
 export function art(id) {
   const img = (src, pos, bg, label, extra = '') => `<div class="cart img" style="background-image:url(assets/${src});background-position:${pos};background-color:${bg};${extra}" role="img" aria-label="${label}"></div>`
-  if (id === 'hub') return img('brand/learning-with-liann-logo.png', 'center', '#121410', 'Learning with LiANN', 'background-size:contain;background-repeat:no-repeat')
   if (id === 'tones') {
     const P = [[4, 50, 'w', '月亮', 'yueliang'], [50, 50, 'm', 'moon'], [96, 50, 'w', '声调', 'shengdiao'], [142, 50, 'm', 'tone'], [188, 50, 'w', '一半', 'yiban'], [27, 12, 'w lit', '一般', 'yiban'], [73, 12, 'm lit', 'ordinary'], [119, 12, 'm', 'half']]
     return `<div class="cart" style="background:radial-gradient(120% 120% at 30% 20%,#4C6145,#26331F)"><div class="stack">${P.map(([x, y, c, t, py]) => `<span class="mb ${c}" style="left:${x}px;top:${y}px">${c.startsWith('w') ? `<span class="z">${t}</span><span class="p">${py}</span>` : `<span class="e">${t}</span>`}</span>`).join('')}</div><div class="tonepick">${[1, 2, 3, 4, 5].map(n => `<b class="${n === 4 ? 'on' : ''}">${n}</b>`).join('')}</div></div>`
