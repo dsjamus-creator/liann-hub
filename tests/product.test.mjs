@@ -124,3 +124,12 @@ test('the hub hero heading is the 3D wordmark and still reads LiANN HUB to assis
   assert.match(h1, /<span class="vh">LiANN HUB<\/span>/)
   assert.match(productHTML(products.find(p => p.id === 'polyflow'), manifest, 'other', []), /<h1>PolyFlow<\/h1>/, 'app pages keep a plain heading')
 })
+
+test('the three Pinyin games link the games privacy notice, and every privacy link is a lwliann.com notice page', () => {
+  for (const id of ['pinyin-tiles', 'pinyin-puzzle', 'mahjong-tones']) {
+    const p = products.find(x => x.id === id)
+    assert.equal(p.privacyUrl, 'https://lwliann.com/privacy-pinyin-games.html', `${id} links the games notice`)
+    assert.ok(productHTML(p, manifest, 'other', []).includes('href="https://lwliann.com/privacy-pinyin-games.html" target="_blank" rel="noopener">Privacy notice</a>'), `${id} page shows it`)
+  }
+  for (const p of products) if (p.privacyUrl) assert.match(p.privacyUrl, /^https:\/\/lwliann\.com\/privacy-[a-z-]+\.html$/, `${p.id} privacy link`)
+})

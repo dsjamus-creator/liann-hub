@@ -49,7 +49,7 @@
         { "os": "android", "store": "play", "storeUrl": "", "status": "testing", "note": "In internal testing on Google Play." }
       ],
       "links": [["Learning with LiANN", "https://lwliann.com/"]],
-      "privacyUrl": "",
+      "privacyUrl": "https://lwliann.com/privacy-pinyin-games.html",
       "support": "enquiries@lwliann.com"
     },
     {
@@ -71,7 +71,7 @@
         { "os": "android", "store": "play", "storeUrl": "", "status": "soon", "note": "An Android build of the crossword is on its way." }
       ],
       "links": [["Learning with LiANN", "https://lwliann.com/"]],
-      "privacyUrl": "",
+      "privacyUrl": "https://lwliann.com/privacy-pinyin-games.html",
       "support": "enquiries@lwliann.com"
     },
     {
@@ -93,7 +93,7 @@
         { "os": "windows", "store": "microsoft", "storeUrl": "", "slot": "mahjong-tones/test-build", "status": "soon", "note": "The Unity edition for Windows is being prepared for the Microsoft Store." }
       ],
       "links": [["Learning with LiANN", "https://lwliann.com/"]],
-      "privacyUrl": "",
+      "privacyUrl": "https://lwliann.com/privacy-pinyin-games.html",
       "support": "enquiries@lwliann.com"
     },
     {
