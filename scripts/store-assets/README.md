@@ -23,6 +23,10 @@ Fonts (Nunito, Noto Sans SC); without the fonts the glyphs fall back to the syst
 | Microsoft Store | `tile-300.png` (1:1 app tile), `box-1080.png` (1:1 box art), `poster-720x1080.png` (2:3), `hero-1920x1080.png` (16:9 super hero), `desktop-NN.png` (1,920 × 1,080) |
 | Apple App Store | `icon-1024.png` (no alpha) |
 
+**PolyFlow on Google Play is hand-supplied.** `store-assets/polyflow/google-play/` (icon, feature graphic, phone and tablet screenshots) holds the
+Georgia set made outside this generator and added on 26 Oct 2026 (it replaced the generated files). Running `build.mjs polyflow` writes the
+generated set over it; restore these files from git if that happens. The adaptive icon layers there are still the generated ones.
+
 Products, glyphs, one-liners and the screenshot captions are in `products.json`; the glyphs are
 the ones the hub's Apps page uses (`src/config.js`).
 
