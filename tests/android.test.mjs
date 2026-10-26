@@ -28,4 +28,7 @@ test('no signing key or password is in the repository; release signing comes fro
   const wf = await read('.github/workflows/hub-android.yml')
   assert.match(wf, /secrets\.HUB_ANDROID_KEYSTORE_B64/); assert.match(wf, /permissions:\n  contents: read/)
   assert.doesNotMatch(wf, /pull_request_target/)
+  assert.match(wf, /if: github\.event_name == 'workflow_dispatch'\n\s+env:\n\s+GH_TOKEN/, 'the release step runs only when started by hand')
+  assert.match(wf, /gh release create[^\n]*--draft --prerelease/, 'the release is always a draft')
+  assert.equal((wf.match(/contents: write/g) || []).length, 1, 'write access is granted once, for the draft release')
 })
