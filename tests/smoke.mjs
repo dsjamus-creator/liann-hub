@@ -40,6 +40,25 @@ async function mock(context, { student = true, tour = false } = {}) {
     if (u.pathname.endsWith('/logout')) return r.fulfill({ status: 204, body: '' })
     return r.fulfill({ status: 404, json: {} })
   })
+  // The support form and live chat (lwl-backend /support/...): staff online or not, enquiries and chat messages recorded.
+  seen.support = { online: false, enquiries: [], chat: null, messages: [] }
+  await context.route('https://lwl-backend-mhgo.onrender.com/support/**', r => {
+    const req = r.request(), url = new URL(req.url()), p = url.pathname, S = seen.support
+    if (p === '/support/chat/status') return r.fulfill({ json: { staffOnline: S.online } })
+    if (p === '/support/enquiries') { S.enquiries.push(req.postDataJSON()); return r.fulfill({ status: 201, json: { ok: true, reference: 'SUP-TEST23' } }) }
+    if (p === '/support/chat' && req.method() === 'POST') {
+      if (!S.online) return r.fulfill({ status: 409, json: { error: 'no_staff_online' } })
+      S.chat = req.postDataJSON(); S.messages = [{ id: 1, from: 'you', body: S.chat.message, at: 'now' }]
+      return r.fulfill({ status: 201, json: { ok: true, chatId: '11111111-1111-4111-8111-111111111111', token: 't'.repeat(43), staffOnline: true } })
+    }
+    if (/\/messages$/.test(p)) { const m = { id: S.messages.length + 1, from: 'you', body: req.postDataJSON().body, at: 'now' }; S.messages.push(m); return r.fulfill({ status: 201, json: { message: m } }) }
+    if (/^\/support\/chat\/[0-9a-f-]{36}$/.test(p)) {
+      assert.equal(req.headers()['x-chat-token'], 't'.repeat(43), 'the chat token travels as a header')
+      const after = Number(url.searchParams.get('after'))
+      return r.fulfill({ json: { status: S.messages.some(m => m.from === 'support') ? 'active' : 'waiting', staffOnline: S.online, messages: S.messages.filter(m => m.id > after), offerDetails: false, reference: null } })
+    }
+    return r.fulfill({ status: 404, json: { error: 'chat_not_found' } })
+  })
   await context.route('https://lwl-backend-mhgo.onrender.com/learning/**', r => {
     assert.equal(r.request().headers().authorization, 'Bearer at')
     const p = new URL(r.request().url()).pathname
@@ -323,10 +342,10 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     assert.equal(await page.locator('[data-app="poly"] [data-page="polyflow"]').getAttribute('href'), '/polyflow')
   })
   await step(`${tag}: the menu matches the approved design and every page renders`, async () => {
-    if (tag === 'desktop') assert.deepEqual(await page.locator('nav.rail .lbl').allInnerTexts(), ['Home', 'Apps', 'Library', 'Read', 'Figures', 'Discover', 'Kids', 'Shop', 'Downloads', 'Plan'])
+    if (tag === 'desktop') assert.deepEqual(await page.locator('nav.rail .lbl').allInnerTexts(), ['Home', 'Apps', 'Library', 'Read', 'Figures', 'Discover', 'Kids', 'Shop', 'Downloads', 'Plan', 'Help'])
     else {
       assert.deepEqual(await page.locator('nav.tabs .lbl').allInnerTexts(), ['Home', 'Apps', 'Library', 'Downloads', 'More'])
-      await page.click('#morebtn'); assert.deepEqual(await page.locator('nav.moresheet .lbl').allInnerTexts(), ['Read', 'Figures', 'Discover', 'Kids', 'Shop', 'Plan'])
+      await page.click('#morebtn'); assert.deepEqual(await page.locator('nav.moresheet .lbl').allInnerTexts(), ['Read', 'Figures', 'Discover', 'Kids', 'Shop', 'Plan', 'Help'])
       await shot(page, 'phone-more')
       await page.click('nav.moresheet [data-nav="shop"]'); await page.locator('[data-shopf]').first().waitFor(); assert.equal(await page.locator('nav.moresheet').count(), 0)
     }
@@ -338,6 +357,36 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     await page.goto(url + '#shop'); assert.equal(await page.locator('main .acts button:not([disabled])').count(), 0, 'nothing in the shop can be bought yet')
     await page.click('[data-shopf="Figures"]'); assert.equal(await page.locator('main .grid > .c').count(), 2)
     await page.goto(url + '#plan'); await page.click('[data-planf="Organisations"]'); assert.match(await page.locator('main').innerText(), /Education Department/)
+  })
+  await step(`${tag}: Help shows the FAQ, the support form sends a message, and live chat works while staff are online`, async () => {
+    seen.support.online = false
+    await page.goto(url + '#help'); await page.locator('details.faq').first().waitFor()
+    assert.equal(await page.locator('details.faq').count(), 7)
+    await page.locator('details.faq[data-faq="sign-in"] summary').click()
+    assert.equal(await page.locator('details.faq[data-faq="sign-in"] li').count(), 3, 'the mini-guide steps show')
+    await page.locator('details.faq[data-faq="free"] summary').click()
+    assert.match(await page.locator('main').innerText(), /Do I have to pay[\s\S]*Plans are for sharing/)
+    await page.locator('.lwls').waitFor(); await page.getByText('Chat is offline: leave a message').waitFor()
+    assert.equal(await page.getByRole('button', { name: 'Start live chat' }).isVisible(), false, 'no chat button while nobody is online')
+    assert.equal(await page.locator('#lwls-email').inputValue(), 'ann.mingen@example.com', 'the signed-in email is prefilled')
+    await page.selectOption('#lwls-topic', 'setlists'); await page.fill('#lwls-message', 'My saved words are missing from the Library.')
+    await page.getByRole('button', { name: 'Send message' }).click()
+    await page.getByText('SUP-TEST23').waitFor()
+    assert.deepEqual([seen.support.enquiries[0].source, seen.support.enquiries[0].product, seen.support.enquiries[0].topic, seen.support.enquiries[0].email], ['hub-support', 'hub', 'setlists', 'ann.mingen@example.com'])
+    await noOverflow(page); await shot(page, `${tag}-help`)
+    // Staff online: chat is offered, and survives the hub redrawing around it.
+    seen.support.online = true
+    await page.reload(); await page.getByText('Live chat is available').waitFor()
+    await page.fill('#lwls-message', 'Is anyone there?'); await page.getByRole('button', { name: 'Start live chat' }).click()
+    await page.getByText('Waiting for someone to join').waitFor()
+    seen.support.messages.push({ id: 2, from: 'support', body: 'Hello, how can I help?', at: 'now' })
+    await page.locator('.lwls-msg.support').waitFor()
+    await page.evaluate(() => { location.hash = '#plan' }); await page.locator('main').getByText('Plans', { exact: true }).first().waitFor()
+    await page.evaluate(() => { location.hash = '#help' }); await page.locator('.lwls-msg.support').waitFor()
+    assert.equal(await page.locator('.lwls-msg').count(), 2, 'the chat survived a trip to another page, with nothing repeated')
+    await page.fill('#lwls-say', 'The Library is empty'); await page.keyboard.press('Enter')
+    await page.locator('.lwls-msg.you', { hasText: 'The Library is empty' }).waitFor()
+    await noOverflow(page); await shot(page, `${tag}-help-chat`)
   })
   await step(`${tag}: appearance changes and is remembered`, async () => {
     await page.goto(url + '#plan'); await page.locator('#apbtn2').click()

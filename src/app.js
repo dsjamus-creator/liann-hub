@@ -22,6 +22,7 @@ const S = { viewId: viewId(),
   theme: theme && DS.some(d => d[0] === theme.ds) && /^(light|dark)$/.test(theme.t) ? theme : { ds: 'liann', t: 'dark' },
   recent: [], downloads: null, comics: null, reader: null, progress: {}, setlists: null, openList: null, query: '', busy: false, error: '', fix: '',
   household: undefined, learner: null, hhError: '', hhBusy: false,
+  faq: undefined,
 }
 
 function hashParts() { const [k, arg] = location.hash.slice(1).split('/'); try { return [k, arg ? decodeURIComponent(arg) : ''] } catch { return [k, ''] } }
@@ -57,11 +58,37 @@ async function householdDo(method, path, body, done) {
   S.hhBusy = false; await loadHousehold()
 }
 
+// The support widget keeps its own state (a chat in progress, a half-written message), so it is created once and moved
+// into each fresh render's #support-mount rather than rebuilt; it is dropped when the person signs out.
+let supportRoot = null
+function mountHelp() {
+  const slot = $('#support-mount')
+  if (!slot) return
+  if (!supportRoot) {
+    supportRoot = document.createElement('div')
+    const root = supportRoot
+    import('./support-widget.js').then(({ mountSupport }) => mountSupport(root, { backend: config.backend, source: 'hub-support', product: 'hub', email: S.user?.email || '' }))
+      .catch(() => { root.textContent = 'Support could not load. Please write to us from the website, or try again shortly.' })
+  }
+  slot.replaceChildren(supportRoot)
+  if (S.faq === undefined) loadFaq()
+}
+async function loadFaq() {
+  S.faq = false
+  try {
+    const res = await fetch('data/faq.json', { cache: 'no-cache' })
+    const data = res.ok ? await res.json() : null
+    S.faq = Array.isArray(data?.items) ? data.items : null
+  } catch { S.faq = null }
+  if (S.view === 'hub' && S.page === 'help') render()
+}
+
 function render() {
   const view = { loading: vLoading, email: vEmail, code: vCode, who: vWho, hub: vHub }[S.view]
   const focused = document.activeElement?.id
   $('#root').innerHTML = view(S)
   bind()
+  if (S.view === 'hub' && S.page === 'help') mountHelp()
   if (focused === 'q' || focused === 'ts') { const el = $('#' + focused); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length) } }
 }
 
@@ -391,7 +418,7 @@ function bind() {
     const ok = $('#hhagree').checked
     householdDo('POST', '/children', { name: $('#hhcname').value, dateOfBirth: $('#hhcdob').value, guardianName: $('#hhgname').value,
       agreements: { terms: ok, privacy: ok } }, 'Child profile added') }
-  document.querySelectorAll('#signout').forEach(b => { b.onclick = async () => { await account.signOut(); if (await signedOut()) toast('Signed out') } })
+  document.querySelectorAll('#signout').forEach(b => { b.onclick = async () => { await account.signOut(); if (await signedOut()) { supportRoot = null; toast('Signed out') } } })
 
   document.querySelectorAll('[data-nav]').forEach(b => { b.onclick = () => {
     S.page = b.dataset.nav; S.openList = null; S.appf = b.dataset.f || 'All'; S.more = false; S.notif = false

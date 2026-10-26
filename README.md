@@ -1,6 +1,6 @@
 # Learning with LiANN hub
 
-The browser hub for **app.lwliann.com**. It is a static web app with no build step: plain HTML, CSS and ES modules. Its look and menu follow the approved hub design (https://claude.ai/artifact/VtAytf4capbkRU6NDA35yh; also `learningwithliann-registry/HUB-MOCKUP/liann-hub.html`): Home, Apps, Library, Read, Figures, Discover, Kids, Shop, Downloads and Plan. On phones the tab bar shows Home, Apps, Library and Downloads, and **More** opens the rest.
+The browser hub for **app.lwliann.com**. It is a static web app with no build step: plain HTML, CSS and ES modules. Its look and menu follow the approved hub design (https://claude.ai/artifact/VtAytf4capbkRU6NDA35yh; also `learningwithliann-registry/HUB-MOCKUP/liann-hub.html`): Home, Apps, Library, Read, Figures, Discover, Kids, Shop, Downloads, Plan and Help. On phones the tab bar shows Home, Apps, Library and Downloads, and **More** opens the rest.
 
 ## What it does
 
@@ -13,6 +13,7 @@ The browser hub for **app.lwliann.com**. It is a static web app with no build st
 | Downloads, Read, Kids | `data/downloads.json`, a copy of the registry's `downloads/manifest.json`. A file is offered only when its entry has a file, a size and a SHA-256; a Kids card with no file is not shown at all (the reserved Flight colouring book has an entry in the manifest but no card until its PDF exists). |
 | Figures | Early 3D models drawn in the browser with three.js r128 (MIT), served from `vendor/three-r128/` so the page's script policy stays `'self'`. It loads only when Figures opens. |
 | Shop | The design's items, all "Coming soon" with prices to be set. Nothing can be bought yet. |
+| Help | The FAQ with mini-guides (`data/faq.json`, shared with the website) and the support form with live chat (`src/support-widget.js`, the canonical copy lives in lwl-backend `public/support/`). Chat is offered only while a staff member has the Admin chat console open; otherwise the form takes a message and the reply comes by email. |
 | Plan | The current plan (Free), account and sign-out, appearance, and the Learner, Tutor and Organisation plans. Plans other than Free say "Coming soon". |
 
 Not in this version: profiles and permissions, buying plans or shop items, and comic reading. They need content or backend work first.

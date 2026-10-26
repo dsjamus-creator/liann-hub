@@ -33,4 +33,4 @@ export const CODE_LENGTH = 6
 export const appUrl = app => app.url || (app.path ? new URL(app.path, config.gamesOrigin).href : null)
 
 // The menu of the approved hub design (claude.ai/artifact/VtAytf4capbkRU6NDA35yh).
-export const NAV = [['home', 'Home'], ['apps', 'Apps'], ['library', 'Library'], ['read', 'Read'], ['figures', 'Figures'], ['discover', 'Discover'], ['kids', 'Kids'], ['shop', 'Shop'], ['downloads', 'Downloads'], ['plan', 'Plan']]
+export const NAV = [['home', 'Home'], ['apps', 'Apps'], ['library', 'Library'], ['read', 'Read'], ['figures', 'Figures'], ['discover', 'Discover'], ['kids', 'Kids'], ['shop', 'Shop'], ['downloads', 'Downloads'], ['plan', 'Plan'], ['help', 'Help']]
