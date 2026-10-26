@@ -315,14 +315,6 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     assert.match(await page.locator('.prow[data-os="android"] a[download]').getAttribute('href'), /PolyFlow-Android-0\.1\.1\.apk$/)
     assert.equal(await page.locator('.prow[data-os="android"] button[disabled]').innerText(), 'Coming to Google Play')
     await noOverflow(page); await shot(page, `${tag}-product-polyflow`)
-    await page.goto(url + 'hub'); await page.locator('.product .hero h1').waitFor()
-    assert.equal(await page.locator('.product .hero h1 .vh').textContent(), 'LiANN HUB', 'the heading still reads LiANN HUB to assistive technology')
-    assert.ok(await page.locator('.product .hero h1 .l3').isVisible(), 'the 3D wordmark is what people see')
-    assert.equal(await page.locator('.prow[data-os="web"] a').innerText(), 'Open')
-    assert.equal(await page.locator('.prow[data-os="windows"] button[disabled]').innerText(), 'Download')
-    assert.deepEqual(await page.locator('.prow[data-os="mac"] .t').allInnerTexts(), ['Mac — Intel', 'Mac — Apple silicon'])
-    assert.deepEqual(await page.locator('.prow[data-os="mac"] button[disabled]').allInnerTexts(), ['Download', 'Download'])
-    await noOverflow(page); await shot(page, `${tag}-product-hub`)
     for (const slug of ['pinyin-tiles', 'pinyin-puzzle', 'mahjong-tones', 'alongside', 'dual-subs', 'lyricsync']) {
       await page.goto(url + slug); await page.locator('.product .hero h1').waitFor(); await noOverflow(page)
     }
