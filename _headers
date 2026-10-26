@@ -14,3 +14,11 @@
 /.well-known/security.txt
   Content-Type: text/plain; charset=utf-8
   Cache-Control: public, max-age=86400
+
+/manifest.webmanifest
+  Content-Type: application/manifest+json
+  Cache-Control: no-cache
+
+/sw.js
+  Content-Type: text/javascript; charset=utf-8
+  Cache-Control: no-cache
