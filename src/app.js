@@ -1,3 +1,4 @@
+import { initInstall, currentMode, onInstallChange, promptInstall } from './pwa.js'
 import { config, NAV, CODE_LENGTH } from './config.js'
 import { createAccount } from './account.js'
 import { loadDownloads } from './downloads.js'
@@ -397,6 +398,7 @@ function bind() {
     S.page = b.dataset.nav; S.openList = null; S.appf = b.dataset.f || 'All'; S.more = false; S.notif = false
     history.replaceState(null, '', '#' + S.page); render(); const m = $('#main'); if (m) m.scrollTop = 0
   } })
+  document.querySelectorAll('[data-install]').forEach(b => { b.onclick = () => { promptInstall() } })
   document.querySelectorAll('[data-appf]').forEach(b => { b.onclick = () => { S.appf = b.dataset.appf; render() } })
   document.querySelectorAll('[data-open]').forEach(a => { a.onclick = () => {
     S.recent = [a.dataset.open, ...S.recent.filter(x => x !== a.dataset.open)].slice(0, 3)
@@ -463,6 +465,7 @@ async function start() {
     history.replaceState(null, '', location.pathname + location.search)
   }
   applyTheme(); render()
+  initInstall(); S.install = currentMode(); onInstallChange(() => { S.install = currentMode(); if (S.view === 'hub') render() })
   loadComics(config.comicsManifest).then(c => { S.comics = c }, () => { S.comics = [] }).finally(() => { if (S.view === 'hub') { render(); openFromHash() } })
   loadDownloads(config.downloadsManifest).then(d => { S.downloads = d }, e => { S.downloads = e }).finally(() => { if (S.view === 'hub') render() })
   // A shared comic link opens after the reader signs in with a LiANN account.

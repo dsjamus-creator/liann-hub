@@ -227,8 +227,21 @@ function downloadsFor(s, filter) {
   return list.length ? `<div class="grid">${list.map(downloadCard).join('')}</div>` : '<div class="empty">Nothing here yet.</div>'
 }
 
+// "Install on this device": the hub as an app on Android, tablets, iPhone, iPad, Windows and Mac. Hidden when it already is one.
+const INSTALL_TEXT = {
+  prompt: 'Add the hub to your home screen or desktop. It opens in its own window and always shows the latest version.',
+  ios: 'On iPhone and iPad, tap the Share button, then choose Add to Home Screen.',
+  browser: "In your browser's menu, choose Install app or Add to Home screen. Chrome and Edge also show an install icon in the address bar.",
+}
+export function installCard(mode) {
+  if (!INSTALL_TEXT[mode]) return ''
+  return `<div class="c" data-install-card="${mode}"><div class="t">Install LiANN HUB on this device</div><div class="s">Android, tablets, iPhone, iPad, Windows and Mac</div>
+  <div class="d">${esc(INSTALL_TEXT[mode])}</div>${mode === 'prompt' ? '<div class="acts"><button class="btn" data-install>Install</button></div>' : ''}</div>`
+}
+
 function pDownloads(s) {
   return `<section class="sec"><div class="sechead"><h2>Downloads</h2><span class="muted" style="font-size:.85rem">Latest files, checked and signed off</span></div>
+  ${installCard(s.install) ? `<div class="grid">${installCard(s.install)}</div>` : ''}
   ${downloadsFor(s, d => d.product !== 'figures' && d.product !== 'bella-liann')}
   <p class="muted" style="margin:0;font-size:.85rem">Each file is listed from a signed-off manifest with its version, size and source. The manifest (<a href="data/downloads.json" style="color:inherit">downloads.json</a>) carries every file's SHA-256 checksum for anyone who wants to verify a download.</p></section>`
 }

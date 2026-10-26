@@ -120,6 +120,8 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
   })
   await step(`${tag}: Downloads withholds private tester builds`, async () => {
     await page.goto(url + '#downloads'); await page.locator('[data-slot]').first().waitFor()
+    assert.match(await page.locator('[data-install-card]').first().getAttribute('data-install-card'), /^(prompt|browser)$/, 'the Downloads page offers to install the hub on this device')
+    assert.match(await page.locator('[data-install-card]').first().innerText(), /Install LiANN HUB on this device/)
     assert.equal(await page.locator('[data-slot]').count(), 28, 'the reserved figures and comic slots are hidden from Downloads; all three HUB installer slots are waiting')
     assert.equal(await page.locator('[data-slot] a[download]').count(), 17, 'PolyFlow 0.1.1 for Windows and Android are public (lwl-backend docs/LIANN-DOWNLOADS.md)')
     assert.equal(await page.locator('[data-slot="lyricsync/extension"] a[download]').getAttribute('href'), 'https://downloads.lwliann.com/lyricsync/chrome-edge/0.9.31/LyricSync-v0.9.31-hub-public-20261021.zip?v=9860fee62532')
@@ -573,6 +575,29 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
   await context2.close()
 }
 
-await browser.close(); server.close()
+{
+  const context = await browser.newContext({ viewport: { width: 1280, height: 860 } })
+  await context.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ status: 200, contentType: 'text/css', body: '' }))
+  const page = await context.newPage()
+  await step('the hub is installable: manifest, icons, service worker and the offline page', async () => {
+    await page.goto(url)
+    assert.equal(await page.locator('link[rel="manifest"]').getAttribute('href'), '/manifest.webmanifest')
+    const res = await page.request.get(url + 'manifest.webmanifest')
+    assert.equal(res.status(), 200); assert.match(res.headers()['content-type'], /manifest\+json/)
+    const manifest = await res.json()
+    for (const icon of manifest.icons) assert.equal((await page.request.get(url + icon.src.slice(1))).status(), 200, `${icon.src} loads`)
+    await page.evaluate(() => navigator.serviceWorker.ready)
+    await page.reload()
+    assert.ok(await page.evaluate(() => !!navigator.serviceWorker.controller), 'the service worker controls the page')
+    // Playwright's offline switch does not reach the service worker's own requests, so really stop the server (this step runs last).
+    server.closeAllConnections?.(); await new Promise(r => server.close(r))
+    await page.goto(url + 'polyflow').catch(() => {})
+    assert.match(await page.locator('h1').innerText(), /You are offline/, 'an offline visit shows the offline page')
+    assert.ok((await page.locator('a[href="/"]').count()) >= 1)
+  })
+  await context.close()
+}
+
+await browser.close(); server.close(() => {})
 if (failures) { console.log(`${failures} smoke step(s) failed`); process.exit(1) }
 console.log('Smoke test passed')

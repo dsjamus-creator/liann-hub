@@ -1,0 +1,19 @@
+{
+  "name": "Learning with LiANN",
+  "short_name": "LiANN HUB",
+  "description": "Your Learning with LiANN apps, games, Library and downloads in one place.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#121410",
+  "theme_color": "#121410",
+  "lang": "en-GB",
+  "categories": ["education"],
+  "icons": [
+    { "src": "/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
