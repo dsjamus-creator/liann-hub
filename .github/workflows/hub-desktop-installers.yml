@@ -56,3 +56,33 @@ jobs:
           path: apps/liann-hub-desktop/dist/*.dmg
           if-no-files-found: error
           retention-days: 30
+
+  # Hand-started runs only: gather the three installers into one DRAFT pre-release (visible only to people with write
+  # access) with a checksum file, so the owner can inspect them. Nothing is published to learners by this job; public
+  # files go to the downloads bucket under the immutable-key rule in lwl-backend docs/LIANN-DOWNLOADS.md.
+  draft-release:
+    if: github.event_name == 'workflow_dispatch'
+    needs: desktop
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: liann-hub-windows-installer
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: liann-hub-mac-dmg
+          path: dist
+      - name: Checksum and draft the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          ls -l dist
+          (cd dist && sha256sum LiANN-HUB-Setup-*.exe LiANN-HUB-*-x64.dmg LiANN-HUB-*-arm64.dmg > SHA256SUMS.txt && cat SHA256SUMS.txt)
+          version=$(ls dist/LiANN-HUB-Setup-*.exe | sed -n 's/.*Setup-\(.*\)\.exe/\1/p')
+          test -n "$version"
+          printf 'Unsigned preview installers for LiANN HUB %s from commit %s. Windows may show a SmartScreen warning; on a Mac, open the disk image from the context menu the first time.\n' "$version" "$GITHUB_SHA" > "$RUNNER_TEMP/notes.md"
+          gh release create "hub-desktop-v$version-$GITHUB_RUN_ID" dist/*.exe dist/*.dmg dist/SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft --prerelease --title "LiANN HUB $version installers (preview, run $GITHUB_RUN_ID)" --notes-file "$RUNNER_TEMP/notes.md"
