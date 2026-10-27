@@ -58,3 +58,12 @@ It runs at desktop and phone sizes, checks for sideways overflow, and fails on a
 Copy the registry's `downloads/manifest.json` to `data/downloads.json`. Each entry has a `producer`: `claude` for the Game 3 Unity package and test build, and `codex` for everything else. Entries need `hubSlot`, `name`, `file` (an https URL, or a path relative to `data/`), `bytes` and `sha256` before a Download button appears. The apps' `slot` values in `src/config.js` must exist in the manifest, and a unit test checks this.
 
 Deploying is a separate, owner-approved step. See [docs/DEPLOY.md](docs/DEPLOY.md).
+
+## GitHub Codespaces
+
+Create a codespace from **Code → Codespaces**. On first start `scripts/bootstrap.sh` installs the packages (`npm ci`),
+Chromium for the smoke test (and sets `CHROME_PATH` for new terminals), and the Codex and Claude Code CLIs. Then
+`npm start` gives a preview on the forwarded port 4173 and `npm run check` runs the tests;
+`scripts/verify-environment.sh` prints the tool versions. `.devcontainer/` is in `.assetsignore`, so it is never uploaded
+with the site. Deploying still goes through the GitHub workflow; a deploy from a codespace would need a Cloudflare token
+stored as a Codespaces secret, which this setup does not add.

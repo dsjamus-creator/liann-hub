@@ -25,7 +25,7 @@ test('the content security policy stays tight', async () => {
 
 test('nothing in the published site holds a secret, and source files are not published', async () => {
   const ignore = await read('.assetsignore')
-  for (const p of ['tests', 'scripts', 'docs', 'worker', 'node_modules', '.git', '.github', '.env', 'package.json', 'wrangler.jsonc']) assert.ok(ignore.split(/\r?\n/).includes(p), `${p} is excluded from the upload`)
+  for (const p of ['tests', 'scripts', 'docs', 'worker', 'node_modules', '.git', '.github', '.devcontainer', '.env', 'package.json', 'wrangler.jsonc']) assert.ok(ignore.split(/\r?\n/).includes(p), `${p} is excluded from the upload`)
   const files = [...await readdir(new URL('../src', import.meta.url)).then(l => l.map(f => `src/${f}`)), 'index.html', 'data/comics.json', 'data/downloads.json', 'wrangler.jsonc', '.github/workflows/deploy.yml']
   for (const f of files) {
     const text = await read(f)
