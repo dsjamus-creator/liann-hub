@@ -3,6 +3,7 @@
 .gitignore
 .assetsignore
 .github
+.devcontainer
 node_modules
 .wrangler
 tests
