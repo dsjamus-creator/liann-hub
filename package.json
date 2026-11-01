@@ -14,7 +14,7 @@
   },
   "devDependencies": {
     "playwright-core": "1.56.1",
-    "wrangler": "^4.40.0"
+    "wrangler": "^4.152.0"
   },
   "overrides": {
     "undici": "7.30.1"
