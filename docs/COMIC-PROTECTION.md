@@ -23,6 +23,8 @@ The old public page copies that were under `comics/ep-01/` in the `liann-downloa
 
 On 2026-11-07 the Read page moved from the two B&W editions (`ep-01`) to the v28 Clean Pencils (`issue1-pencils`) and Cinematic Painted (`issue1-painted`) editions of Issue One. Each has 25 reader pages in `liann-reader` (`cover-a-page`, `000` inside front cover, `001`–`022`, and the variant cover `cover-b-page` at the back) and two public card covers under `comics/<edition>/` in `liann-downloads`. The `ep-01` files can be deleted from both buckets once the new editions are live.
 
+`scripts/comics/make-reader-pages.ps1 -Source <Drive folder>` makes those 25 reader files from a v28 page folder on a Windows PC (Node.js needed). It writes them to `reader-pages` inside the folder.
+
 To add another episode: upload its pages to `liann-reader` under `reader/<episode>/<page>.webp`, list them in `data/comics.json` as `comic/<episode>/<page>.webp`, and keep only the cover thumbnails in the public bucket.
 
 ## The deploy token
