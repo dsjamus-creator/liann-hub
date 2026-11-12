@@ -4,6 +4,8 @@
 // Tokens stay in this origin's localStorage and are never logged.
 
 const SESSION_KEY = 'liann-hub-session-v1'
+const SCHOOL_SESSION_KEY = 'liann-hub-school-session-v1'
+const SCHOOL_PENDING_KEY = 'liann-hub-school-pending-v1'
 
 export class AccountError extends Error {
   constructor(message, code, status) { super(message); this.code = code; this.status = status }
@@ -15,6 +17,11 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
   const read = () => { try { return JSON.parse(storage.getItem(SESSION_KEY) || 'null') } catch { return null } }
   const write = value => { try { storage.setItem(SESSION_KEY, JSON.stringify(value)); return true } catch { return false } }
   const clear = () => { try { storage.removeItem(SESSION_KEY) } catch { /* storage blocked */ } }
+  const schoolRead = () => { try { return JSON.parse(globalThis.sessionStorage?.getItem(SCHOOL_SESSION_KEY) || 'null') } catch { return null } }
+  const schoolWrite = value => { try { globalThis.sessionStorage?.setItem(SCHOOL_SESSION_KEY, JSON.stringify(value)); return true } catch { return false } }
+  const schoolClear = () => { try { globalThis.sessionStorage?.removeItem(SCHOOL_SESSION_KEY); globalThis.sessionStorage?.removeItem(SCHOOL_PENDING_KEY) } catch { /* storage blocked */ } }
+  const randomB64Url = size => { const bytes = crypto.getRandomValues(new Uint8Array(size)); return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') }
+  const sha256B64Url = async value => { const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value)); return btoa(String.fromCharCode(...new Uint8Array(hash))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') }
 
   async function json(url, options = {}) {
     let response
@@ -119,12 +126,73 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
   }
 
   async function signOut() {
+    const school = schoolRead()
+    if (school?.access_token) await fetch(`${backend}/auth/handoff/revoke`, { method: 'POST',
+      headers: { Authorization: `Bearer ${school.access_token}` }, mode: 'cors', credentials: 'omit' }).catch(() => {})
+    schoolClear()
     const token = await accessToken().catch(() => null)
     clear()
     if (!token || !authConfig) return
     await fetchImpl(`${authConfig.supabaseUrl}/auth/v1/logout`, {
       method: 'POST', headers: { apikey: authConfig.publishableKey, Authorization: `Bearer ${token}` }, body: '{}',
     }).catch(() => {})
+  }
+
+  async function beginSchoolSignIn() {
+    const codeVerifier = randomB64Url(32)
+    const state = randomB64Url(32)
+    const codeChallenge = await sha256B64Url(codeVerifier)
+    try { globalThis.sessionStorage?.setItem(SCHOOL_PENDING_KEY, JSON.stringify({ codeVerifier, state })) }
+    catch { throw new AccountError('This browser blocked temporary sign-in storage.', 'storage') }
+    const url = new URL('/auth/entra/start', backend)
+    url.searchParams.set('client', 'hub')
+    url.searchParams.set('hub_state', state)
+    url.searchParams.set('code_challenge', codeChallenge)
+    globalThis.location.assign(url.toString())
+  }
+
+  async function acceptSchoolCallback(hash) {
+    const params = new URLSearchParams(String(hash || '').replace(/^#/, ''))
+    const code = params.get('lwl_code'), state = params.get('lwl_state')
+    if (!code && !state) return null
+    let pending
+    try { pending = JSON.parse(globalThis.sessionStorage?.getItem(SCHOOL_PENDING_KEY) || 'null') } catch { pending = null }
+    schoolClear()
+    if (!pending?.state || !pending?.codeVerifier || state !== pending.state || !code)
+      throw new AccountError('School sign-in could not be matched to this browser. Start again.', 'bad_handoff')
+    const session = await json(`${backend}/auth/handoff/exchange`, { method: 'POST', mode: 'cors', credentials: 'omit',
+      headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code, state, codeVerifier: pending.codeVerifier }) })
+    if (!session.accessToken || !session.user?.email) throw new AccountError('School sign-in did not complete.', 'bad_handoff')
+    const value = { access_token: session.accessToken, expires_at: Math.floor(now() / 1000) + Number(session.expiresIn || 1200),
+      user: session.user, institutions: Array.isArray(session.institutions) ? session.institutions : [] }
+    if (!schoolWrite(value)) throw new AccountError('This browser could not keep the school sign-in session.', 'storage')
+    return value
+  }
+
+  function schoolSession() {
+    const session = schoolRead()
+    if (!session?.access_token || Number(session.expires_at) <= Math.floor(now() / 1000)) { schoolClear(); return null }
+    return session
+  }
+
+  async function schoolMemberships() {
+    const session = schoolSession()
+    if (!session) throw new AccountError('Sign in with your school again.', 'signed_out')
+    const result = await json(`${backend}/learning/institutions`, { mode: 'cors', credentials: 'omit',
+      headers: { Authorization: `Bearer ${session.access_token}` } })
+    return Array.isArray(result.institutions) ? result.institutions : []
+  }
+
+  async function linkSchoolIdentity() {
+    const token = await accessToken()
+    if (!token) throw new AccountError('Sign in to your LWL account first.', 'signed_out')
+    const response = await json(`${backend}/learning/session-pass`, { method: 'POST', mode: 'cors', credentials: 'omit',
+      headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ next: '/account/entra/link/start' }) })
+    let target
+    try { target = new URL(response.url) } catch { throw new AccountError('The account service returned an invalid link.', 'bad_pass') }
+    if (target.origin !== new URL(backend).origin) throw new AccountError('The account service returned an unexpected link.', 'bad_pass')
+    return target.href
   }
 
   async function backendGet(path) {
@@ -183,5 +251,7 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     }
   }
 
-  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, profileLink, household, householdAction, hasSession: () => Boolean(read()?.access_token) }
+  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, profileLink, household, householdAction,
+    beginSchoolSignIn, acceptSchoolCallback, schoolSession, schoolMemberships, linkSchoolIdentity,
+    hasInstitutionSession: () => Boolean(schoolSession()), hasSession: () => Boolean(read()?.access_token) }
 }

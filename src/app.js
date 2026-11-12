@@ -34,10 +34,11 @@ function openFromHash() {
 }
 function applyTheme() { document.documentElement.dataset.ds = S.theme.ds; document.documentElement.dataset.t = S.theme.t; store.set('liann-hub-theme', S.theme) }
 function toast(text) { const el = $('#toast'); el.textContent = text; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => { el.hidden = true }, 2200) }
-function go(view, extra = {}) { Object.assign(S, { error: '', busy: false }, extra, { view }); render(); if (view === 'who' || view === 'hub') loadHousehold() }
+function go(view, extra = {}) { Object.assign(S, { error: '', busy: false }, extra, { view }); render(); if ((view === 'who' || view === 'hub') && !S.institutional) loadHousehold() }
 
 // Couple and Family plans (One LiANN account C3). null = AlongSide has households switched off; nothing is shown.
 async function loadHousehold() {
+  if (S.institutional) return
   try { S.household = await account.household() } catch (error) { if (error.code === 'signed_out') return signedOut(); S.household = null }
   if (S.household?.household?.plan === 'family' && !S.policies)
     S.policies = (await account.householdAction('GET', '/policies').catch(() => ({}))).policies || null
@@ -75,7 +76,7 @@ async function sendCode(email) {
 }
 
 async function enterHub(user) {
-  S.user = user
+  S.user = user; S.institutional = false; S.institutions = []
   S.recent = store.get(accountKey('liann-hub-recent', user), [])
   S.progress = store.get(accountKey('liann-hub-reader', user), {})
   go('hub')
@@ -83,7 +84,15 @@ async function enterHub(user) {
   loadLibrary()
 }
 
+async function enterInstitutionHub(session) {
+  S.user = session.user; S.institutional = true; S.learner = null; S.household = null
+  S.institutions = await account.schoolMemberships()
+  S.page = 'home'; history.replaceState(null, '', '#home')
+  go('hub')
+}
+
 async function loadLibrary() {
+  if (S.institutional) return
   S.setlists = { status: 'loading' }
   if (S.view === 'hub') render()
   try { S.setlists = { status: 'ok', items: await account.setlists(S.learner?.id) } }
@@ -349,6 +358,12 @@ function bind() {
     }
     const usefix = $('#usefix'); if (usefix) usefix.onclick = () => { S.email = S.fix; S.fix = ''; render() }
   }
+  const school = $('#school-signin')
+  if (school) school.onclick = async () => {
+    S.error = ''; school.disabled = true
+    try { await account.beginSchoolSignIn() }
+    catch (error) { S.error = error.message; render() }
+  }
   const f2 = $('#f2')
   if (f2) {
     const ins = [...f2.querySelectorAll('.code input')]; ins[0].focus()
@@ -393,6 +408,13 @@ function bind() {
     householdDo('POST', '/children', { name: $('#hhcname').value, dateOfBirth: $('#hhcdob').value, guardianName: $('#hhgname').value,
       agreements: { terms: ok, privacy: ok } }, 'Child profile added') }
   document.querySelectorAll('#signout').forEach(b => { b.onclick = async () => { await account.signOut(); if (await signedOut()) toast('Signed out') } })
+  const linkSchool = $('#link-school'); if (linkSchool) linkSchool.onclick = async () => {
+    const tab = window.open('', '_blank')
+    if (!tab) { S.error = 'Allow a new tab to open the secure school-linking page, then try again.'; render(); return }
+    linkSchool.disabled = true
+    try { const target = await account.linkSchoolIdentity(); tab.opener = null; tab.location.href = target }
+    catch (error) { tab.close(); S.error = error.message; render() }
+  }
 
   document.querySelectorAll('[data-nav]').forEach(b => { b.onclick = () => {
     S.page = b.dataset.nav; S.openList = null; S.appf = b.dataset.f || 'All'; S.more = false; S.notif = false
@@ -459,6 +481,12 @@ window.addEventListener('hashchange', () => { if (S.view === 'hub') { S.page = p
 async function start() {
   // Returning from the sign-in link in the email: take the session out of the address before the hub reads it as a page.
   let linkError = ''
+  let schoolError = ''
+  if (new URLSearchParams(location.hash.slice(1)).has('lwl_code') || new URLSearchParams(location.hash.slice(1)).has('lwl_state')) {
+    try { await account.acceptSchoolCallback(location.hash) }
+    catch (error) { schoolError = error.message }
+    history.replaceState(null, '', location.pathname + location.search)
+  }
   if (/^#(access_token|error)=/.test(location.hash)) {
     try { const link = account.acceptLink(location.hash); if (link && !link.ok) linkError = link.message }
     catch (error) { linkError = error.message }
@@ -470,8 +498,12 @@ async function start() {
   loadDownloads(config.downloadsManifest).then(d => { S.downloads = d }, e => { S.downloads = e }).finally(() => { if (S.view === 'hub') render() })
   // A shared comic link opens after the reader signs in with a LiANN account.
   const gate = extra => go('email', extra)
-  if (!account.hasSession()) return gate(linkError ? { error: linkError } : undefined)
-  try { const user = await account.user(); user ? enterHub(user) : gate(linkError ? { error: linkError } : undefined) }
+  if (account.hasInstitutionSession()) {
+    try { return await enterInstitutionHub(account.schoolSession()) }
+    catch (error) { await account.signOut(); schoolError = error.message }
+  }
+  if (!account.hasSession()) return gate(linkError || schoolError ? { error: linkError || schoolError } : undefined)
+  try { const user = await account.user(); user ? enterHub(user) : gate(linkError || schoolError ? { error: linkError || schoolError } : undefined) }
   catch (error) { gate({ error: error.message }) }
 }
 start()

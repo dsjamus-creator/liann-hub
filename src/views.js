@@ -99,7 +99,10 @@ export function vEmail(s) {
   <p id="fix" class="note" ${s.fix ? '' : 'hidden'}>${s.fix ? `Did you mean <button type="button" class="link" id="usefix" style="color:var(--accent);padding:0">${esc(s.fix)}</button>? Press the button again to keep what you typed.` : ''}</p>
   ${s.error ? `<p class="note err" role="alert">${esc(s.error)}</p>` : ''}
   <button class="btn" type="submit" ${s.busy ? 'disabled' : ''}>${s.busy ? 'Sending…' : 'Send me a code'}</button>
-  <p class="note muted">No password. We email a ${CODE_LENGTH}-digit code each time you sign in. One LiANN account works here, in every game and in AlongSide. For ages 13 and over.</p></form></div>`
+  <p class="note muted">No password. We email a ${CODE_LENGTH}-digit code each time you sign in. One LiANN account works here, in every game and in AlongSide. For ages 13 and over.</p>
+  <div style="display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--muted);font-size:.8rem"><span style="height:1px;flex:1;background:var(--line)"></span>OR<span style="height:1px;flex:1;background:var(--line)"></span></div>
+  <button class="btn ghost" type="button" id="school-signin">Sign in with your school · Microsoft</button>
+  <p class="note muted">School access is checked by Learning with LiANN after sign-in.</p></form></div>`
 }
 
 export function vCode(s) {
@@ -427,7 +430,7 @@ function pPlan(s) {
   ${s.household?.household
     ? `<div class="c"><div class="t">${s.household.household.plan === 'family' ? 'Family' : 'Couple'} plan</div><div class="s">${s.household.household.role === 'owner' ? 'Plan holder' : 'Member of a household'}</div><div class="d">Every adult keeps their own LiANN account and SetLists.${s.household.household.plan === 'family' ? ' Children under 13 learn on their own profile.' : ''}</div></div>`
     : '<div class="c"><div class="t">Free</div><div class="s">Learner · no charge</div><div class="d">Pinyin games, Bella &amp; LiANN and your SetLists from every game.</div></div>'}
-  <div class="c"><div class="t">LiANN account</div><div class="s">${esc(s.user.email)}</div><div class="d">You sign in with a code sent to this email. The same account works in every game and in AlongSide.</div><div class="acts"><button class="btn ghost" id="signout">Sign out</button></div></div>
+  <div class="c"><div class="t">LiANN account</div><div class="s">${esc(s.user.email)}</div><div class="d">You sign in with a code sent to this email. The same account works in every game and in AlongSide.</div><div class="acts"><button class="btn ghost" id="link-school">Link school sign-in</button><button class="btn ghost" id="signout">Sign out</button></div></div>
   ${s.household ? '' : '<div class="c"><div class="t">Profiles</div><div class="s">1 profile</div><div class="d">Separate profiles for each learner arrive with Couple and Family plans.</div></div>'}
   <div class="c"><div class="t">Appearance</div><div class="s">${esc(DS.find(d => d[0] === th.ds)[1])} · ${th.t === 'dark' ? 'Dark' : 'Light'}</div><div class="d">LiANN, Amberline, Steelline, Cadence or Ivoryline, in light or dark.</div><div class="acts"><button class="btn ghost" id="apbtn2">Change</button></div></div></div></section>
   ${s.household ? householdSection(s) : ''}
@@ -464,6 +467,7 @@ const TAB_PAGES = ['home', 'apps', 'library', 'downloads']
 export const PAGES = { home: pHome, apps: pApps, library: pLibrary, read: pRead, figures: pFigures, discover: pDiscover, kids: pKids, shop: pShop, downloads: pDownloads, plan: pPlan }
 
 export function vHub(s) {
+  if (s.institutional) return vInstitutionHub(s)
   const p = profileOf(s.user), page = PAGES[s.page] ? s.page : 'home'
   return `<div class="app ${s.slim ? 'slim' : ''}">
   <header class="top"><button class="iconbtn menu" id="slim" aria-label="${s.slim ? 'Expand' : 'Collapse'} menu">${ico('menu')}</button>${LOCKUP}
@@ -474,4 +478,20 @@ export function vHub(s) {
   <main id="main"><div class="wrap fade">${PAGES[page](s)}</div></main>
   <nav class="tabs" aria-label="Main">${NAV.filter(([k]) => TAB_PAGES.includes(k)).map(rItem(page)).join('')}<button class="ritem" id="morebtn" aria-expanded="${!!s.more}" ${TAB_PAGES.includes(page) ? '' : 'aria-current="page"'}><span class="ic">${ico('menu')}</span><span class="lbl">More</span></button></nav>
   ${s.more ? `<nav class="moresheet" aria-label="More">${NAV.filter(([k]) => !TAB_PAGES.includes(k)).map(rItem(page)).join('')}</nav>` : ''}</div>${s.appear ? appearHTML(s.theme) : ''}${s.notif ? notifsHTML(s) : ''}${s.reader ? readerHTML(s) : ''}`
+}
+
+function vInstitutionHub(s) {
+  const memberships = Array.isArray(s.institutions) ? s.institutions : []
+  const roleName = role => ({ institution_admin: 'Institution administrator', teacher: 'Teacher', learner: 'Learner' }[role] || 'Member')
+  const membershipsWithApps = memberships.map(m => ({ ...m, availableApps: APPS.filter(a => Array.isArray(m.apps) && m.apps.includes(a.id) && a.st !== 'soon') }))
+  const hasApps = membershipsWithApps.some(m => m.availableApps.length)
+  return `<div class="gate fade">${decor()}<div class="card" style="width:min(900px,100%);text-align:left">
+    ${LOCKUP}<h1>School learning space</h1>
+    <p class="muted" style="margin:0 0 18px">Signed in as <b>${esc(s.user?.email || '')}</b></p>
+    ${memberships.length ? `<section class="sec"><h2>Your active school memberships</h2><div class="grid">${membershipsWithApps.map(m => `<div class="c"><div class="t">${esc(m.name)}</div><div class="s">${esc(roleName(m.role))}</div></div>`).join('')}</div></section>
+      ${hasApps ? `<section class="sec"><div class="sechead"><h2>Learning apps</h2></div><p class="muted">These apps are assigned to your school by Learning with LiANN. Each app checks its own permissions when you open school materials or class data.</p><div class="grid">${membershipsWithApps.flatMap(m => m.availableApps).filter((a, i, all) => all.findIndex(x => x.id === a.id) === i).map(a => appCard(a, s)).join('')}</div></section>`
+        : '<div class="c"><div class="t">No learning apps assigned yet</div><p class="muted">Your school sign-in is active, but an administrator has not assigned app access to your institution.</p></div>'}`
+      : `<div class="c"><div class="t">No active school membership found</div><p class="muted">Your Microsoft sign-in succeeded, but it does not grant class access by itself. Ask your school or Learning with LiANN administrator to confirm your membership.</p></div>`}
+    <div style="margin-top:20px"><button class="btn ghost" id="signout">Sign out</button></div>
+  </div></div>`
 }
