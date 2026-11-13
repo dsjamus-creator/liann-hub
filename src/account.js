@@ -201,6 +201,20 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     return json(`${backend}${path}`, { headers: { Authorization: `Bearer ${token}` } })
   }
 
+  const workspaceAccess = () => backendGet('/learning/workspace')
+  async function workspaceData(role) {
+    if (!['tutor','student'].includes(role)) throw new AccountError('Unknown workspace.', 'bad_workspace')
+    return backendGet('/learning/workspace/' + role)
+  }
+  async function workspaceLink(next) {
+    if (typeof next !== 'string' || !/^\/(?:tutor(?:#.*)?|student(?:#.*)?|calendar|authorboard\/|classroom\/\?lesson=[a-zA-Z0-9-]+)$/.test(next))
+      throw new AccountError('Unknown workspace action.', 'bad_workspace_path')
+    const result = await backendCall('POST', '/learning/session-pass', { next })
+    const url = new URL(result.url)
+    if (url.origin !== new URL(backend).origin || url.pathname !== '/auth/liann/continue') throw new AccountError('Invalid sign-in link.', 'bad_pass')
+    return url.href
+  }
+
   async function adminRequest(path, method = 'GET', body) {
     // No absolute URLs, traversal, cookie fallback or arbitrary proxy requests.
     if (typeof path !== 'string' || !/^\/admin\/[a-z0-9/?&=_%+@.,:-]+$/i.test(path === '/me' ? '/admin/whoami' : path) || path.includes('..') || /%2f|%5c|%2e/i.test(path))
@@ -320,7 +334,7 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     }
   }
 
-  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, learningProgress, progressSharingOptions, setProgressSharing, institutionClasses, classProgress, profileLink, household, householdAction, adminAccess, adminRequest,
+  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, learningProgress, progressSharingOptions, setProgressSharing, institutionClasses, classProgress, profileLink, household, householdAction, adminAccess, adminRequest, workspaceAccess, workspaceData, workspaceLink,
     beginSchoolSignIn, acceptSchoolCallback, schoolSession, schoolMemberships, linkSchoolIdentity,
     hasInstitutionSession: () => Boolean(schoolSession()), hasSession: () => Boolean(read()?.access_token) }
 }

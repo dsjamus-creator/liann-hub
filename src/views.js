@@ -1,3 +1,4 @@
+import { workspaceRail, workspacePage } from './workspace.js'
 // Pure render functions: state in, HTML string out. Markup and art follow the approved mockup.
 import { config, APPS, NAV, CODE_LENGTH, appUrl } from './config.js'
 import { ADMIN_SECTIONS, adminSection } from './admin.js'
@@ -6,6 +7,7 @@ import { clampPage, visiblePages } from './comics.js'
 import { watermarkStyle } from './pages.js'
 
 const I = {
+  progress: '<path d="M4 3v17h17M7 15l4-5 4 3 6-8"/>',
   shield: '<path d="M12 3 3 7v5c0 5 9 9 9 9s9-4 9-9V7z"/><path d="m8 12 3 3 5-6"/>',
   calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 11h18"/>',
   mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 6 9 7 9-7"/>',
@@ -505,14 +507,16 @@ function pAdmin(s) {
 export function vHub(s) {
   if (s.institutional) return vInstitutionHub(s)
   const isAdmin = s.admin?.superAdmin === true && !s.learner
-  const p = profileOf(s.user), page = s.page === 'admin' && isAdmin ? 'admin' : PAGES[s.page] ? s.page : 'home'
-  return `<div class="app ${isAdmin ? 'with-admin' : ''} ${s.slim ? 'slim' : ''}">
+  const hasWorkspace = !isAdmin && !s.learner && !!s.workspaceAccess
+  const isWorkspace = s.page === 'workspace' && hasWorkspace
+  const p = profileOf(s.user), page = isWorkspace ? 'workspace' : s.page === 'admin' && isAdmin ? 'admin' : PAGES[s.page] ? s.page : 'home'
+  return `<div class="app ${isAdmin || hasWorkspace ? 'with-admin' : ''} ${s.slim ? 'slim' : ''}">
   <header class="top"><button class="iconbtn menu" id="slim" aria-label="${s.slim ? 'Expand' : 'Collapse'} menu">${ico('menu')}</button>${LOCKUP}
    <form class="search" id="topsearch" role="search">${ico('search', 18)}<input id="ts" value="${esc(s.query || '')}" placeholder="Search Learning with LiANN" aria-label="Search"></form>
    <button class="iconbtn" id="apbtn" aria-label="Appearance">${ico('palette')}</button><button class="iconbtn help" aria-label="Help and account" data-nav="plan">${ico('help')}</button><button class="iconbtn${notificationsOf(s).length ? ' has-new' : ''}" id="bell" aria-label="Notifications" aria-expanded="${!!s.notif}">${ico('bell')}</button>
    <button class="tile avatar" id="me" aria-label="Profile (${esc(p.name)})">${esc(p.g)}</button></header>
   <nav class="rail" aria-label="Main">${NAV.map(rItem(page)).join('')}</nav>
-  <main id="main" class="${page === 'admin' ? 'admin-main' : ''}"><div class="wrap fade ${page === 'admin' ? 'admin-wrap' : ''}">${s.adminError ? `<div class="c" role="alert">${esc(s.adminError)} <button class="btn ghost" id="retry-admin">Retry admin access</button></div>` : ''}${page === 'admin' ? pAdmin(s) : PAGES[page](s)}</div></main>${isAdmin ? adminRail(s) : ''}
+  <main id="main" class="${page === 'admin' ? 'admin-main' : ''}"><div class="wrap fade ${page === 'admin' ? 'admin-wrap' : page === 'workspace' ? 'workspace-wrap' : ''}">${s.workspaceError && !hasWorkspace && !isAdmin ? `<div class="c" role="alert">${esc(s.workspaceError)} <button class="btn ghost" id="retry-workspace-access">Retry workspace access</button></div>` : ''}${s.adminError ? `<div class="c" role="alert">${esc(s.adminError)} <button class="btn ghost" id="retry-admin">Retry admin access</button></div>` : ''}${page === 'admin' ? pAdmin(s) : page === 'workspace' ? workspacePage(s, { esc, progress: learningProgressPanel, library: pLibrary, apps: pApps }) : PAGES[page](s)}</div></main>${isAdmin ? adminRail(s) : hasWorkspace ? workspaceRail(s, {esc,ico}) : ''}
   <nav class="tabs" aria-label="Main">${NAV.filter(([k]) => TAB_PAGES.includes(k)).map(rItem(page)).join('')}<button class="ritem" id="morebtn" aria-expanded="${!!s.more}" ${TAB_PAGES.includes(page) ? '' : 'aria-current="page"'}><span class="ic">${ico('menu')}</span><span class="lbl">More</span></button></nav>
   ${s.more ? `<nav class="moresheet" aria-label="More">${NAV.filter(([k]) => !TAB_PAGES.includes(k)).map(rItem(page)).join('')}</nav>` : ''}</div>${s.appear ? appearHTML(s.theme) : ''}${s.notif ? notifsHTML(s) : ''}${s.reader ? readerHTML(s) : ''}`
 }

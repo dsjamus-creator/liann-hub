@@ -282,3 +282,14 @@ test('magnifier lens: maps the cursor onto the page inside its box and ignores t
   assert.equal(lensGeometry({ box, natural: { w: 400, h: 1200 }, align: 'right', x: 110, y: 200, zoom: 2, size: 100 }), null)
   assert.equal(lensGeometry({ box, natural: { w: 0, h: 0 }, align: 'left', x: 200, y: 200, zoom: 2, size: 100 }), null)
 })
+
+test('workspace actions use a constrained one-time pass and reject outside destinations', async () => {
+ const data=new Map([['liann-hub-session-v1',JSON.stringify({access_token:'at',refresh_token:'rt',expires_at:9999999999})]])
+ const requests=[]
+ const account=createAccount({pinyinApi:'https://api.example.test',backend:'https://backend.example.test',storage:{getItem:k=>data.get(k),setItem:(k,v)=>data.set(k,v)},fetchImpl:async(url,options)=>{requests.push({url,options});return Response.json({url:'https://backend.example.test/auth/liann/continue#pass=one-time'})}})
+ assert.equal(await account.workspaceLink('/authorboard/'),'https://backend.example.test/auth/liann/continue#pass=one-time')
+ assert.equal(requests[0].options.headers.Authorization,'Bearer at');assert.equal(JSON.parse(requests[0].options.body).next,'/authorboard/')
+ for(const path of ['https://evil.example','//evil.example','/admin','/authorboard/../admin','/classroom/?lesson=x&role=tutor']) await assert.rejects(()=>account.workspaceLink(path))
+ assert.equal(requests.length,1)
+ await assert.rejects(()=>account.workspaceData('admin'))
+})
