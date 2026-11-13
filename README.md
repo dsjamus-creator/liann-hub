@@ -32,6 +32,10 @@ When a store listing goes live, put its public URL in `storeUrl` for that platfo
 
 ## Run and test
 
+Super admins are detected through the backend's verified `/admin/whoami` response after email-code sign-in or session restoration. Their hub opens the admin controls automatically, with a vertical navigation rail on the right. Child profiles and ordinary accounts never get the rail. The existing AlongSide controls run inside a backend-hosted frame; requests pass through the hub with a refreshed bearer token and no cookies. The frame receives JSON responses, never the token. The backend must include `/hub-admin` and super-admin bearer support before this hub version is released. See `lwl-backend/docs/HUB-ADMIN.md` for the backend contract and rollout order.
+
+`npm run test:smoke` includes the admin parent/frame contract at desktop and phone sizes. To exercise the actual AlongSide interface with mocked data and save screenshots, run `CHROME_PATH=/usr/bin/chromium ADMIN_BACKEND_DIR=/path/to/lwl-backend SHOTS=/tmp node tests/admin-smoke.mjs`.
+
 ```
 npm install
 npm start                 # http://localhost:4173/

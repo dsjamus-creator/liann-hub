@@ -14,6 +14,7 @@ const shot = async (page, name) => { if (process.env.SHOTS) await page.waitForTi
 
 async function mock(context, { student = true, tour = false } = {}) {
   const seen = { auth: [] }
+  await context.route('https://lwl-backend-mhgo.onrender.com/admin/whoami', r => r.fulfill({ json: { superAdmin: false } }))
   if (!tour) await context.addInitScript(() => localStorage.setItem('liann-hub-tour-done', 'true'))
   const PAGE = n => `https://downloads.lwliann.com/comics/ep1/page-${n}.jpg`
   await context.route('**/data/comics.json', r => r.fulfill({ json: { episodes: [{ id: 'ep1', title: 'Episode 1: Flight', number: 1, summary: 'Bella takes off.', cover: PAGE(1), pages: [PAGE(1), PAGE(2), PAGE(3)] },

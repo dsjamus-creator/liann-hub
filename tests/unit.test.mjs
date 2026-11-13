@@ -73,6 +73,43 @@ function fakeServer() {
   return { calls, store, storage, fetchImpl }
 }
 
+test('admin discovery trusts the backend role and admin requests never send cookies', async () => {
+  const f = fakeServer(), requests = []
+  let role = false
+  const acct = createAccount({ pinyinApi: 'https://api.test', backend: 'https://be.test', storage: f.storage,
+    fetchImpl: async (url, opts) => {
+      if (!url.includes('/admin/')) return f.fetchImpl(url, opts)
+      requests.push({ url, opts })
+      return { ok: true, status: 200, json: async () => ({ email: 'a@b.c', superAdmin: role }) }
+    } })
+  await acct.verifyCode('a@b.c', '123456')
+  assert.equal(await acct.adminAccess(), null)
+  role = true
+  assert.equal((await acct.adminAccess()).superAdmin, true)
+  assert.equal((await acct.adminRequest('/me')).body.isAdmin, true)
+  await acct.adminRequest('/admin/staff/a%40b.c/permissions', 'PUT', '{"permissions":[]}')
+  for (const { opts } of requests) {
+    assert.equal(opts.credentials, 'omit'); assert.equal(opts.headers.Authorization, 'Bearer at1')
+    assert.equal(opts.cache, 'no-store')
+  }
+  for (const path of ['https://evil.example/admin/staff', '//evil.example/admin/staff', '/admin/../me', '/admin/%2e%2e/me', '/student'])
+    await assert.rejects(acct.adminRequest(path), /Unknown admin request/)
+  await assert.rejects(acct.adminRequest('/admin/staff', 'TRACE'), /Invalid admin request/)
+})
+
+test('the right-side admin rail and embedded controls require a verified super admin and an adult profile', () => {
+  const s = { user: { email: 'a@b.c' }, page: 'admin', theme: { ds: 'liann', t: 'dark' } }
+  for (const state of [s, { ...s, admin: { superAdmin: false } }, { ...s, admin: { superAdmin: true }, learner: { id: 'child' } }]) {
+    const html = vHub(state)
+    assert.ok(!html.includes('id="admin-frame"')); assert.ok(!html.includes('class="admin-rail"'))
+  }
+  const html = vHub({ ...s, admin: { superAdmin: true }, adminSection: 'staff' })
+  assert.ok(html.includes('class="admin-rail"'))
+  assert.ok(html.includes('data-admin="staff"'))
+  assert.ok(html.includes('src="https://lwl-backend-mhgo.onrender.com/hub-admin"'))
+  assert.ok(html.includes('title="AlongSide Super Admin controls"'))
+})
+
 test('email code sign-in stores a session and reads SetLists with a bearer token', async () => {
   const f = fakeServer(); let clock = 1_000_000_000_000
   const acct = createAccount({ pinyinApi: 'https://api.test', backend: 'https://be.test', fetchImpl: f.fetchImpl, storage: f.storage, now: () => clock })
