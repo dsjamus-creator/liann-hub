@@ -1,3 +1,4 @@
+import { workspaceSection } from './workspace.js'
 import { initInstall, currentMode, onInstallChange, promptInstall } from './pwa.js'
 import { config, NAV, CODE_LENGTH } from './config.js'
 import { createAccount } from './account.js'
@@ -24,11 +25,11 @@ const S = { viewId: viewId(),
   view: 'loading', email: '', user: null, page: pageFromHash(), appf: 'All', slim: false, appear: false, notif: false,
   theme: theme && DS.some(d => d[0] === theme.ds) && /^(light|dark)$/.test(theme.t) ? theme : { ds: 'liann', t: 'dark' },
   recent: [], downloads: null, demosceneFiles: [], demosceneSelected: 0, demosceneUrl: null, comics: null, reader: null, progress: {}, setlists: null, learningProgress: null, classProgress: null, progressSharing: {}, institutionClasses: {}, openList: null, query: '', busy: false, error: '', fix: '',
-  admin: null, adminError: '', adminSection: adminSection(hashParts()[1]), household: undefined, learner: null, hhError: '', hhBusy: false,
+  workspaceAccess: null, workspaceData: null, workspaceRole: 'student', workspaceSection: 'overview', workspaceLoading: false, workspaceError: '', workspaceActionError: '', admin: null, adminError: '', adminSection: adminSection(hashParts()[1]), household: undefined, learner: null, hhError: '', hhBusy: false,
 }
 
 function hashParts() { const [k, arg] = location.hash.slice(1).split('/'); try { return [k, arg ? decodeURIComponent(arg) : ''] } catch { return [k, ''] } }
-function pageFromHash() { const [k] = hashParts(); return k === 'admin' || NAV.some(([n]) => n === k) ? k : 'home' }
+function pageFromHash() { const [k] = hashParts(); return k === 'workspace' || k === 'admin' || NAV.some(([n]) => n === k) ? k : 'home' }
 // A reader link: #read/<episode id> opens that comic as soon as the hub and the episodes are ready.
 function openFromHash() {
   const [k, arg] = hashParts()
@@ -86,15 +87,25 @@ async function sendCode(email) {
   catch (error) { S.busy = false; S.error = error.status === 429 ? 'Too many codes requested. Wait a minute, then try again.' : error.message; render() }
 }
 
-async function enterHub(user, access) {
-  S.user = user; S.institutional = false; S.admin = null; S.adminError = '';
+async function enterHub(user, access, workspaceAccess) {
+  ++workspaceRequest; ++progressRequest; S.learningProgress = null; S.classProgress = null; S.progressSharing = {}
+  S.user = user; S.institutional = false; S.admin = null; S.adminError = ''; S.workspaceAccess = null; S.workspaceData = null; S.workspaceError = '';
   if (!S.learner) {
     try { const result = access === undefined ? await account.adminAccess() : access; if (S.user !== user) return; S.admin = result }
     catch (error) { S.adminError = error.message }
   }
+  if (!S.learner && !S.admin?.superAdmin) {
+    try { const result = workspaceAccess === undefined ? await account.workspaceAccess() : workspaceAccess; if (S.user !== user) return; S.workspaceAccess = result?.roles?.length ? result : null }
+    catch (error) { if (S.user !== user) return; S.workspaceError = error.message }
+  }
   if (S.user !== user) return
   if (S.admin?.superAdmin) { S.page = 'admin'; S.adminSection = adminSection(hashParts()[1]); history.replaceState(null, '', '#admin/' + S.adminSection) }
-  else if (S.page === 'admin') S.page = 'home'
+  else if (S.workspaceAccess && !S.learner) {
+    const parts = location.hash.slice(1).split('/'), roles = S.workspaceAccess.roles || [];
+    S.workspaceRole = roles.includes(parts[1]) ? parts[1] : roles[0] || 'student';
+    S.workspaceSection = workspaceSection(S.workspaceRole, parts[2]);
+    if (['home','workspace','admin'].includes(S.page)) { S.page = 'workspace'; history.replaceState(null, '', '#workspace/'+S.workspaceRole+'/'+S.workspaceSection) }
+  } else if (['admin','workspace'].includes(S.page)) S.page = 'home'
   S.user = user; S.institutional = false; S.institutions = []
   S.recent = store.get(accountKey('liann-hub-recent', user), [])
   S.progress = store.get(accountKey('liann-hub-reader', user), {})
@@ -102,10 +113,37 @@ async function enterHub(user, access) {
   openFromHash()
   loadLibrary()
   loadLearningProgress()
+  if (S.workspaceAccess && !S.admin?.superAdmin) loadWorkspace()
+}
+
+let workspaceRequest = 0
+async function loadWorkspace() {
+  const request = ++workspaceRequest, user = S.user, role = S.workspaceRole
+  S.workspaceData = null; S.workspaceError = ''; S.workspaceActionError = ''
+  if (!S.workspaceAccess?.roles?.includes(role) || S.learner) { S.workspaceLoading = false; render(); return }
+  S.workspaceLoading = true; render()
+  try { const result = await account.workspaceData(role); if (S.user !== user || S.learner || request !== workspaceRequest) return; S.workspaceData = result }
+  catch (error) { if (S.user !== user || S.learner || request !== workspaceRequest) return; if (error.code === 'signed_out') return signedOut(); S.workspaceError = error.message }
+  S.workspaceLoading = false; render()
+}
+function navigateWorkspace(section, role = S.workspaceRole) {
+  if (!S.workspaceAccess || S.learner || S.admin?.superAdmin) return
+  if (role !== S.workspaceRole && !S.workspaceAccess.roles?.includes(role)) return
+  const changed = role !== S.workspaceRole
+  S.workspaceRole = role; S.workspaceSection = workspaceSection(role,section); S.page = 'workspace'; S.more = false
+  history.replaceState(null, '', '#workspace/'+role+'/'+S.workspaceSection); render()
+  if (changed) loadWorkspace()
+}
+async function openWorkspaceAction(path) {
+  const user = S.user, tab = window.open('', '_blank')
+  if (!tab) { S.workspaceActionError = 'Allow a new tab to open your secure AlongSide workspace.'; render(); return }
+  tab.opener = null
+  try { const target = await account.workspaceLink(path); if (S.user !== user || S.learner) { tab.close(); return } tab.location.href = target }
+  catch (error) { tab.close(); S.workspaceActionError = error.message; render() }
 }
 
 async function enterInstitutionHub(session) {
-  S.admin = null; S.adminError = ''; S.user = session.user; S.institutional = true; S.learner = null; S.household = null
+  ++workspaceRequest; S.workspaceAccess = null; S.workspaceData = null; S.admin = null; S.adminError = ''; S.user = session.user; S.institutional = true; S.learner = null; S.household = null
   S.institutions = await account.schoolMemberships()
   S.institutionClasses = {}
   for (const m of S.institutions) {
@@ -118,20 +156,27 @@ async function enterInstitutionHub(session) {
   loadLearningProgress()
 }
 
+let progressRequest = 0
 async function loadLearningProgress(profileId) {
+  const request = ++progressRequest, user = S.user, learner = S.learner?.id
+  const current = () => request === progressRequest && S.user === user && S.learner?.id === learner
   S.learningProgress = { status: 'loading' }
   if (S.view === 'hub') render()
   try {
-    S.learningProgress = { status: 'ok', ...(await account.learningProgress(profileId)) }
+    const result = await account.learningProgress(profileId)
+    if (!current()) return
+    S.learningProgress = { status: 'ok', ...result }
   } catch (error) {
+    if (!current()) return
     S.learningProgress = { status: error.code === 'learner_profile_required' ? 'needs_profile' : 'error', error: error.message }
     if (error.code === 'signed_out' && !S.institutional) return signedOut()
   }
   try {
     const shares = await account.progressSharingOptions(profileId)
+    if (!current()) return
     S.progressSharing = Object.fromEntries(shares.map(x => [x.institutionId, !!x.enabled]))
-  } catch { S.progressSharing = {} }
-  if (S.view === 'hub') render()
+  } catch { if (current()) S.progressSharing = {} }
+  if (current() && S.view === 'hub') render()
 }
 
 async function openClassProgress(classId) {
@@ -188,7 +233,8 @@ async function finishProfile() {
 
 async function signedOut() {
   S.reader = null; dropBook()
-  go('loading', { admin: null, adminError: '', learner: null, user: null, recent: [], progress: {}, setlists: null, openList: null })
+  ++workspaceRequest; ++progressRequest; S.learningProgress = null; S.classProgress = null; S.progressSharing = {}
+  go('loading', { workspaceAccess: null, workspaceData: null, workspaceError: '', workspaceLoading: false, admin: null, adminError: '', learner: null, user: null, recent: [], progress: {}, setlists: null, openList: null })
   let revoked = false
   try { revoked = (await fetch('/comic/logout', { method: 'POST', credentials: 'same-origin', cache: 'no-store' })).ok } catch { /* explain below */ }
   go('email', revoked ? {} : { error: 'Could not confirm comic sign-out. Close this browser and try again.' })
@@ -435,7 +481,7 @@ function bind() {
         if (!user) throw new Error('Sign-in did not complete. Try again.')
         const access = await account.adminAccess().catch(error => { S.adminError = error.message; return null })
         if (access?.superAdmin) await enterHub(user, access)
-        else go('who', { user })
+        else { const workspace = await account.workspaceAccess().catch(() => null); if (workspace?.roles?.length) await enterHub(user, access, workspace); else go('who', { user }) }
       }
       catch (error) { S.busy = false; S.error = error.message; render() }
     }
@@ -481,6 +527,11 @@ function bind() {
     catch (error) { tab.close(); S.error = error.message; render() }
   }
 
+  document.querySelectorAll('[data-workspace]').forEach(b => { b.onclick = () => navigateWorkspace(b.dataset.workspace) })
+  const workspaceRole = $('#workspace-role'); if (workspaceRole) workspaceRole.onchange = () => navigateWorkspace('overview', workspaceRole.value)
+  const accessRetry = $('#retry-workspace-access'); if (accessRetry) accessRetry.onclick = () => enterHub(S.user)
+  const workspaceRefresh = $('#refresh-workspace'); if (workspaceRefresh) workspaceRefresh.onclick = () => { loadWorkspace(); loadLearningProgress() }
+  document.querySelectorAll('[data-workspace-open]').forEach(b => { b.onclick = () => openWorkspaceAction(b.dataset.workspaceOpen) })
   document.querySelectorAll('[data-admin]').forEach(b => { b.onclick = () => {
     if (!S.admin?.superAdmin || S.learner) return
     S.page = 'admin'; S.adminSection = adminSection(b.dataset.admin); S.more = false; S.appear = false; S.notif = false
@@ -568,7 +619,7 @@ function showTour() {
   $('#tskip').onclick = () => { store.set('liann-hub-tour-done', true); showTour() }
 }
 
-window.addEventListener('hashchange', () => { if (S.view === 'hub') { S.page = pageFromHash(); S.adminSection = adminSection(hashParts()[1]); S.openList = null; render(); openFromHash() } })
+window.addEventListener('hashchange', () => { if (S.view === 'hub') { S.page = pageFromHash(); if (S.page === 'workspace') { const parts = location.hash.slice(1).split('/'); navigateWorkspace(parts[2], parts[1]); } S.adminSection = adminSection(hashParts()[1]); S.openList = null; render(); openFromHash() } })
 
 async function start() {
   // Returning from the sign-in link in the email: take the session out of the address before the hub reads it as a page.

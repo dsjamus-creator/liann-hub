@@ -391,3 +391,12 @@ a.btn{display:inline-block;text-decoration:none;text-align:center}
 .pmain .sec>p.muted{text-align:center}
 .prows{display:flex;flex-wrap:wrap;justify-content:center;gap:16px}
 .prows .prow{flex:1 1 250px;max-width:290px;min-width:0}
+/* Tutor and student workspaces reuse the right-hand rail and hub palette. */
+.workspace-heading{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:24px}
+.workspace-heading h1{margin:0}.workspace-heading p{margin:0 0 6px}
+.workspace-actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+.workspace-list{list-style:none;padding:0;margin:0}.workspace-list li{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:16px 0;border-bottom:1px solid var(--line)}
+.workspace-list p{margin:6px 0}.workspace-list .btn{flex-shrink:0}
+.workspace-switch{font-size:11px;max-width:100%;display:grid;gap:6px}.workspace-switch select{max-width:90px;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px}
+@media(max-width:720px){.workspace-switch{font-size:9px}.workspace-switch select{max-width:58px;padding:4px 0}.workspace-heading{align-items:flex-start}.workspace-list li{align-items:flex-start;flex-direction:column}.workspace-heading h1{font-size:26px}}
+.wrap.workspace-wrap{gap:20px}.workspace-wrap>.workspace-heading{margin-bottom:0}.workspace-wrap>p{margin:0}

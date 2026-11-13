@@ -42,6 +42,7 @@ async function mock(context, { student = true, tour = false } = {}) {
     return r.fulfill({ status: 404, json: {} })
   })
   await context.route('https://lwl-backend-mhgo.onrender.com/learning/**', r => {
+    if (new URL(r.request().url()).pathname === '/learning/workspace') return r.fulfill({json:{roles:[]}})
     assert.equal(r.request().headers().authorization, 'Bearer at')
     const p = new URL(r.request().url()).pathname
     if (!student && p === '/learning/session-pass') { seen.pass = r.request().postDataJSON(); return r.fulfill({ json: { url: 'https://lwl-backend-mhgo.onrender.com/auth/liann/continue#pass=test-pass', expiresInSeconds: 60 } }) }
