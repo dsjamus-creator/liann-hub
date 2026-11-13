@@ -21,7 +21,7 @@ const viewId = () => 'Learning with LiANN · ' + [...crypto.getRandomValues(new 
 const S = { viewId: viewId(),
   view: 'loading', email: '', user: null, page: pageFromHash(), appf: 'All', slim: false, appear: false, notif: false,
   theme: theme && DS.some(d => d[0] === theme.ds) && /^(light|dark)$/.test(theme.t) ? theme : { ds: 'liann', t: 'dark' },
-  recent: [], downloads: null, comics: null, reader: null, progress: {}, setlists: null, openList: null, query: '', busy: false, error: '', fix: '',
+  recent: [], downloads: null, comics: null, reader: null, progress: {}, setlists: null, learningProgress: null, classProgress: null, progressSharing: {}, institutionClasses: {}, openList: null, query: '', busy: false, error: '', fix: '',
   household: undefined, learner: null, hhError: '', hhBusy: false,
 }
 
@@ -82,13 +82,48 @@ async function enterHub(user) {
   go('hub')
   openFromHash()
   loadLibrary()
+  loadLearningProgress()
 }
 
 async function enterInstitutionHub(session) {
   S.user = session.user; S.institutional = true; S.learner = null; S.household = null
   S.institutions = await account.schoolMemberships()
+  S.institutionClasses = {}
+  for (const m of S.institutions) {
+    if (m.role === 'teacher' || m.role === 'institution_admin') {
+      try { S.institutionClasses[m.institutionId] = await account.institutionClasses(m.institutionId) } catch { S.institutionClasses[m.institutionId] = [] }
+    }
+  }
   S.page = 'home'; history.replaceState(null, '', '#home')
   go('hub')
+  loadLearningProgress()
+}
+
+async function loadLearningProgress(profileId) {
+  S.learningProgress = { status: 'loading' }
+  if (S.view === 'hub') render()
+  try { S.learningProgress = { status: 'ok', ...(await account.learningProgress(profileId)) } }
+  catch (error) {
+    S.learningProgress = { status: error.code === 'learner_profile_required' ? 'needs_profile' : 'error', error: error.message }
+    if (error.code === 'signed_out' && !S.institutional) return signedOut()
+  }
+  if (S.view === 'hub') render()
+}
+
+async function openClassProgress(classId) {
+  S.classProgress = { status: 'loading', classId }; render()
+  try { S.classProgress = { status: 'ok', classId, ...(await account.classProgress(classId)) } }
+  catch (error) { S.classProgress = { status: 'error', classId, error: error.message } }
+  render()
+}
+
+async function setSharing(institutionId, enabled) {
+  try {
+    await account.setProgressSharing(institutionId, enabled, S.learner?.id)
+    S.progressSharing = { ...S.progressSharing, [institutionId]: enabled }
+    toast(enabled ? 'Progress sharing enabled for this institution' : 'Progress sharing turned off')
+  } catch (error) { toast(error.message) }
+  render()
 }
 
 async function loadLibrary() {
@@ -428,6 +463,10 @@ function bind() {
     if (recentKey) store.set(recentKey, S.recent)
   } })
   document.querySelectorAll('[data-list]').forEach(b => { b.onclick = () => { S.page = 'library'; openList(b.dataset.list) } })
+  document.querySelectorAll('[data-progress-class]').forEach(b => { b.onclick = () => openClassProgress(b.dataset.progressClass) })
+  document.querySelectorAll('[data-share-progress]').forEach(b => { b.onclick = () => setSharing(b.dataset.shareProgress, b.dataset.enabled !== 'true') })
+  const rp = $('#refresh-progress'); if (rp) rp.onclick = () => loadLearningProgress(S.learner?.id)
+  const cpback = $('#class-progress-back'); if (cpback) cpback.onclick = () => { S.classProgress = null; render() }
   const cl = $('#closelist'); if (cl) cl.onclick = () => { S.openList = null; render() }
   const rl = $('#retrylib'); if (rl) rl.onclick = loadLibrary
   const fp = $('#finishprofile'); if (fp) fp.onclick = finishProfile
