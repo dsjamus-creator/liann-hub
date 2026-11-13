@@ -348,14 +348,25 @@ function pKids(s) {
   <section class="sec"><div class="sechead"><h2>Individual sticker artwork</h2></div>${downloadsFor(s, d => d.product === 'kids' && d.platform === 'PNG' && !HIDDEN_KIDS_SLOTS.has(d.slot))}</section>`
 }
 
-function pDiscover(s) {
-  const f = s.dchip || 'Featured'
-  const list = f === 'Games' ? GAMES() : f === 'Apps' ? TOOLS() : ['poly', 'lyric', 'trans'].map(id => APPS.find(a => a.id === id))
-  return `<section class="sec"><h2 style="margin:0;font-size:clamp(1.5rem,3vw,2.1rem);font-weight:900">Discover</h2>
-  <div class="chips" style="justify-content:flex-start">${['Featured', 'Games', 'Apps'].map(c => `<button class="chip" data-dchip="${c}" aria-pressed="${f === c}">${c}</button>`).join('')}</div>
-  <div class="feature"><div class="art" style="background:#ddd url(assets/comic-2.jpg) center/cover" role="img" aria-label="Bella flying over the city, from Bella & LiANN"></div>
-  <div class="txt"><div class="eyebrow">Read now</div><h3>Bella &amp; LiANN</h3><p class="muted" style="margin:0">Bella, a small Maltese dog with an extraordinary mind, is swept to China in 2049, where a wrong tone can cost a family their supper.</p><div><button class="btn" data-nav="read">See episodes</button></div></div></div></section>
-  <section class="sec"><div class="sechead"><h2>${f === 'Featured' ? 'Try something new' : f}</h2><button class="link" data-nav="apps">View all</button></div><div class="grid">${list.map(a => appCard(a, s)).join('')}</div></section>`
+function pDemoscene(s) {
+  const files = Array.isArray(s.demosceneFiles) ? s.demosceneFiles : []
+  const selected = files[s.demosceneSelected] || null
+  const folder = files[0]?.webkitRelativePath?.split('/')[0] || ''
+  return `<section class="sec">
+  <div class="sechead"><h2 style="margin:0;font-size:clamp(1.5rem,3vw,2.1rem);font-weight:900">DEMOSCENE</h2></div>
+  <p class="muted" style="max-width:70ch">Choose the <b>LWL DEMOSCENE</b> folder on your computer. The hub lists its HTML demos and opens them here; the files stay on this device and are not uploaded.</p>
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <label class="btn" for="demoscene-folder" style="cursor:pointer">Choose DEMOSCENE folder</label>
+    <input id="demoscene-folder" type="file" webkitdirectory directory multiple hidden aria-label="Choose the LWL DEMOSCENE folder">
+    ${files.length ? `<span class="muted">${files.length} HTML demo${files.length === 1 ? '' : 's'}${folder ? ` in ${esc(folder)}` : ''}</span>` : ''}
+  </div>
+  ${files.length ? `<div class="chips" style="justify-content:flex-start;margin-top:18px">${files.map((file, i) => `<button class="chip" data-demo-index="${i}" aria-pressed="${i === s.demosceneSelected}">${esc(file.name)}</button>`).join('')}</div>
+    ${selected && s.demosceneUrl ? `<div style="margin-top:18px;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#080807">
+      <div style="padding:12px 16px;border-bottom:1px solid var(--line);font-weight:800">${esc(selected.webkitRelativePath || selected.name)}</div>
+      <iframe src="${esc(s.demosceneUrl)}" title="${esc(selected.name)}" sandbox="allow-scripts allow-pointer-lock allow-forms allow-modals allow-downloads" allowfullscreen style="display:block;width:100%;height:min(76vh,900px);min-height:420px;border:0;background:#080807"></iframe>
+    </div>` : ''}
+  ` : `<div class="c" style="margin-top:18px;padding:24px"><div class="t">No demo folder selected</div><p class="muted">On the computer that has the files, choose <code>C:\\Users\\dsjam\\Desktop\\LWLiANN HUB\\LWL DEMOSCENE</code>. Standalone HTML demos can run directly in this viewer.</p><p class="muted" style="margin-bottom:0">If a demo relies on separate JavaScript, CSS, or media files, it needs to be packaged as a standalone HTML file first.</p></div>`}
+  </section>`
 }
 
 // The 3D viewer itself lives in figures.js; this is its frame.
@@ -480,7 +491,7 @@ export function appearHTML(th) {
 // Phone tab bar: four pages, then More for the rest of the menu.
 const TAB_PAGES = ['home', 'apps', 'library', 'downloads']
 
-export const PAGES = { home: pHome, apps: pApps, library: pLibrary, read: pRead, figures: pFigures, discover: pDiscover, kids: pKids, shop: pShop, downloads: pDownloads, plan: pPlan }
+export const PAGES = { home: pHome, apps: pApps, library: pLibrary, read: pRead, figures: pFigures, discover: pDemoscene, kids: pKids, shop: pShop, downloads: pDownloads, plan: pPlan }
 
 function adminRail(s) {
   return `<nav class="admin-rail" aria-label="Super Admin"><div class="admin-rail-label">${ico('shield')}<span>Super Admin</span></div>${ADMIN_SECTIONS.map(([id, label, icon]) => `<button class="ritem" data-admin="${id}" title="${label}" aria-label="${label}" ${s.page === 'admin' && adminSection(s.adminSection) === id ? 'aria-current="page"' : ''}><span class="ic">${ico(icon)}</span><span class="lbl">${label}</span></button>`).join('')}</nav>`
