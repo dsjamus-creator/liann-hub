@@ -152,7 +152,7 @@ const TOOLS = () => APPS.filter(a => !a.kind.startsWith('Game'))
 
 function matches(q, ...fields) { const n = q.trim().toLowerCase(); return !n || fields.some(f => String(f || '').toLowerCase().includes(n)) }
 
-const SOURCES = { 'pinyin-tiles': 'Pinyin Tiles', 'pinyin-puzzle': 'Pinyin Puzzle', 'liann-mahjong-tones': 'Mahjong Tones', lyricsync: 'LyricSync', 'dual-subs': 'Dual Subs', dualsubs: 'Dual Subs', polyflow: 'PolyFlow', alongside: 'AlongSide', multiboard: 'MultiBoard', authorboard: 'AuthorBoard', transapp: 'TransApp' }
+const SOURCES = { 'pinyin-tiles': 'Pinyin Tiles', 'pinyin-puzzle': 'Pinyin Puzzle', 'liann-mahjong-tones': 'Mahjong Tones', readreveal: 'ReadReveal', lyricsync: 'LyricSync', 'dual-subs': 'Dual Subs', dualsubs: 'Dual Subs', polyflow: 'PolyFlow', alongside: 'AlongSide', multiboard: 'MultiBoard', authorboard: 'AuthorBoard', transapp: 'TransApp' }
 export const sourceName = id => SOURCES[id] || id || ''
 
 function setlistCard(l) {
@@ -194,6 +194,17 @@ const profileCard = L => `<div class="c profilecard"><h3 style="margin:0 0 6px">
   <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="finishprofile"${L.opening ? ' disabled' : ''}>${L.opening ? 'Opening AlongSide…' : 'Finish your learner profile'}</button>
   ${L.opened ? '<button class="btn ghost" id="retrylib">I have saved it: show my Library</button>' : ''}</div></div>`
 
+function learningProgressPanel(s) {
+  const p = s.learningProgress
+  if (!p || p.status === 'loading') return '<section class="sec"><div class="c"><div class="t">Learning progress</div><p class="muted">Loading your cross-app progress…</p></div></section>'
+  if (p.status === 'needs_profile') return ''
+  if (p.status === 'error') return `<section class="sec"><div class="c"><div class="t">Learning progress</div><p class="muted">${esc(p.error || 'Progress is not available yet.')}</p><button class="btn ghost" id="refresh-progress">Try again</button></div></section>`
+  const milestones = (p.milestones || []).map(m => `<span class="chip" aria-label="${m.achieved ? 'Achieved' : 'Not yet achieved'}">${m.achieved ? '✓ ' : ''}${Number(m.masteredWords)} mastered</span>`).join('')
+  const words = (p.words || []).filter(w => w.mastered)
+  const details = words.length ? `<ul class="notifs">${words.map(w => `<li><span><b class="han">${esc(w.hz)}</b> · ${esc(w.py)} · ${esc(w.meaning || '')} <span class="muted">(${esc(w.setlist)})</span></span></li>`).join('')}</ul>` : '<p class="muted">No words have reached the mastery rule yet. Practice saved SetList words in any connected app to build progress.</p>'
+  return `<section class="sec"><div class="sechead"><h2>Learning progress</h2><button class="link" id="refresh-progress">Refresh</button></div><div class="c"><div class="t">${Number(p.masteredWords) || 0} mastered word${Number(p.masteredWords) === 1 ? '' : 's'}</div><div class="chips" style="justify-content:flex-start">${milestones}</div><p class="muted">Mastery: five consecutive correct recent attempts across at least two calendar days.</p>${details}</div></section>`
+}
+
 function pLibrary(s) {
   const L = s.setlists || { status: 'loading' }
   if (s.openList) {
@@ -206,7 +217,7 @@ function pLibrary(s) {
     : L.status === 'needs_profile' ? profileCard(L)
     : L.status === 'error' ? `<div class="empty"><p style="margin:0 0 10px">${esc(L.error)}</p><button class="btn ghost" id="retrylib">Try again</button></div>` : '<div class="empty">Loading your SetLists…</div>'
   const whose = s.learner ? `${esc(s.learner.name)}\u2019s SetLists from every game, kept in AlongSide` : 'Your SetLists from every game, kept in AlongSide'
-  return `<section class="sec"><div class="sechead"><h2>Library</h2><span class="muted">${whose}</span></div>${body}</section>`
+  return `${learningProgressPanel(s)}<section class="sec"><div class="sechead"><h2>Library</h2><span class="muted">${whose}</span></div>${body}</section>`
 }
 
 const PRODUCT_GLYPH = { 'dual-subs': '字', lyricsync: '歌', polyflow: '琴', 'mahjong-tones': '声', 'alongside-mobile': '伴', 'alongside-dashboard': '伴', 'pinyin-tiles': '拼', 'pinyin-puzzle': '谜', 'bella-liann': '漫', kids: '小', figures: '偶' }
@@ -485,10 +496,25 @@ function vInstitutionHub(s) {
   const roleName = role => ({ institution_admin: 'Institution administrator', teacher: 'Teacher', learner: 'Learner' }[role] || 'Member')
   const membershipsWithApps = memberships.map(m => ({ ...m, availableApps: APPS.filter(a => Array.isArray(m.apps) && m.apps.includes(a.id) && a.st !== 'soon') }))
   const hasApps = membershipsWithApps.some(m => m.availableApps.length)
-  return `<div class="gate fade">${decor()}<div class="card" style="width:min(900px,100%);text-align:left">
+  const classProgress = s.classProgress
+  const progressBody = classProgress?.status === 'loading' ? '<div class="c">Loading shared student progress…</div>'
+    : classProgress?.status === 'error' ? `<div class="c"><p class="err">${esc(classProgress.error)}</p><button class="btn ghost" id="class-progress-back">Back to classes</button></div>`
+    : classProgress?.status === 'ok' ? `<section class="sec"><div class="sechead"><h2>Class progress</h2><button class="link" id="class-progress-back">Back to classes</button></div><div class="grid">${(classProgress.learners || []).map(l => `<div class="c"><div class="t">${esc(l.displayName)}</div><div class="s">${Number(l.masteredWords) || 0} mastered word${Number(l.masteredWords) === 1 ? '' : 's'}</div><div class="chips" style="justify-content:flex-start">${(l.milestones || []).map(m => `<span class="chip">${m.achieved ? '✓ ' : ''}${Number(m.masteredWords)} mastered</span>`).join('')}</div><p class="muted">${(l.words || []).filter(w => w.mastered).map(w => esc(w.hz)).join(' · ') || 'No mastered words shared yet.'}</p></div>`).join('') || '<div class="empty">No students have opted in to share progress for this class.</div>'}</div></section>`
+    : ''
+  const classSections = membershipsWithApps.filter(m => ['teacher','institution_admin'].includes(m.role)).map(m => {
+    const classes = s.institutionClasses?.[m.institutionId] || []
+    return classes.length ? `<section class="sec"><h2>${esc(m.name)} · Classes</h2><div class="grid">${classes.map(c => `<div class="c"><div class="t">${esc(c.name)}</div><p class="muted">Only learners who have opted in appear in progress reports.</p><button class="btn ghost" data-progress-class="${esc(c.id)}">View shared progress</button></div>`).join('')}</div></section>` : ''
+  }).join('')
+  const sharingSections = membershipsWithApps.filter(m => m.role === 'learner').map(m => {
+    const enabled = !!s.progressSharing?.[m.institutionId]
+    return `<div class="c"><div class="t">${esc(m.name)}</div><div class="s">Your institution membership is active.</div><p class="muted">Choose whether your tutor or college may see your SetList mastery and milestones.</p><button class="btn ghost" data-share-progress="${esc(m.institutionId)}" data-enabled="${enabled}">${enabled ? 'Stop sharing progress' : 'Share my progress with this institution'}</button></div>`
+  }).join('')
+  return `<div class="gate fade"><div class="card" style="width:min(900px,100%);text-align:left">
     ${LOCKUP}<h1>School learning space</h1>
     <p class="muted" style="margin:0 0 18px">Signed in as <b>${esc(s.user?.email || '')}</b></p>
     ${memberships.length ? `<section class="sec"><h2>Your active school memberships</h2><div class="grid">${membershipsWithApps.map(m => `<div class="c"><div class="t">${esc(m.name)}</div><div class="s">${esc(roleName(m.role))}</div></div>`).join('')}</div></section>
+      ${sharingSections ? `<section class="sec"><h2>Progress sharing</h2><div class="grid">${sharingSections}</div></section>` : ''}
+      ${classProgress ? progressBody : classSections}
       ${hasApps ? `<section class="sec"><div class="sechead"><h2>Learning apps</h2></div><p class="muted">These apps are assigned to your school by Learning with LiANN. Each app checks its own permissions when you open school materials or class data.</p><div class="grid">${membershipsWithApps.flatMap(m => m.availableApps).filter((a, i, all) => all.findIndex(x => x.id === a.id) === i).map(a => appCard(a, s)).join('')}</div></section>`
         : '<div class="c"><div class="t">No learning apps assigned yet</div><p class="muted">Your school sign-in is active, but an administrator has not assigned app access to your institution.</p></div>'}`
       : `<div class="c"><div class="t">No active school membership found</div><p class="muted">Your Microsoft sign-in succeeded, but it does not grant class access by itself. Ask your school or Learning with LiANN administrator to confirm your membership.</p></div>`}

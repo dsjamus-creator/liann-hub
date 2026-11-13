@@ -45,6 +45,8 @@ async function mock(context, { student = true, tour = false } = {}) {
     const p = new URL(r.request().url()).pathname
     if (!student && p === '/learning/session-pass') { seen.pass = r.request().postDataJSON(); return r.fulfill({ json: { url: 'https://lwl-backend-mhgo.onrender.com/auth/liann/continue#pass=test-pass', expiresInSeconds: 60 } }) }
     if (!student) return r.fulfill({ status: 403, json: { error: 'not_a_student', profile: { url: 'https://lwl-backend-mhgo.onrender.com/student#profile', sessionPass: { url: 'https://lwl-backend-mhgo.onrender.com/learning/session-pass', next: '/student#profile' } } } })
+    if (p === '/learning/progress') return r.fulfill({ json: { ok: true, words: [], masteredWords: 0, milestones: [], masteryRule: 'five consecutive correct recent attempts across at least two calendar days' } })
+    if (p === '/learning/progress/sharing') return r.fulfill({ json: { ok: true, institutions: [] } })
     if (p === '/learning/setlists') return r.fulfill({ json: { ok: true, setlists: [{ id: LIST, name: 'Tone pairs I miss', words: 2, source_product: 'liann-mahjong-tones' }] } })
     if (p === `/learning/setlists/${LIST}/words`) return r.fulfill({ json: { ok: true, name: 'Tone pairs I miss', words: [{ hz: '一般', py: 'yìbān', gl: 'ordinary', source_product: 'liann-mahjong-tones' }, { hz: '一半', py: 'yíbàn', gl: 'half' }] } })
     return r.fulfill({ status: 404, json: {} })
@@ -113,6 +115,8 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
   })
   await step(`${tag}: Library shows AlongSide SetLists and their words`, async () => {
     await page.goto(url + '#library'); await page.locator('[data-list]').waitFor()
+    await page.getByRole('heading', { name: 'Learning progress' }).waitFor()
+    assert.match(await page.locator('main').innerText(), /0 mastered words/)
     await page.click(`[data-list="${LIST}"]`)
     await page.locator('table.words').waitFor()
     assert.match(await page.locator('table.words').innerText(), /一般[\s\S]*ordinary[\s\S]*一半[\s\S]*half/)
