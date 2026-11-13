@@ -251,7 +251,7 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     const token = school?.access_token || await accessToken()
     if (!token) throw new AccountError('Sign in again to manage progress sharing.', 'signed_out')
     return json(`${backend}/learning/institutions/${encodeURIComponent(institutionId)}/progress-sharing`, {
-      method: 'POST', mode: school ? 'cors' : 'same-origin', credentials: school ? 'omit' : 'same-origin',
+      method: 'POST', mode: 'cors', credentials: 'omit',
       headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ enabled: !!enabled, ...(profileId ? { profileId } : {}) })
     })
