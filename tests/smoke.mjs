@@ -331,14 +331,14 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
     assert.equal(await page.locator('[data-app="poly"] [data-page="polyflow"]').getAttribute('href'), '/polyflow')
   })
   await step(`${tag}: the menu matches the approved design and every page renders`, async () => {
-    if (tag === 'desktop') assert.deepEqual(await page.locator('nav.rail .lbl').allInnerTexts(), ['Home', 'Apps', 'Library', 'Read', 'Figures', 'Discover', 'Kids', 'Shop', 'Downloads', 'Plan'])
+    if (tag === 'desktop') assert.deepEqual(await page.locator('nav.rail .lbl').allInnerTexts(), ['Home', 'Apps', 'Library', 'Read', 'Figures', 'DEMOSCENE', 'Kids', 'Shop', 'Downloads', 'Plan'])
     else {
       assert.deepEqual(await page.locator('nav.tabs .lbl').allInnerTexts(), ['Home', 'Apps', 'Library', 'Downloads', 'More'])
-      await page.click('#morebtn'); assert.deepEqual(await page.locator('nav.moresheet .lbl').allInnerTexts(), ['Read', 'Figures', 'Discover', 'Kids', 'Shop', 'Plan'])
+      await page.click('#morebtn'); assert.deepEqual(await page.locator('nav.moresheet .lbl').allInnerTexts(), ['Read', 'Figures', 'DEMOSCENE', 'Kids', 'Shop', 'Plan'])
       await shot(page, 'phone-more')
       await page.click('nav.moresheet [data-nav="shop"]'); await page.locator('[data-shopf]').first().waitFor(); assert.equal(await page.locator('nav.moresheet').count(), 0)
     }
-    for (const [hash, text] of [['discover', /Try something new/], ['shop', /Price to be set/], ['plan', /Plans[\s\S]*Couple[\s\S]*Family/], ['apps', /Coming video game/]]) {
+    for (const [hash, text] of [['discover', /Choose the LWL DEMOSCENE folder/], ['shop', /Price to be set/], ['plan', /Plans[\s\S]*Couple[\s\S]*Family/], ['apps', /Coming video game/]]) {
       await page.goto(url + '#' + hash); await page.locator('main .sec').first().waitFor()
       assert.match(await page.locator('main').innerText(), text, hash)
       await noOverflow(page); await shot(page, `${tag}-${hash}`)
