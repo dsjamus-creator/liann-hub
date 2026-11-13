@@ -23,7 +23,7 @@ const viewId = () => 'Learning with LiANN · ' + [...crypto.getRandomValues(new 
 const S = { viewId: viewId(),
   view: 'loading', email: '', user: null, page: pageFromHash(), appf: 'All', slim: false, appear: false, notif: false,
   theme: theme && DS.some(d => d[0] === theme.ds) && /^(light|dark)$/.test(theme.t) ? theme : { ds: 'liann', t: 'dark' },
-  recent: [], downloads: null, comics: null, reader: null, progress: {}, setlists: null, learningProgress: null, classProgress: null, progressSharing: {}, institutionClasses: {}, openList: null, query: '', busy: false, error: '', fix: '',
+  recent: [], downloads: null, demosceneFiles: [], demosceneSelected: 0, demosceneUrl: null, comics: null, reader: null, progress: {}, setlists: null, learningProgress: null, classProgress: null, progressSharing: {}, institutionClasses: {}, openList: null, query: '', busy: false, error: '', fix: '',
   admin: null, adminError: '', adminSection: adminSection(hashParts()[1]), household: undefined, learner: null, hhError: '', hhBusy: false,
 }
 
@@ -521,6 +521,23 @@ function bind() {
     document.querySelectorAll(`[data-${attr}]`).forEach(b => { b.onclick = () => { S[key] = b.dataset[attr]; render() } })
   }
   document.querySelectorAll('[data-fig]').forEach(b => { b.onclick = () => { S.fig = b.dataset.fig; if (S.figmode === 'lineup') S.figmode = 'figure'; render() } })
+  const demoFolder = $('#demoscene-folder')
+  if (demoFolder) demoFolder.onchange = () => {
+    const files = [...(demoFolder.files || [])].filter(file => /\.html?$/i.test(file.name))
+    if (S.demosceneUrl) URL.revokeObjectURL(S.demosceneUrl)
+    S.demosceneFiles = files
+    S.demosceneSelected = 0
+    S.demosceneUrl = files.length ? URL.createObjectURL(files[0]) : null
+    render()
+  }
+  document.querySelectorAll('[data-demo-index]').forEach(button => { button.onclick = () => {
+    const index = Number(button.dataset.demoIndex), file = S.demosceneFiles[index]
+    if (!file) return
+    if (S.demosceneUrl) URL.revokeObjectURL(S.demosceneUrl)
+    S.demosceneSelected = index
+    S.demosceneUrl = URL.createObjectURL(file)
+    render()
+  } })
   if (S.view === 'hub' && S.page === 'figures') mountViewer(S); else stopViewer()
   showTour()
 }
