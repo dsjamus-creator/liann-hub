@@ -237,6 +237,15 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
       headers: { Authorization: `Bearer ${school.access_token}` } })
     return backendGet(`/learning/progress${q}`)
   }
+  async function progressSharingOptions(profileId) {
+    const q = profileId ? `?profileId=${encodeURIComponent(profileId)}` : ''
+    const school = schoolSession()
+    const result = school?.access_token
+      ? await json(`${backend}/learning/progress/sharing${q}`, { mode: 'cors', credentials: 'omit',
+          headers: { Authorization: `Bearer ${school.access_token}` } })
+      : await backendGet(`/learning/progress/sharing${q}`)
+    return Array.isArray(result.institutions) ? result.institutions : []
+  }
   async function setProgressSharing(institutionId, enabled, profileId) {
     const school = schoolSession()
     const token = school?.access_token || await accessToken()
@@ -282,7 +291,7 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     }
   }
 
-  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, learningProgress, setProgressSharing, institutionClasses, classProgress, profileLink, household, householdAction,
+  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, learningProgress, progressSharingOptions, setProgressSharing, institutionClasses, classProgress, profileLink, household, householdAction,
     beginSchoolSignIn, acceptSchoolCallback, schoolSession, schoolMemberships, linkSchoolIdentity,
     hasInstitutionSession: () => Boolean(schoolSession()), hasSession: () => Boolean(read()?.access_token) }
 }
