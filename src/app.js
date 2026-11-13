@@ -104,13 +104,14 @@ async function loadLearningProgress(profileId) {
   if (S.view === 'hub') render()
   try {
     S.learningProgress = { status: 'ok', ...(await account.learningProgress(profileId)) }
-    const shares = await account.progressSharingOptions(profileId).catch(() => [])
-    S.progressSharing = Object.fromEntries(shares.map(x => [x.institutionId, !!x.enabled]))
-  }
-  catch (error) {
+  } catch (error) {
     S.learningProgress = { status: error.code === 'learner_profile_required' ? 'needs_profile' : 'error', error: error.message }
     if (error.code === 'signed_out' && !S.institutional) return signedOut()
   }
+  try {
+    const shares = await account.progressSharingOptions(profileId)
+    S.progressSharing = Object.fromEntries(shares.map(x => [x.institutionId, !!x.enabled]))
+  } catch { S.progressSharing = {} }
   if (S.view === 'hub') render()
 }
 
