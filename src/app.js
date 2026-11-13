@@ -102,7 +102,11 @@ async function enterInstitutionHub(session) {
 async function loadLearningProgress(profileId) {
   S.learningProgress = { status: 'loading' }
   if (S.view === 'hub') render()
-  try { S.learningProgress = { status: 'ok', ...(await account.learningProgress(profileId)) } }
+  try {
+    S.learningProgress = { status: 'ok', ...(await account.learningProgress(profileId)) }
+    const shares = await account.progressSharingOptions(profileId).catch(() => [])
+    S.progressSharing = Object.fromEntries(shares.map(x => [x.institutionId, !!x.enabled]))
+  }
   catch (error) {
     S.learningProgress = { status: error.code === 'learner_profile_required' ? 'needs_profile' : 'error', error: error.message }
     if (error.code === 'signed_out' && !S.institutional) return signedOut()
