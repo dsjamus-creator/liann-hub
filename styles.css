@@ -61,6 +61,29 @@ button{cursor:pointer}
 
 /* ---------- hub ---------- */
 .app{height:100%;display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto 1fr}
+.app.with-admin{grid-template-columns:auto minmax(0,1fr) 100px}
+.admin-rail{grid-column:3;grid-row:2;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;overflow-y:auto;border-left:1px solid var(--line);background:var(--bg)}
+.admin-rail .ritem{width:88px;min-height:64px;flex-shrink:0}
+.admin-rail .lbl{font-size:11px}
+.admin-rail-label{display:grid;justify-items:center;gap:5px;color:var(--accent);font-size:11px;font-weight:800;text-align:center;margin-bottom:8px}
+.admin-main{min-width:0;min-height:0;display:flex;padding:20px}
+.wrap.admin-wrap{width:100%;max-width:none;min-height:0;grid-template-rows:auto minmax(0,1fr);gap:12px}
+.admin-heading{display:flex;align-items:baseline;flex-wrap:wrap;gap:16px}
+.admin-heading h1{margin:0}
+.admin-heading .btn{margin-left:auto;font-size:12px;padding:6px 10px}
+#admin-frame{border:1px solid var(--line);border-radius:16px;width:100%;height:100%;min-height:400px;background:var(--card)}
+@media(max-width:720px){
+  .app.with-admin{grid-template-columns:minmax(0,1fr) 64px;grid-template-rows:auto minmax(0,1fr) auto}
+  .admin-rail{grid-column:2;grid-row:2;padding:8px 2px}
+  .admin-rail .ritem{width:58px;min-height:56px;padding:6px 2px}
+  .admin-rail .lbl{display:none}
+  .admin-rail-label{font-size:9px}
+  .with-admin .tabs{grid-column:1/-1}
+  .admin-main{padding:8px}
+  .admin-heading{gap:4px}
+  .admin-heading h1{font-size:1.3rem}
+  #admin-frame{border-radius:10px}
+}
 .top{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--bg)}
 .iconbtn{background:none;border:0;border-radius:10px;width:38px;height:38px;display:grid;place-items:center;color:var(--fg);position:relative;flex:none}
 .iconbtn:hover{background:var(--card)}
@@ -75,7 +98,7 @@ button{cursor:pointer}
 .ritem[aria-current="page"]{color:var(--fg)}
 .ritem[aria-current="page"] .ic{background:var(--rail-sel);color:var(--rail-sel-fg)}
 .ritem .dot{top:8px;right:14px}
-.app.slim .ritem{width:52px}.app.slim .ritem span.lbl{display:none}
+.app.slim .rail .ritem{width:52px}.app.slim .rail .ritem span.lbl{display:none}
 main{overflow-y:auto;background:var(--main);border-top-left-radius:18px;padding-inline:clamp(16px,4vw,48px);padding-block:28px 60px;min-width:0}
 .wrap{max-width:1180px;margin-inline:auto;display:grid;gap:34px}
 .hello{display:grid;gap:14px;justify-items:center;text-align:center;padding-top:12px}

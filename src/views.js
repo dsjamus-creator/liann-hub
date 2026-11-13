@@ -1,10 +1,15 @@
 // Pure render functions: state in, HTML string out. Markup and art follow the approved mockup.
-import { APPS, NAV, CODE_LENGTH, appUrl } from './config.js'
+import { config, APPS, NAV, CODE_LENGTH, appUrl } from './config.js'
+import { ADMIN_SECTIONS, adminSection } from './admin.js'
 import { formatBytes } from './downloads.js'
 import { clampPage, visiblePages } from './comics.js'
 import { watermarkStyle } from './pages.js'
 
 const I = {
+  shield: '<path d="M12 3 3 7v5c0 5 9 9 9 9s9-4 9-9V7z"/><path d="m8 12 3 3 5-6"/>',
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 11h18"/>',
+  mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 6 9 7 9-7"/>',
+  settings: '<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>',
   home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h5v-6h4v6h5V9.5"/>',
   apps: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="3.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
   library: '<path d="M4 19.5V5a2 2 0 0 1 2-2h12v15H6a2 2 0 0 0-2 2v0a2 2 0 0 0 2 2h12"/><path d="M8 7h6"/>',
@@ -477,16 +482,26 @@ const TAB_PAGES = ['home', 'apps', 'library', 'downloads']
 
 export const PAGES = { home: pHome, apps: pApps, library: pLibrary, read: pRead, figures: pFigures, discover: pDiscover, kids: pKids, shop: pShop, downloads: pDownloads, plan: pPlan }
 
+function adminRail(s) {
+  return `<nav class="admin-rail" aria-label="Super Admin"><div class="admin-rail-label">${ico('shield')}<span>Super Admin</span></div>${ADMIN_SECTIONS.map(([id, label, icon]) => `<button class="ritem" data-admin="${id}" title="${label}" aria-label="${label}" ${s.page === 'admin' && adminSection(s.adminSection) === id ? 'aria-current="page"' : ''}><span class="ic">${ico(icon)}</span><span class="lbl">${label}</span></button>`).join('')}</nav>`
+}
+
+function pAdmin(s) {
+  const section = ADMIN_SECTIONS.find(([id]) => id === adminSection(s.adminSection))
+  return `<div class="admin-heading"><h1>Super Admin</h1><span class="muted">${esc(section[1])}</span><button class="btn ghost" id="retry-admin">Refresh dashboard</button></div><iframe id="admin-frame" title="AlongSide Super Admin controls" ${s.adminFrameParked ? '' : `src="${esc(new URL('/hub-admin', config.backend).href)}"`} referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox"></iframe>`
+}
+
 export function vHub(s) {
   if (s.institutional) return vInstitutionHub(s)
-  const p = profileOf(s.user), page = PAGES[s.page] ? s.page : 'home'
-  return `<div class="app ${s.slim ? 'slim' : ''}">
+  const isAdmin = s.admin?.superAdmin === true && !s.learner
+  const p = profileOf(s.user), page = s.page === 'admin' && isAdmin ? 'admin' : PAGES[s.page] ? s.page : 'home'
+  return `<div class="app ${isAdmin ? 'with-admin' : ''} ${s.slim ? 'slim' : ''}">
   <header class="top"><button class="iconbtn menu" id="slim" aria-label="${s.slim ? 'Expand' : 'Collapse'} menu">${ico('menu')}</button>${LOCKUP}
    <form class="search" id="topsearch" role="search">${ico('search', 18)}<input id="ts" value="${esc(s.query || '')}" placeholder="Search Learning with LiANN" aria-label="Search"></form>
    <button class="iconbtn" id="apbtn" aria-label="Appearance">${ico('palette')}</button><button class="iconbtn help" aria-label="Help and account" data-nav="plan">${ico('help')}</button><button class="iconbtn${notificationsOf(s).length ? ' has-new' : ''}" id="bell" aria-label="Notifications" aria-expanded="${!!s.notif}">${ico('bell')}</button>
    <button class="tile avatar" id="me" aria-label="Profile (${esc(p.name)})">${esc(p.g)}</button></header>
   <nav class="rail" aria-label="Main">${NAV.map(rItem(page)).join('')}</nav>
-  <main id="main"><div class="wrap fade">${PAGES[page](s)}</div></main>
+  <main id="main" class="${page === 'admin' ? 'admin-main' : ''}"><div class="wrap fade ${page === 'admin' ? 'admin-wrap' : ''}">${s.adminError ? `<div class="c" role="alert">${esc(s.adminError)} <button class="btn ghost" id="retry-admin">Retry admin access</button></div>` : ''}${page === 'admin' ? pAdmin(s) : PAGES[page](s)}</div></main>${isAdmin ? adminRail(s) : ''}
   <nav class="tabs" aria-label="Main">${NAV.filter(([k]) => TAB_PAGES.includes(k)).map(rItem(page)).join('')}<button class="ritem" id="morebtn" aria-expanded="${!!s.more}" ${TAB_PAGES.includes(page) ? '' : 'aria-current="page"'}><span class="ic">${ico('menu')}</span><span class="lbl">More</span></button></nav>
   ${s.more ? `<nav class="moresheet" aria-label="More">${NAV.filter(([k]) => !TAB_PAGES.includes(k)).map(rItem(page)).join('')}</nav>` : ''}</div>${s.appear ? appearHTML(s.theme) : ''}${s.notif ? notifsHTML(s) : ''}${s.reader ? readerHTML(s) : ''}`
 }

@@ -1,6 +1,7 @@
 import { initInstall, currentMode, onInstallChange, promptInstall } from './pwa.js'
 import { config, NAV, CODE_LENGTH } from './config.js'
 import { createAccount } from './account.js'
+import { adminSection, bindAdminBridge } from './admin.js'
 import { loadDownloads } from './downloads.js'
 import { createBook, webglOK } from './book3d.js'
 import { createPageSigner } from './pages.js'
@@ -9,6 +10,7 @@ import { DS, vLoading, vEmail, vCode, vWho, vHub } from './views.js'
 import { mountViewer, stopViewer } from './figures.js'
 
 const account = createAccount({ pinyinApi: config.pinyinApi, backend: config.backend })
+const syncAdmin = bindAdminBridge({ account, state: () => S, onDenied: () => { S.admin = null; S.adminError = 'Super Admin access has ended. Sign in again or retry the access check.'; S.page = 'home'; history.replaceState(null, '', '#home'); render() } })
 const $ = sel => document.querySelector(sel)
 const store = {
   get(key, fallback) { try { return JSON.parse(localStorage.getItem(key) || 'null') ?? fallback } catch { return fallback } },
@@ -22,11 +24,11 @@ const S = { viewId: viewId(),
   view: 'loading', email: '', user: null, page: pageFromHash(), appf: 'All', slim: false, appear: false, notif: false,
   theme: theme && DS.some(d => d[0] === theme.ds) && /^(light|dark)$/.test(theme.t) ? theme : { ds: 'liann', t: 'dark' },
   recent: [], downloads: null, comics: null, reader: null, progress: {}, setlists: null, learningProgress: null, classProgress: null, progressSharing: {}, institutionClasses: {}, openList: null, query: '', busy: false, error: '', fix: '',
-  household: undefined, learner: null, hhError: '', hhBusy: false,
+  admin: null, adminError: '', adminSection: adminSection(hashParts()[1]), household: undefined, learner: null, hhError: '', hhBusy: false,
 }
 
 function hashParts() { const [k, arg] = location.hash.slice(1).split('/'); try { return [k, arg ? decodeURIComponent(arg) : ''] } catch { return [k, ''] } }
-function pageFromHash() { const [k] = hashParts(); return NAV.some(([n]) => n === k) ? k : 'home' }
+function pageFromHash() { const [k] = hashParts(); return k === 'admin' || NAV.some(([n]) => n === k) ? k : 'home' }
 // A reader link: #read/<episode id> opens that comic as soon as the hub and the episodes are ready.
 function openFromHash() {
   const [k, arg] = hashParts()
@@ -62,8 +64,17 @@ async function householdDo(method, path, body, done) {
 function render() {
   const view = { loading: vLoading, email: vEmail, code: vCode, who: vWho, hub: vHub }[S.view]
   const focused = document.activeElement?.id
-  $('#root').innerHTML = view(S)
+  const adminFrame = $('#admin-frame')
+  let parking
+  if (adminFrame && S.view === 'hub' && S.page === 'admin' && S.admin?.superAdmin && !S.learner && document.body.moveBefore) {
+    parking = document.createElement('div'); parking.hidden = true; document.body.append(parking); parking.moveBefore(adminFrame, null)
+  }
+  $('#root').innerHTML = view(parking ? { ...S, adminFrameParked: true } : S)
+  const replacement = $('#admin-frame')
+  if (parking && replacement) { replacement.parentElement.moveBefore(adminFrame, replacement); replacement.remove() }
+  parking?.remove()
   bind()
+  syncAdmin()
   if (focused === 'q' || focused === 'ts') { const el = $('#' + focused); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length) } }
 }
 
@@ -75,7 +86,15 @@ async function sendCode(email) {
   catch (error) { S.busy = false; S.error = error.status === 429 ? 'Too many codes requested. Wait a minute, then try again.' : error.message; render() }
 }
 
-async function enterHub(user) {
+async function enterHub(user, access) {
+  S.user = user; S.institutional = false; S.admin = null; S.adminError = '';
+  if (!S.learner) {
+    try { const result = access === undefined ? await account.adminAccess() : access; if (S.user !== user) return; S.admin = result }
+    catch (error) { S.adminError = error.message }
+  }
+  if (S.user !== user) return
+  if (S.admin?.superAdmin) { S.page = 'admin'; S.adminSection = adminSection(hashParts()[1]); history.replaceState(null, '', '#admin/' + S.adminSection) }
+  else if (S.page === 'admin') S.page = 'home'
   S.user = user; S.institutional = false; S.institutions = []
   S.recent = store.get(accountKey('liann-hub-recent', user), [])
   S.progress = store.get(accountKey('liann-hub-reader', user), {})
@@ -86,7 +105,7 @@ async function enterHub(user) {
 }
 
 async function enterInstitutionHub(session) {
-  S.user = session.user; S.institutional = true; S.learner = null; S.household = null
+  S.admin = null; S.adminError = ''; S.user = session.user; S.institutional = true; S.learner = null; S.household = null
   S.institutions = await account.schoolMemberships()
   S.institutionClasses = {}
   for (const m of S.institutions) {
@@ -169,7 +188,7 @@ async function finishProfile() {
 
 async function signedOut() {
   S.reader = null; dropBook()
-  go('loading', { user: null, recent: [], progress: {}, setlists: null, openList: null })
+  go('loading', { admin: null, adminError: '', learner: null, user: null, recent: [], progress: {}, setlists: null, openList: null })
   let revoked = false
   try { revoked = (await fetch('/comic/logout', { method: 'POST', credentials: 'same-origin', cache: 'no-store' })).ok } catch { /* explain below */ }
   go('email', revoked ? {} : { error: 'Could not confirm comic sign-out. Close this browser and try again.' })
@@ -411,7 +430,13 @@ function bind() {
     const submit = async () => {
       if (S.busy) return
       S.busy = true; S.error = ''; f2.querySelector('[type=submit]').disabled = true
-      try { const user = await account.verifyCode(S.email, code()); if (!user) throw new Error('Sign-in did not complete. Try again.'); go('who', { user }) }
+      try {
+        const user = await account.verifyCode(S.email, code())
+        if (!user) throw new Error('Sign-in did not complete. Try again.')
+        const access = await account.adminAccess().catch(error => { S.adminError = error.message; return null })
+        if (access?.superAdmin) await enterHub(user, access)
+        else go('who', { user })
+      }
       catch (error) { S.busy = false; S.error = error.message; render() }
     }
     ins.forEach((el, i) => {
@@ -447,7 +472,7 @@ function bind() {
     const ok = $('#hhagree').checked
     householdDo('POST', '/children', { name: $('#hhcname').value, dateOfBirth: $('#hhcdob').value, guardianName: $('#hhgname').value,
       agreements: { terms: ok, privacy: ok } }, 'Child profile added') }
-  document.querySelectorAll('#signout').forEach(b => { b.onclick = async () => { await account.signOut(); if (await signedOut()) toast('Signed out') } })
+  document.querySelectorAll('#signout').forEach(b => { b.onclick = async () => { S.admin = null; render(); await account.signOut(); if (await signedOut()) toast('Signed out') } })
   const linkSchool = $('#link-school'); if (linkSchool) linkSchool.onclick = async () => {
     const tab = window.open('', '_blank')
     if (!tab) { S.error = 'Allow a new tab to open the secure school-linking page, then try again.'; render(); return }
@@ -456,6 +481,12 @@ function bind() {
     catch (error) { tab.close(); S.error = error.message; render() }
   }
 
+  document.querySelectorAll('[data-admin]').forEach(b => { b.onclick = () => {
+    if (!S.admin?.superAdmin || S.learner) return
+    S.page = 'admin'; S.adminSection = adminSection(b.dataset.admin); S.more = false; S.appear = false; S.notif = false
+    history.replaceState(null, '', '#admin/' + S.adminSection); render()
+  } })
+  const retryAdmin = $('#retry-admin'); if (retryAdmin) retryAdmin.onclick = () => { $('#admin-frame')?.remove(); enterHub(S.user) }
   document.querySelectorAll('[data-nav]').forEach(b => { b.onclick = () => {
     S.page = b.dataset.nav; S.openList = null; S.appf = b.dataset.f || 'All'; S.more = false; S.notif = false
     history.replaceState(null, '', '#' + S.page); render(); const m = $('#main'); if (m) m.scrollTop = 0
@@ -520,7 +551,7 @@ function showTour() {
   $('#tskip').onclick = () => { store.set('liann-hub-tour-done', true); showTour() }
 }
 
-window.addEventListener('hashchange', () => { if (S.view === 'hub') { S.page = pageFromHash(); S.openList = null; render(); openFromHash() } })
+window.addEventListener('hashchange', () => { if (S.view === 'hub') { S.page = pageFromHash(); S.adminSection = adminSection(hashParts()[1]); S.openList = null; render(); openFromHash() } })
 
 async function start() {
   // Returning from the sign-in link in the email: take the session out of the address before the hub reads it as a page.

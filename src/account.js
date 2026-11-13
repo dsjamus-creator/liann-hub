@@ -201,6 +201,35 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     return json(`${backend}${path}`, { headers: { Authorization: `Bearer ${token}` } })
   }
 
+  async function adminRequest(path, method = 'GET', body) {
+    // No absolute URLs, traversal, cookie fallback or arbitrary proxy requests.
+    if (typeof path !== 'string' || !/^\/admin\/[a-z0-9/?&=_%+@.,:-]+$/i.test(path === '/me' ? '/admin/whoami' : path) || path.includes('..') || /%2f|%5c|%2e/i.test(path))
+      throw new AccountError('Unknown admin request.', 'bad_admin_path')
+    if (!['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].includes(method) || (body !== undefined && (typeof body !== 'string' || body.length > 1_000_000)))
+      throw new AccountError('Invalid admin request.', 'bad_admin_request')
+    const token = await accessToken()
+    if (!token) throw new AccountError('Sign in again to use Super Admin.', 'signed_out')
+    let response
+    try {
+      response = await fetchImpl(`${backend}${path === '/me' ? '/admin/whoami' : path}`, {
+        method, body: method === 'GET' ? undefined : body, mode: 'cors', credentials: 'omit',
+        cache: 'no-store', referrerPolicy: 'no-referrer',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      })
+    } catch { throw new AccountError('Could not reach Super Admin. Check your connection and try again.', 'network') }
+    let result = {}
+    try { result = await response.json() } catch { /* non-JSON errors remain errors */ }
+    if (path === '/me') result = { ...result, isAdmin: response.ok && result.superAdmin === true }
+    return { status: response.status, body: result }
+  }
+
+  async function adminAccess() {
+    const result = await adminRequest('/admin/whoami')
+    if ([401, 403, 404].includes(result.status)) return null
+    if (result.status !== 200) throw new AccountError('Could not check Super Admin access. Try again.', 'admin_unavailable')
+    return result.body.superAdmin === true ? result.body : null
+  }
+
   // Couple and Family plans (One LiANN account C3). A 404 means AlongSide has households switched off.
   async function backendCall(method, path, body) {
     const token = await accessToken()
@@ -291,7 +320,7 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     }
   }
 
-  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, learningProgress, progressSharingOptions, setProgressSharing, institutionClasses, classProgress, profileLink, household, householdAction,
+  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, learningProgress, progressSharingOptions, setProgressSharing, institutionClasses, classProgress, profileLink, household, householdAction, adminAccess, adminRequest,
     beginSchoolSignIn, acceptSchoolCallback, schoolSession, schoolMemberships, linkSchoolIdentity,
     hasInstitutionSession: () => Boolean(schoolSession()), hasSession: () => Boolean(read()?.access_token) }
 }
