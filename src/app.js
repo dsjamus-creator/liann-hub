@@ -523,7 +523,7 @@ function bind() {
   document.querySelectorAll('[data-fig]').forEach(b => { b.onclick = () => { S.fig = b.dataset.fig; if (S.figmode === 'lineup') S.figmode = 'figure'; render() } })
   const demoFolder = $('#demoscene-folder')
   if (demoFolder) demoFolder.onchange = () => {
-    const files = [...(demoFolder.files || [])].filter(file => /\\.html?$/i.test(file.name))
+    const files = [...(demoFolder.files || [])].filter(file => /\.html?$/i.test(file.name))
     if (S.demosceneUrl) URL.revokeObjectURL(S.demosceneUrl)
     S.demosceneFiles = files
     S.demosceneSelected = 0
