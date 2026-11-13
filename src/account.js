@@ -230,6 +230,37 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     return { name: result.name, words: Array.isArray(result.words) ? result.words : [] }
   }
 
+  async function learningProgress(profileId) {
+    const q = profileId ? `?profileId=${encodeURIComponent(profileId)}` : ''
+    const school = schoolSession()
+    if (school?.access_token) return json(`${backend}/learning/progress${q}`, { mode: 'cors', credentials: 'omit',
+      headers: { Authorization: `Bearer ${school.access_token}` } })
+    return backendGet(`/learning/progress${q}`)
+  }
+  async function setProgressSharing(institutionId, enabled, profileId) {
+    const school = schoolSession()
+    const token = school?.access_token || await accessToken()
+    if (!token) throw new AccountError('Sign in again to manage progress sharing.', 'signed_out')
+    return json(`${backend}/learning/institutions/${encodeURIComponent(institutionId)}/progress-sharing`, {
+      method: 'POST', mode: school ? 'cors' : 'same-origin', credentials: school ? 'omit' : 'same-origin',
+      headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ enabled: !!enabled, ...(profileId ? { profileId } : {}) })
+    })
+  }
+  async function institutionClasses(institutionId) {
+    const school = schoolSession()
+    if (!school?.access_token) throw new AccountError('Sign in with your school again.', 'signed_out')
+    const result = await json(`${backend}/learning/institutions/${encodeURIComponent(institutionId)}/classes`, {
+      mode: 'cors', credentials: 'omit', headers: { Authorization: `Bearer ${school.access_token}` } })
+    return Array.isArray(result.classes) ? result.classes : []
+  }
+  async function classProgress(classId) {
+    const school = schoolSession()
+    if (!school?.access_token) throw new AccountError('Sign in with your school again.', 'signed_out')
+    return json(`${backend}/learning/classes/${encodeURIComponent(classId)}/progress`, {
+      mode: 'cors', credentials: 'omit', headers: { Authorization: `Bearer ${school.access_token}` } })
+  }
+
   // Finish the learner profile (One LiANN account, B2): ask AlongSide for a one-time pass, which opens its profile
   // form already signed in. Only AlongSide's own addresses are ever used, whatever the reply says.
   async function profileLink(profile) {
@@ -251,7 +282,7 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     }
   }
 
-  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, profileLink, household, householdAction,
+  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, learningProgress, setProgressSharing, institutionClasses, classProgress, profileLink, household, householdAction,
     beginSchoolSignIn, acceptSchoolCallback, schoolSession, schoolMemberships, linkSchoolIdentity,
     hasInstitutionSession: () => Boolean(schoolSession()), hasSession: () => Boolean(read()?.access_token) }
 }
