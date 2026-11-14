@@ -1,4 +1,5 @@
 import { workspaceSection } from './workspace.js'
+import { createHskController } from './hsk.js'
 import { initInstall, currentMode, onInstallChange, promptInstall } from './pwa.js'
 import { config, NAV, CODE_LENGTH } from './config.js'
 import { createAccount } from './account.js'
@@ -27,6 +28,7 @@ const S = { viewId: viewId(),
   recent: [], downloads: null, demosceneFiles: [], demosceneSelected: 0, demosceneUrl: null, comics: null, reader: null, progress: {}, setlists: null, learningProgress: null, classProgress: null, progressSharing: {}, institutionClasses: {}, openList: null, query: '', busy: false, error: '', fix: '',
   followups: null, followupDetail: null, followupDraft: null, followupReviewDraft: null, followupQuiz: null, followupError: '', followupBusy: false, workspaceAccess: null, workspaceData: null, workspaceRole: 'student', workspaceSection: 'overview', workspaceLoading: false, workspaceError: '', workspaceActionError: '', admin: null, adminError: '', adminSection: adminSection(hashParts()[1]), household: undefined, learner: null, hhError: '', hhBusy: false,
 }
+const hsk = createHskController({state:S,account,render})
 
 function hashParts() { const [k, arg] = location.hash.slice(1).split('/'); try { return [k, arg ? decodeURIComponent(arg) : ''] } catch { return [k, ''] } }
 function pageFromHash() { const [k] = hashParts(); return k === 'workspace' || k === 'admin' || NAV.some(([n]) => n === k) ? k : 'home' }
@@ -91,6 +93,7 @@ async function sendCode(email) {
 }
 
 async function enterHub(user, access, workspaceAccess) {
+  hsk.reset()
   ++workspaceRequest; ++progressRequest; S.learningProgress = null; S.classProgress = null; S.progressSharing = {}; S.followups = null; S.followupDetail = null; S.followupDraft = null; S.followupReviewDraft = null; S.followupQuiz = null; S.followupError = ''; S.followupBusy = false
   S.user = user; S.institutional = false; S.admin = null; S.adminError = ''; S.workspaceAccess = null; S.workspaceData = null; S.workspaceError = '';
   if (!S.learner) {
@@ -121,18 +124,20 @@ async function enterHub(user, access, workspaceAccess) {
 
 let workspaceRequest = 0
 async function loadWorkspace() {
+  hsk.reset()
   const request = ++workspaceRequest, user = S.user, role = S.workspaceRole
   S.workspaceData = null; S.workspaceError = ''; S.workspaceActionError = ''; S.followups = null; S.followupDetail = null; S.followupQuiz = null; S.followupDraft = null; S.followupReviewDraft = null; S.followupError = ''; S.followupBusy = false
   if (!S.workspaceAccess?.roles?.includes(role) || S.learner) { S.workspaceLoading = false; render(); return }
   S.workspaceLoading = true; render()
   try { const result = await account.workspaceData(role); if (S.user !== user || S.learner || request !== workspaceRequest) return; S.workspaceData = result }
   catch (error) { if (S.user !== user || S.learner || request !== workspaceRequest) return; if (error.code === 'signed_out') return signedOut(); S.workspaceError = error.message }
-  S.workspaceLoading = false; render(); loadFollowups()
+  S.workspaceLoading = false; render(); loadFollowups(); hsk.load()
 }
 function navigateWorkspace(section, role = S.workspaceRole) {
   if (!S.workspaceAccess || S.learner || S.admin?.superAdmin) return
   if (role !== S.workspaceRole && !S.workspaceAccess.roles?.includes(role)) return
   const changed = role !== S.workspaceRole
+  hsk.navigate(section)
   S.followupDetail = null; S.followupQuiz = null; S.followupDraft = null; S.followupReviewDraft = null; S.followupError = ''; S.notif = false
   S.workspaceRole = role; S.workspaceSection = workspaceSection(role,section); S.page = 'workspace'; S.more = false
   history.replaceState(null, '', '#workspace/'+role+'/'+S.workspaceSection); render()
@@ -193,6 +198,7 @@ async function openWorkspaceAction(path) {
 }
 
 async function enterInstitutionHub(session) {
+  hsk.reset()
   ++workspaceRequest; S.workspaceAccess = null; S.workspaceData = null; S.admin = null; S.adminError = ''; S.user = session.user; S.institutional = true; S.learner = null; S.household = null
   S.institutions = await account.schoolMemberships()
   S.institutionClasses = {}
@@ -282,6 +288,7 @@ async function finishProfile() {
 }
 
 async function signedOut() {
+  hsk.reset()
   S.reader = null; dropBook()
   ++workspaceRequest; ++progressRequest; S.learningProgress = null; S.classProgress = null; S.progressSharing = {}; S.followups = null; S.followupDetail = null; S.followupDraft = null; S.followupReviewDraft = null; S.followupQuiz = null; S.followupError = ''; S.followupBusy = false
   go('loading', { workspaceAccess: null, workspaceData: null, workspaceError: '', workspaceLoading: false, admin: null, adminError: '', learner: null, user: null, recent: [], progress: {}, setlists: null, openList: null })
@@ -497,6 +504,7 @@ window.addEventListener('resize', () => {
 })
 
 function bind() {
+  hsk.bind()
   document.querySelectorAll('[data-readep]').forEach(b => { b.onclick = () => openReader(b.dataset.readep) })
   bindReader()
   const f1 = $('#f1')

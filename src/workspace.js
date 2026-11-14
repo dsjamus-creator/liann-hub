@@ -1,9 +1,10 @@
 import { roleLabel, followupCards, followupDetail, guardianPage } from './followups.js'
+import { hskPage, hskProgress } from './hsk.js'
 // Role-specific navigation. Access comes from the backend, never user metadata.
 export const WORKSPACE_SECTIONS = {
- guardian:[['overview','Overview','apps'],['lessons','Lessons','calendar'],['practice','Practice','read'],['progress','Progress','progress']],
- tutor:[['overview','Overview','apps'],['calendar','Calendar','calendar'],['people','My Students','figures'],['classroom','Classroom','read'],['authorboard','AuthorBoard','kids'],['setlists','SetLists','library'],['progress','Progress','progress'],['earnings','Earnings','plan'],['profile','Profile','settings']],
- student:[['overview','My Learning','apps'],['lessons','My Lessons','calendar'],['classroom','Classroom','read'],['people','My Tutors','figures'],['practice','Practice','discover'],['setlists','My SetLists','library'],['progress','Progress','progress'],['profile','Profile','settings']],
+ guardian:[['overview','Overview','apps'],['lessons','Lessons','calendar'],['practice','Practice','read'],['hsk','HSK Plans','library'],['progress','Progress','progress']],
+ tutor:[['overview','Overview','apps'],['calendar','Calendar','calendar'],['people','My Students','figures'],['preparation','Preparation','kids'],['assessment','Assessment','progress'],['classroom','Classroom','read'],['authorboard','AuthorBoard','kids'],['setlists','SetLists','library'],['progress','Progress','progress'],['earnings','Earnings','plan'],['profile','Profile','settings']],
+ student:[['overview','My Learning','apps'],['lessons','My Lessons','calendar'],['classroom','Classroom','read'],['people','My Tutors','figures'],['practice','Practice','discover'],['hsk','HSK Practice','read'],['setlists','My SetLists','library'],['progress','Progress','progress'],['profile','Profile','settings']],
 }
 export const workspaceSection=(role,section)=>WORKSPACE_SECTIONS[role]?.some(([id])=>id===section)?section:'overview'
 export function workspaceRail(s,{esc,ico}){
@@ -13,14 +14,15 @@ export function workspaceRail(s,{esc,ico}){
 }
 export function workspacePage(s,{esc,progress,library,apps}){
  if(s.followupDetail)return followupDetail(s,{esc})
- if(s.workspaceRole==='guardian')return guardianPage(s,{esc})
+ if(s.workspaceRole==='guardian'&&s.workspaceSection!=='hsk')return guardianPage(s,{esc})+(s.workspaceSection==='progress'?hskProgress(s):'')
  const role=WORKSPACE_SECTIONS[s.workspaceRole]?s.workspaceRole:'student',section=workspaceSection(role,s.workspaceSection),record=s.workspaceData?.role===role?s.workspaceData:null,d=record?.data||{},up=d.upcoming||[],past=d.past||[]
  const title=WORKSPACE_SECTIONS[role].find(([id])=>id===section)[1]
  const open=(path,label)=>`<button class="btn" data-workspace-open="${esc(path)}">${esc(label)}</button>`
  const table=(rows,person)=>rows.length?`<ul class="workspace-list">${rows.map(l=>`<li><div><b>${esc(l.topic||'Lesson')}</b><p class="muted">${esc(person(l)||'')} · ${esc(new Date(l.starts_at).toLocaleString())}</p><span class="muted">${esc(l.status||'Scheduled')}</span></div>${up.includes(l)?open('/classroom/?lesson='+encodeURIComponent(l.id),'Join lesson'):`<button class="btn ghost" data-followup="${esc(l.id)}">${role==='tutor'?'Summary and practice':'Lesson summary'}</button>`}</li>`).join('')}</ul>`:'<p class="muted">No lessons to show yet.</p>'
  const who=l=>role==='tutor'?l.student:l.tutor
  let body=''
- if(section==='progress' && role==='tutor' && s.learningProgress?.status==='needs_profile') body=`<div class="grid"><div class="c"><h2>${up.length}</h2><p>Upcoming lessons</p></div><div class="c"><h2>${past.length}</h2><p>Past lesson records</p></div><div class="c"><h2>${(d.students||[]).length}</h2><p>Students on your roster</p></div></div><p class="muted">Lesson records describe teaching activity, not learner mastery. Student mastery is shown only through authorised progress sharing in an institution workspace.</p>`
+ if(['preparation','assessment','hsk'].includes(section)) body=hskPage(s)
+ else if(section==='progress' && role==='tutor' && s.learningProgress?.status==='needs_profile') body=`<p class="muted">HSK evidence below comes from practice assigned in your lessons. Cross-app word mastery remains subject to its existing sharing controls.</p>`
  else if(section==='progress') body=`<p class="muted">Your learning across connected LiANN apps. Mastery is calculated from recorded practice, not lesson attendance.</p>${s.learningProgress?.status==='needs_profile'?`<div class="c"><p>Complete your learner profile to start recording progress.</p>${open('/student#profile','Set up learner profile')}</div>`:progress(s)}`
  else if(section==='setlists') body=library(s)
  else if(section==='practice') body=`<p class="muted">Practise your saved words in a connected app, then revisit Progress to see recorded mastery.</p>${apps({...s,appf:'All'})}`
@@ -39,5 +41,5 @@ export function workspacePage(s,{esc,progress,library,apps}){
  const e=d.earnings||{},money=p=>new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'}).format((Number(p)||0)/100)
  body=`<div class="grid">${[['Earned',e.earnedPence],['Pending',e.pendingPence],['Refunded',e.refundedPence]].map(([k,v])=>`<div class="c"><h2>${money(v)}</h2><p>${k}</p></div>`).join('')}</div><p class="muted">Accrued lesson amounts, not confirmation of bank payouts. Check AlongSide for the full statement and payment setup.</p>${open('/tutor','Open earnings and payment settings')}`
  }
- return `<div class="workspace-heading"><div><p class="muted">${role==='tutor'?'Tutor workspace':'Student workspace'}</p><h1>${title}</h1></div><button class="btn ghost" id="refresh-workspace">Refresh</button></div>${s.workspaceActionError?`<p class="err" role="alert">${esc(s.workspaceActionError)}</p>`:''}${body}${['practice','progress','lessons'].includes(section)?followupCards(s,{esc}):''}`
+ return `<div class="workspace-heading"><div><p class="muted">${roleLabel(role)} workspace</p><h1>${title}</h1></div><button class="btn ghost" id="refresh-workspace">Refresh</button></div>${s.workspaceActionError?`<p class="err" role="alert">${esc(s.workspaceActionError)}</p>`:''}${body}${section==='progress'?hskProgress(s):''}${['practice','progress','lessons'].includes(section)?followupCards(s,{esc}):''}`
 }

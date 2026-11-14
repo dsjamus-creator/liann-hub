@@ -6,11 +6,12 @@
   "type": "module",
   "scripts": {
     "start": "node scripts/serve.mjs",
-    "test": "node --test tests/unit.test.mjs tests/protect.test.mjs tests/security.test.mjs tests/product.test.mjs tests/pwa.test.mjs tests/android.test.mjs tests/desktop-workflow.test.mjs tests/redirects.test.mjs",
-    "test:smoke": "node tests/smoke.mjs && node tests/admin-smoke.mjs && node tests/workspace-smoke.mjs && node tests/followups-smoke.mjs",
+    "test": "node --test tests/unit.test.mjs tests/protect.test.mjs tests/security.test.mjs tests/product.test.mjs tests/pwa.test.mjs tests/android.test.mjs tests/desktop-workflow.test.mjs tests/redirects.test.mjs tests/hsk.test.mjs",
+    "test:smoke": "node tests/smoke.mjs && node tests/admin-smoke.mjs && node tests/workspace-smoke.mjs && node tests/followups-smoke.mjs && node tests/hsk-smoke.mjs",
     "check": "npm test && npm run test:smoke",
     "deploy": "wrangler deploy",
-    "deploy:check": "wrangler deploy --dry-run"
+    "deploy:check": "wrangler deploy --dry-run",
+    "test:hsk": "node tests/hsk.test.mjs && node tests/hsk-smoke.mjs"
   },
   "devDependencies": {
     "playwright-core": "1.56.1",
