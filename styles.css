@@ -400,3 +400,6 @@ a.btn{display:inline-block;text-decoration:none;text-align:center}
 .workspace-switch{font-size:11px;max-width:100%;display:grid;gap:6px}.workspace-switch select{max-width:90px;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px}
 @media(max-width:720px){.workspace-switch{font-size:9px}.workspace-switch select{max-width:58px;padding:4px 0}.workspace-heading{align-items:flex-start}.workspace-list li{align-items:flex-start;flex-direction:column}.workspace-heading h1{font-size:26px}}
 .wrap.workspace-wrap{gap:20px}.workspace-wrap>.workspace-heading{margin-bottom:0}.workspace-wrap>p{margin:0}
+.followup-form{display:grid;gap:16px}.followup-form label{display:grid;gap:7px;font-weight:700}.followup-form :is(textarea,input,select){font:inherit;box-sizing:border-box;width:100%;max-width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg);color:var(--fg)}
+.followup-form textarea{resize:vertical}.followup-text{white-space:pre-wrap;overflow-wrap:anywhere}.followup-sharing{display:flex;align-items:flex-start;gap:10px;font-size:.9rem}.followup-sharing input{flex:none;margin-top:4px}
+.followup-summary{display:block}.followup-summary h2{margin:0 0 12px}.followup-summary h3{margin:20px 0 8px}.followup-summary p{margin:0 0 12px}

@@ -469,18 +469,22 @@ function pPlan(s) {
   <p class="muted" style="margin:0;font-size:.85rem">Learners use the hub free, or choose a Couple or Family plan. Tutors subscribe monthly or yearly. Schools, institutions and education departments buy licences.</p></section>`
 }
 
-// Notification menu: pending household invitations are the only live items today; everything else is "all caught up".
+// Notifications derive from authorised workspace records and household invites.
 export function notificationsOf(s) {
-  return (s.household?.invitations || []).map(i => ({ id: i.id, text: `${i.owner_email} invited you to their ${i.plan === 'family' ? 'Family' : 'Couple'} plan.`, page: 'plan', cta: 'View' }))
+  const now=Date.now(),data=s.workspaceData?.data||{},role=s.workspaceRole,lessons=(data.upcoming||[]).slice(0,5)
+  const items=lessons.filter(l=>new Date(l.starts_at).getTime()-now<7*86400000).map(l=>({id:'lesson:'+l.id,text:(new Date(l.starts_at).getTime()-now<=90*60000?'Starting soon: ':'Upcoming lesson: ')+(l.topic||'Lesson')+' · '+new Date(l.starts_at).toLocaleString(),page:'workspace',section:role==='tutor'?'calendar':'lessons',cta:'View lesson'}))
+  for(const l of [...(data.upcoming||[]),...(data.past||[])]){if(l.pending_reschedule)items.push({id:'reschedule:'+l.id,text:'Reschedule request awaiting a decision: '+(l.topic||'Lesson'),page:'workspace',section:role==='tutor'?'calendar':'lessons',cta:'View request'});if(l.status==='cancelled'&&Math.abs(new Date(l.starts_at).getTime()-now)<7*86400000)items.push({id:'cancel:'+l.id,text:'Lesson cancelled: '+(l.topic||'Lesson'),page:'workspace',section:role==='tutor'?'calendar':'lessons',cta:'View lessons'})}
+  for(const f of s.followups?.items||[])if(!f.completed_at&&f.status!=='draft'&&f.status!=='withdrawn')items.push({id:'practice:'+f.id,text:'Assigned practice: '+(f.goal||f.topic||'Lesson practice')+(f.due_on?' · Due '+String(f.due_on).slice(0,10):''),page:'workspace',section:role==='tutor'?'overview':'practice',cta:'View practice'})
+  return [...items,...(s.household?.invitations || []).map(i => ({ id: i.id, text: `${i.owner_email} invited you to their ${i.plan === 'family' ? 'Family' : 'Couple'} plan.`, page: 'plan', cta: 'View' }))]
 }
 
 export function notifsHTML(s) {
   const list = notificationsOf(s)
   const body = list.length
-    ? `<ul class="notifs">${list.map(n => `<li><span>${esc(n.text)}</span><button class="btn ghost" data-nav="${n.page}">${esc(n.cta)}</button></li>`).join('')}</ul>`
+    ? `<ul class="notifs">${list.map(n => `<li><span>${esc(n.text)}</span><button class="btn ghost" ${n.section?`data-workspace="${n.section}"`:`data-nav="${n.page}"`}>${esc(n.cta)}</button></li>`).join('')}</ul>`
     : '<p class="muted" style="margin:0">You are all caught up.</p>'
   return `<div class="appear" id="notifpanel" role="dialog" aria-label="Notifications"><h3>Notifications<button class="iconbtn" id="notifclose" aria-label="Close">✕</button></h3>${body}
- <p class="note muted" style="margin:0">Plan invitations and new Bella &amp; LiANN episodes appear here.</p></div>`
+ <p class="note muted" style="margin:0">Upcoming lessons, booking changes, assigned practice and plan invitations appear here. Refresh your workspace for the latest updates.</p></div>`
 }
 
 export function appearHTML(th) {

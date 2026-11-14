@@ -25,7 +25,7 @@ const S = { viewId: viewId(),
   view: 'loading', email: '', user: null, page: pageFromHash(), appf: 'All', slim: false, appear: false, notif: false,
   theme: theme && DS.some(d => d[0] === theme.ds) && /^(light|dark)$/.test(theme.t) ? theme : { ds: 'liann', t: 'dark' },
   recent: [], downloads: null, demosceneFiles: [], demosceneSelected: 0, demosceneUrl: null, comics: null, reader: null, progress: {}, setlists: null, learningProgress: null, classProgress: null, progressSharing: {}, institutionClasses: {}, openList: null, query: '', busy: false, error: '', fix: '',
-  workspaceAccess: null, workspaceData: null, workspaceRole: 'student', workspaceSection: 'overview', workspaceLoading: false, workspaceError: '', workspaceActionError: '', admin: null, adminError: '', adminSection: adminSection(hashParts()[1]), household: undefined, learner: null, hhError: '', hhBusy: false,
+  followups: null, followupDetail: null, followupDraft: null, followupReviewDraft: null, followupQuiz: null, followupError: '', followupBusy: false, workspaceAccess: null, workspaceData: null, workspaceRole: 'student', workspaceSection: 'overview', workspaceLoading: false, workspaceError: '', workspaceActionError: '', admin: null, adminError: '', adminSection: adminSection(hashParts()[1]), household: undefined, learner: null, hhError: '', hhBusy: false,
 }
 
 function hashParts() { const [k, arg] = location.hash.slice(1).split('/'); try { return [k, arg ? decodeURIComponent(arg) : ''] } catch { return [k, ''] } }
@@ -65,6 +65,8 @@ async function householdDo(method, path, body, done) {
 function render() {
   const view = { loading: vLoading, email: vEmail, code: vCode, who: vWho, hub: vHub }[S.view]
   const focused = document.activeElement?.id
+  const activeForm=document.activeElement?.closest('#followup-form,#followup-review')
+  const formFocus=activeForm&&document.activeElement.name?{form:activeForm.id,name:document.activeElement.name,start:document.activeElement.selectionStart,end:document.activeElement.selectionEnd}:null
   const adminFrame = $('#admin-frame')
   let parking
   if (adminFrame && S.view === 'hub' && S.page === 'admin' && S.admin?.superAdmin && !S.learner && document.body.moveBefore) {
@@ -76,6 +78,7 @@ function render() {
   parking?.remove()
   bind()
   syncAdmin()
+  if(formFocus){const field=document.getElementById(formFocus.form)?.elements.namedItem(formFocus.name);if(field){field.focus();try{field.setSelectionRange(formFocus.start,formFocus.end)}catch{}}}
   if (focused === 'q' || focused === 'ts') { const el = $('#' + focused); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length) } }
 }
 
@@ -88,7 +91,7 @@ async function sendCode(email) {
 }
 
 async function enterHub(user, access, workspaceAccess) {
-  ++workspaceRequest; ++progressRequest; S.learningProgress = null; S.classProgress = null; S.progressSharing = {}
+  ++workspaceRequest; ++progressRequest; S.learningProgress = null; S.classProgress = null; S.progressSharing = {}; S.followups = null; S.followupDetail = null; S.followupDraft = null; S.followupReviewDraft = null; S.followupQuiz = null; S.followupError = ''; S.followupBusy = false
   S.user = user; S.institutional = false; S.admin = null; S.adminError = ''; S.workspaceAccess = null; S.workspaceData = null; S.workspaceError = '';
   if (!S.learner) {
     try { const result = access === undefined ? await account.adminAccess() : access; if (S.user !== user) return; S.admin = result }
@@ -119,21 +122,68 @@ async function enterHub(user, access, workspaceAccess) {
 let workspaceRequest = 0
 async function loadWorkspace() {
   const request = ++workspaceRequest, user = S.user, role = S.workspaceRole
-  S.workspaceData = null; S.workspaceError = ''; S.workspaceActionError = ''
+  S.workspaceData = null; S.workspaceError = ''; S.workspaceActionError = ''; S.followups = null; S.followupDetail = null; S.followupQuiz = null; S.followupDraft = null; S.followupReviewDraft = null; S.followupError = ''; S.followupBusy = false
   if (!S.workspaceAccess?.roles?.includes(role) || S.learner) { S.workspaceLoading = false; render(); return }
   S.workspaceLoading = true; render()
   try { const result = await account.workspaceData(role); if (S.user !== user || S.learner || request !== workspaceRequest) return; S.workspaceData = result }
   catch (error) { if (S.user !== user || S.learner || request !== workspaceRequest) return; if (error.code === 'signed_out') return signedOut(); S.workspaceError = error.message }
-  S.workspaceLoading = false; render()
+  S.workspaceLoading = false; render(); loadFollowups()
 }
 function navigateWorkspace(section, role = S.workspaceRole) {
   if (!S.workspaceAccess || S.learner || S.admin?.superAdmin) return
   if (role !== S.workspaceRole && !S.workspaceAccess.roles?.includes(role)) return
   const changed = role !== S.workspaceRole
+  S.followupDetail = null; S.followupQuiz = null; S.followupDraft = null; S.followupReviewDraft = null; S.followupError = ''; S.notif = false
   S.workspaceRole = role; S.workspaceSection = workspaceSection(role,section); S.page = 'workspace'; S.more = false
   history.replaceState(null, '', '#workspace/'+role+'/'+S.workspaceSection); render()
   if (changed) loadWorkspace()
 }
+const followupMessage = error => ({followup_changed_reload:'This summary changed in another tab. Reload it before saving.',lesson_not_finished:'You can save a private draft now. Share the summary after the lesson ends.',summary_goal_practice_required:'Add a summary, a learning goal and practice instructions before sharing.',not_your_lesson:'You no longer have access to this lesson.',not_your_setlist:'Choose a SetList belonging to this lesson’s tutor and learner.',choose_setlist_with_1_to_200_words:'Choose a SetList containing 1–200 words.',assignment_word_too_long:'A word in this SetList exceeds the learner Library limits. Shorten its wording before assigning it.',withdraw_before_editing:'Withdraw the shared summary before revising it.'}[error.code] || error.message)
+let followupListRequest=0, followupDetailRequest=0
+const followupContext=()=>({user:S.user,role:S.workspaceRole,learner:S.learner?.id})
+const sameFollowupContext=c=>S.user===c.user&&S.workspaceRole===c.role&&S.learner?.id===c.learner&&!S.institutional
+async function loadFollowups(){
+ const context=followupContext(),request=++followupListRequest
+ if(!S.workspaceAccess?.roles?.includes(context.role)||S.learner)return
+ S.followups={status:'loading'};render()
+ try{const result=await account.followupRequest('?role='+context.role);if(!sameFollowupContext(context)||request!==followupListRequest)return;S.followups={status:'ok',items:result.items||[]}}
+ catch(error){if(!sameFollowupContext(context)||request!==followupListRequest)return;S.followups={status:'error',error:followupMessage(error)}}
+ render()
+}
+async function openFollowup(id,keepQuiz=false){
+ const context=followupContext(),request=++followupDetailRequest
+ S.followupDetail={status:'loading',lessonId:id};S.followupDraft=null;S.followupReviewDraft=null;S.followupError='';if(!keepQuiz)S.followupQuiz=null;render()
+ try{const result=await account.followupRequest('/'+id);if(!sameFollowupContext(context)||request!==followupDetailRequest)return;S.followupDetail={status:'ok',lessonId:id,...result}}
+ catch(error){if(!sameFollowupContext(context)||request!==followupDetailRequest)return;S.followupDetail={status:'error',lessonId:id,error:followupMessage(error)}}
+ render()
+}
+async function mutateFollowup(action,body){
+ const context=followupContext(),id=S.followupDetail?.lessonId;if(!id||S.followupBusy)return
+ S.followupBusy=true;S.followupError='';render()
+ try{await account.followupRequest('/'+id+(action?'/'+action:''),body);if(!sameFollowupContext(context)||S.followupDetail?.lessonId!==id)return;S.followupBusy=false;await openFollowup(id);loadFollowups();loadLibrary()}
+ catch(error){if(!sameFollowupContext(context)||S.followupDetail?.lessonId!==id)return;S.followupBusy=false;S.followupError=followupMessage(error);render()}
+}
+function nextPracticeWord(){
+ const quiz=S.followupQuiz;if(!quiz)return
+ const unique=[...new Map(quiz.words.filter(w=>w.gl?.trim()).map(w=>[w.gl.trim().toLocaleLowerCase(),w])).values()]
+ if(unique.length<2){quiz.target=null;return render()}
+ const eligible=quiz.words.filter(w=>w.gl?.trim());quiz.index=((quiz.index??-1)+1)%eligible.length;quiz.target=eligible[quiz.index];quiz.eventId=crypto.randomUUID();quiz.result=null
+ const shuffled=items=>items.map(v=>({v,n:crypto.getRandomValues(new Uint32Array(1))[0]})).sort((a,b)=>a.n-b.n).map(x=>x.v)
+ quiz.choices=shuffled([quiz.target,...shuffled(unique.filter(w=>w.gl.trim().toLocaleLowerCase()!==quiz.target.gl.trim().toLocaleLowerCase())).slice(0,3)]);render()
+}
+async function startAssignedPractice(){
+ const context=followupContext(),id=S.followupDetail?.lessonId
+ try{const result=await account.followupRequest('/'+id+'/words');if(!sameFollowupContext(context)||S.followupDetail?.lessonId!==id)return;S.followupQuiz={words:result.words||[],index:-1};nextPracticeWord()}
+ catch(error){if(sameFollowupContext(context)){S.followupError=followupMessage(error);render()}}
+}
+async function answerPractice(choiceId){
+ const quiz=S.followupQuiz,context=followupContext(),id=S.followupDetail?.lessonId
+ if(!quiz?.target||quiz.result||S.followupBusy)return
+ S.followupBusy=true;S.followupError='';render()
+ try{const result=await account.followupRequest('/'+id+'/attempt',{wordId:quiz.target.id,choiceId,eventId:quiz.eventId});if(!sameFollowupContext(context)||S.followupQuiz!==quiz)return;quiz.result=result;S.followupBusy=false;render();loadLearningProgress();account.followupRequest('/'+id).then(detail=>{if(sameFollowupContext(context)&&S.followupQuiz===quiz&&S.followupDetail?.lessonId===id){S.followupDetail={status:'ok',lessonId:id,...detail};render()}}).catch(()=>{})}
+ catch(error){if(!sameFollowupContext(context)||S.followupQuiz!==quiz)return;S.followupBusy=false;S.followupError=followupMessage(error);render()}
+}
+
 async function openWorkspaceAction(path) {
   const user = S.user, tab = window.open('', '_blank')
   if (!tab) { S.workspaceActionError = 'Allow a new tab to open your secure AlongSide workspace.'; render(); return }
@@ -233,7 +283,7 @@ async function finishProfile() {
 
 async function signedOut() {
   S.reader = null; dropBook()
-  ++workspaceRequest; ++progressRequest; S.learningProgress = null; S.classProgress = null; S.progressSharing = {}
+  ++workspaceRequest; ++progressRequest; S.learningProgress = null; S.classProgress = null; S.progressSharing = {}; S.followups = null; S.followupDetail = null; S.followupDraft = null; S.followupReviewDraft = null; S.followupQuiz = null; S.followupError = ''; S.followupBusy = false
   go('loading', { workspaceAccess: null, workspaceData: null, workspaceError: '', workspaceLoading: false, admin: null, adminError: '', learner: null, user: null, recent: [], progress: {}, setlists: null, openList: null })
   let revoked = false
   try { revoked = (await fetch('/comic/logout', { method: 'POST', credentials: 'same-origin', cache: 'no-store' })).ok } catch { /* explain below */ }
@@ -527,6 +577,17 @@ function bind() {
     catch (error) { tab.close(); S.error = error.message; render() }
   }
 
+  document.querySelectorAll('[data-followup]').forEach(b=>{b.onclick=()=>openFollowup(b.dataset.followup)})
+  const followupRefresh=$('#refresh-followups');if(followupRefresh)followupRefresh.onclick=loadFollowups
+  const closeFollowup=$('#close-followup');if(closeFollowup)closeFollowup.onclick=()=>{++followupDetailRequest;S.followupDetail=null;S.followupQuiz=null;S.followupDraft=null;render()}
+  const followupForm=$('#followup-form');if(followupForm)followupForm.oninput=()=>{S.followupDraft=Object.fromEntries(new FormData(followupForm))};if(followupForm)followupForm.onsubmit=e=>{e.preventDefault();const values=Object.fromEntries(new FormData(followupForm));S.followupDraft=values;mutateFollowup('',{...values,status:e.submitter?.dataset.followupStatus||'draft',version:S.followupDetail.record?.version||0})}
+  const reviewForm=$('#followup-review');if(reviewForm)reviewForm.oninput=()=>{S.followupReviewDraft=new FormData(reviewForm).get('note')};if(reviewForm)reviewForm.onsubmit=e=>{e.preventDefault();mutateFollowup('review',{note:new FormData(reviewForm).get('note')})}
+  const withdraw=$('#withdraw-followup');if(withdraw)withdraw.onclick=()=>{if(confirm('Withdraw this shared summary? The learner’s saved practice copy will remain in their Library.'))mutateFollowup('withdraw',{version:S.followupDetail.record.version})}
+  document.querySelectorAll('[data-practice-done]').forEach(b=>{b.onclick=()=>mutateFollowup('completion',{done:b.dataset.practiceDone==='true'})})
+  const sharing=$('#share-assignment-progress');if(sharing)sharing.onchange=()=>mutateFollowup('sharing',{enabled:sharing.checked})
+  const startPractice=$('#start-assigned-practice');if(startPractice)startPractice.onclick=startAssignedPractice
+  const nextPractice=$('#next-practice-word');if(nextPractice)nextPractice.onclick=nextPracticeWord
+  document.querySelectorAll('[data-practice-answer]').forEach(b=>{b.onclick=()=>answerPractice(b.dataset.practiceAnswer)})
   document.querySelectorAll('[data-workspace]').forEach(b => { b.onclick = () => navigateWorkspace(b.dataset.workspace) })
   const workspaceRole = $('#workspace-role'); if (workspaceRole) workspaceRole.onchange = () => navigateWorkspace('overview', workspaceRole.value)
   const accessRetry = $('#retry-workspace-access'); if (accessRetry) accessRetry.onclick = () => enterHub(S.user)

@@ -203,8 +203,12 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
 
   const workspaceAccess = () => backendGet('/learning/workspace')
   async function workspaceData(role) {
-    if (!['tutor','student'].includes(role)) throw new AccountError('Unknown workspace.', 'bad_workspace')
+    if (!['tutor','student','guardian'].includes(role)) throw new AccountError('Unknown workspace.', 'bad_workspace')
     return backendGet('/learning/workspace/' + role)
+  }
+  async function followupRequest(path='',body) {
+    if(!/^(?:\?role=(?:tutor|student|guardian)|\/[a-f0-9-]{36}(?:\/(?:completion|sharing|review|withdraw|words|attempt))?)?$/.test(path)) throw new AccountError('Unknown lesson follow-up.','bad_followup')
+    return body===undefined?backendGet('/learning/followups'+path):backendCall('POST','/learning/followups'+path,body)
   }
   async function workspaceLink(next) {
     if (typeof next !== 'string' || !/^\/(?:tutor(?:#.*)?|student(?:#.*)?|calendar|authorboard\/|classroom\/\?lesson=[a-zA-Z0-9-]+)$/.test(next))
@@ -334,7 +338,7 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     }
   }
 
-  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, learningProgress, progressSharingOptions, setProgressSharing, institutionClasses, classProgress, profileLink, household, householdAction, adminAccess, adminRequest, workspaceAccess, workspaceData, workspaceLink,
+  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, learningProgress, progressSharingOptions, setProgressSharing, institutionClasses, classProgress, profileLink, household, householdAction, adminAccess, adminRequest, workspaceAccess, workspaceData, workspaceLink, followupRequest,
     beginSchoolSignIn, acceptSchoolCallback, schoolSession, schoolMemberships, linkSchoolIdentity,
     hasInstitutionSession: () => Boolean(schoolSession()), hasSession: () => Boolean(read()?.access_token) }
 }
