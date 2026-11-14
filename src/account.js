@@ -210,6 +210,11 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     if(!/^(?:\?role=(?:tutor|student|guardian)|\/[a-f0-9-]{36}(?:\/(?:completion|sharing|review|withdraw|words|attempt))?)?$/.test(path)) throw new AccountError('Unknown lesson follow-up.','bad_followup')
     return body===undefined?backendGet('/learning/followups'+path):backendCall('POST','/learning/followups'+path,body)
   }
+  async function hskRequest(path='',body) {
+    if (!/^(?:\?role=(?:tutor|student|guardian)|\/plans\/[a-f0-9-]{36}(?:\/(?:start|withdraw))?|\/attempts\/[a-f0-9-]{36}\/(?:submit|review))?$/.test(path))
+      throw new AccountError('Unknown HSK workspace action.', 'bad_hsk_path')
+    return body===undefined?backendGet('/learning/hsk'+path):backendCall('POST','/learning/hsk'+path,body)
+  }
   async function workspaceLink(next) {
     if (typeof next !== 'string' || !/^\/(?:tutor(?:#.*)?|student(?:#.*)?|calendar|authorboard\/|classroom\/\?lesson=[a-zA-Z0-9-]+)$/.test(next))
       throw new AccountError('Unknown workspace action.', 'bad_workspace_path')
@@ -338,7 +343,7 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     }
   }
 
-  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, learningProgress, progressSharingOptions, setProgressSharing, institutionClasses, classProgress, profileLink, household, householdAction, adminAccess, adminRequest, workspaceAccess, workspaceData, workspaceLink, followupRequest,
+  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, learningProgress, progressSharingOptions, setProgressSharing, institutionClasses, classProgress, profileLink, household, householdAction, adminAccess, adminRequest, workspaceAccess, workspaceData, workspaceLink, followupRequest, hskRequest,
     beginSchoolSignIn, acceptSchoolCallback, schoolSession, schoolMemberships, linkSchoolIdentity,
     hasInstitutionSession: () => Boolean(schoolSession()), hasSession: () => Boolean(read()?.access_token) }
 }
