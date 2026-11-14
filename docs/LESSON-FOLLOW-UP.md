@@ -1,0 +1,15 @@
+# Lesson follow-up and guardian learning views
+
+Tutors open a past lesson from Calendar, write a private draft, and share a summary, learner feedback, a learning goal and practice instructions after the lesson ends. An optional tutor-curated SetList must belong to the same active tutor/student pair. Publication makes a separate learner-owned practice copy, preserving effective wording and dictionary provenance. It never overwrites an existing learner list. Shared feedback is a new record, separate from private tutor and safeguarding notes.
+
+Students see assignments in My Learning, Practice and Progress. They may report practice done; the interface labels that report separately from measured mastery. A matching-meaning quiz evaluates answers on the server and appends idempotent practice evidence using server time. Existing mastery rules remain unchanged. One activity completion, opening a list or a tutor review cannot award mastery. Text-only activities record completion without generating word-practice events.
+
+Learners choose whether to share the results of each assignment. Tutors and confirmed guardians see assignment-scoped attempt/mastery counts only while that choice is enabled. Other vocabulary and practice history stays private. Tutor review is an explicit shared note, not an automatic learning-goal award. A tutor can withdraw a published summary; it disappears from learner/guardian views, while an already-created learner-owned SetList remains in their Library.
+
+Guardians get a read-only right-hand workspace only for confirmed guardian addresses and learners currently under 18. Requests recheck age, address and confirmation. Changing guardian email clears confirmation at the database level even when legacy feature flags are off. Guardians cannot author feedback, report completion, share results, answer quizzes, enter a classroom as the learner or access private notes/payer information. Current active roster membership and tutor access are checked for teacher reads/writes. Mutations use trusted-origin checks, transactions, row locks, optimistic draft versions and audit records.
+
+The hub bell now shows upcoming/starting-soon lessons, cancellations, open rescheduling requests and assigned practice from authorised workspace data. These are in-app notices refreshed with the workspace; they are not browser push notifications. Existing booking email delivery and the scheduled lesson-reminder workflow are reused. This release does not send a new bulk or marketing email campaign.
+
+Deployment: release the backend and its idempotent startup migration first, then the hub. `db/lesson_followups.sql` is included in the rebuild order and baseline; startup applies it under an advisory lock. All new records are backend-only with RLS and no public/anon/authenticated grants. No Supabase client schema exposure is added.
+
+Verification: backend `scripts/test-lesson-followups.mjs` runs against a disposable PGlite database with real HTTP and verified-identity fixtures; browser `tests/followups-smoke.mjs` covers the tutor/student/guardian workflow at desktop and phone widths. All screenshots use test data.
