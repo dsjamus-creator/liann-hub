@@ -9,6 +9,9 @@ const learnerBase={...base,detail:{...base.detail,plan:{...plan,private_notes:un
 assert.ok(!printablePack(learnerBase).includes('TEACHER-REFERENCE-GUIDANCE'))
 assert.ok(!printablePack(learnerBase).includes('PRIVATE-ONLY'))
 assert.ok(!hskPage({hsk:learnerBase,workspaceRole:'guardian'}).includes('data-hsk-start'))
+const oldAttempt={id:'old',plan_version:0,status:'started',snapshot:{title:'Old plan',targetLevel:4,materials:cleanTasks(tasks)},answers:{},results:[],observations:[]}
+const revised={...learnerBase,attemptId:'old',detail:{...learnerBase.detail,attempts:[oldAttempt]}}
+assert.ok(hskPage({hsk:revised,workspaceRole:'student'}).includes('data-hsk-start="practice"'),'a revised assignment remains startable after an unfinished old attempt')
 const attempts=[{student_id:'one',student:'Same Name',target_level:'4',lesson_id:lesson.id,results:[],observations:[]},{student_id:'two',student:'Same Name',target_level:'4',lesson_id:lesson.id,results:[],observations:[]}]
 assert.equal((hskProgress({hsk:{...base,attempts}}).match(/Same Name · HSK Level 4/g)||[]).length,2)
 let resolveRequest
