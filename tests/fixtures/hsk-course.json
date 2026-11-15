@@ -3,7 +3,7 @@
     "units": [
       {
         "id": "hsk3-course-v2-1-1",
-        "version": "liann-course-v2",
+        "version": "liann-course-v3",
         "band": "1",
         "sequence": 1,
         "title": "Introduce yourself and arrange a meeting",
@@ -128,11 +128,16 @@
             "classification": "listed_at_or_below_target"
           },
           {
-            "hz": "几点",
-            "meaning": "what time",
-            "inventoryReference": null,
-            "pinyin": "jǐ diǎn",
-            "classification": "extension_or_unmatched"
+            "hz": "几",
+            "meaning": "how many (a small expected number)",
+            "inventoryReference": {
+              "band": "1",
+              "serial": 85,
+              "printedPage": 79,
+              "pinyin": "jǐ"
+            },
+            "pinyin": "jǐ",
+            "classification": "listed_at_or_below_target"
           },
           {
             "hz": "见",
@@ -160,14 +165,61 @@
           }
         ],
         "dialogue": "甲：你叫什么名字？\n乙：我叫安娜。我是学生。\n甲：我们明天几点见？\n乙：上午十点，在学校见。",
+        "dialoguePinyin": "Jiǎ: Nǐ jiào shénme míngzi?\nYǐ: Wǒ jiào Ānnà. Wǒ shì xuéshēng.\nJiǎ: Wǒmen míngtiān jǐ diǎn jiàn?\nYǐ: Shàngwǔ shí diǎn, zài xuéxiào jiàn.",
+        "reviewRecord": {
+          "version": "hsk1-desk-review-20261115",
+          "status": "desk_review_complete_tutor_signoff_required",
+          "reviewerType": "AI-assisted desk review in the interactive workspace; not a native-speaker sign-off or learner pilot",
+          "modelApiUsed": false,
+          "sources": [
+            {
+              "scope": "Level 1 task descriptions",
+              "printedPages": "2–5"
+            },
+            {
+              "scope": "300 vocabulary entries",
+              "printedPages": "77–84"
+            },
+            {
+              "scope": "246 recognition characters",
+              "printedPages": "353–354"
+            },
+            {
+              "scope": "Level 1 grammar",
+              "printedPages": "383–384"
+            }
+          ],
+          "pending": [
+            "Qualified Mandarin tutor checks naturalness, pinyin, pacing and developmental suitability.",
+            "Run a real learner pilot; no learner results have been collected by this review."
+          ]
+        },
+        "assessmentNotes": {
+          "examBoundary": "The verified HSK 1 sample has 20 listening and 20 reading questions, with no writing section. These short lesson sets are not full mock papers.",
+          "speakingBoundary": "Speaking is formative communicative practice; a written reflection is not evidence of spoken proficiency.",
+          "writingBoundary": "Writing here is optional supported character practice. There is no minimum-character requirement and it must not affect an HSK 1 readiness judgement.",
+          "pinyinConvention": "Word forms use lexical tones, including written nǐ hǎo; connected examples show common 一/不 tone changes. A tutor must model and check actual pronunciation. Proper names are supplied with pinyin."
+        },
+        "tutorGuide": {
+          "preteach": "Read the two people’s roles and the meeting details before checking answers.",
+          "baseline": "Before modelling, give one short parallel oral or reading example and record whether support was needed. Do not reuse the reserved seven-day review.",
+          "independent": "Use the assigned practice once after teaching. Record the exact prompt, replay, translation or model supplied; separate supported completion from independent performance. Record whether pinyin was visible; pinyin-supported and character-only reading are different support conditions and must not be treated as interchangeable evidence.",
+          "exitCheck": "Change a person, place, time or quantity. Ask for one new response without showing the model; record the words heard or seen, not a general impression.",
+          "delayed": "Revisit with the different reserved tasks at the server-enforced seven-day point. Do not print or rehearse their answer key with the learner beforehand.",
+          "recording": "Use the existing task observation/evidence fields for specific support and errors. The pilot worksheet is a private tutor aid; no new learner database or automatic pilot judgement is introduced.",
+          "readAloud": "Read naturally at a consistent beginner pace. Record every replay; screen off the script during listening. Label tutor-read or device-voice audio accurately; neither is a reviewed human recording asset."
+        },
+        "authorship": {
+          "method": "previous_prepared_draft",
+          "reviewStatus": "tutor_review_required"
+        },
         "teachingStages": {
           "warmup": "Retrieve 叫、名字、学生、明天. Ask the learner to give a new example and note any gaps.",
           "teaching": "Model this dialogue and check meaning:\n甲：你叫什么名字？\n乙：我叫安娜。我是学生。\n甲：我们明天几点见？\n乙：上午十点，在学校见。\nTeach 是 + noun and Time + place + action. Ask the learner to explain how each example works.",
           "guided": "Use the reading passage and listening script. Ask the learner to locate the evidence for each answer, then practise a parallel exchange together.",
           "independent": "Use the selected speaking and writing tasks without showing the reference guidance. Record any prompting. Longer writing may be completed after the lesson.",
           "exitTicket": "Ask for one new example that demonstrates: Introduce yourself and identify who, when and where in a simple arrangement. Record the evidence and one next step. The delayed review uses different material after seven days."
-        },
-        "dialoguePinyin": "Jiǎ: Nǐ jiào shénme míngzi?\nYǐ: Wǒ jiào Ānnà. Wǒ shì xuésheng.\nJiǎ: Wǒmen míngtiān jǐ diǎn jiàn?\nYǐ: Shàngwǔ shí diǎn, zài xuéxiào jiàn."
+        }
       },
       {
         "id": "hsk3-course-v2-1-3",
@@ -235,22 +287,23 @@
       "title": "Introduce yourself and arrange a meeting · reading",
       "minutes": 6,
       "prompt": "Read the passage and choose the best answers. Use evidence from the text.",
-      "passage": "我叫小林。我是学生。明天上午九点，我和大卫在学校见面。大卫的书在我这里。",
-      "passagePinyin": "Wǒ jiào Xiǎolín. Wǒ shì xuésheng. Míngtiān shàngwǔ jiǔ diǎn, wǒ hé Dàwèi zài xuéxiào jiànmiàn. Dàwèi de shū zài wǒ zhèlǐ.",
+      "passage": "我叫小林。我是学生。大卫是老师。明天上午九点，我和大卫在学校见。大卫的书在我这里。",
+      "passagePinyin": "Wǒ jiào Xiǎolín. Wǒ shì xuéshēng. Dàwèi shì lǎoshī. Míngtiān shàngwǔ jiǔ diǎn, wǒ hé Dàwèi zài xuéxiào jiàn. Dàwèi de shū zài wǒ zhèlǐ.",
+      "reference": "Tutor-only key evidence: Q1: 小林. Ask the learner to point to the exact supporting words in the passage; a correct guess alone is not evidence of understanding. Q2: 上午九点. Ask the learner to point to the exact supporting words in the passage; a correct guess alone is not evidence of understanding. Time and place are read directly; names are supported labels, not new vocabulary being tested.",
       "questions": [
         {
           "id": "q1",
-          "prompt": "小林是做什么的？",
+          "prompt": "谁是学生？",
           "options": [
-            "学生",
-            "医生",
-            "老师"
+            "大卫",
+            "安娜",
+            "小林"
           ],
-          "answer": 0
+          "answer": 2
         },
         {
           "id": "q2",
-          "prompt": "他们几点见面？",
+          "prompt": "他们几点见？",
           "options": [
             "上午八点",
             "上午九点",
@@ -277,14 +330,15 @@
       "title": "Introduce yourself and arrange a meeting · listening",
       "minutes": 4,
       "prompt": "Listen to the script read aloud by your tutor or a Mandarin device voice, then choose the best answer.",
-      "audioText": "我叫安娜。今天下午两点，我在学校等你。请带你的书。",
+      "audioText": "今天下午两点，我们在学校见。你的书在我这里。",
+      "reference": "Tutor-only key evidence: 学校. Use the spoken time, place, activity or quantity explicitly given in this script. Do not infer gender from a voice. Record replay or translation support.",
       "questions": [
         {
           "id": "q1",
-          "prompt": "安娜在哪里等？",
+          "prompt": "我们在哪里见？",
           "options": [
             "家里",
-            "商店",
+            "超市",
             "学校"
           ],
           "answer": 2
@@ -307,7 +361,7 @@
       "objectiveId": "1-speaking",
       "title": "Introduce yourself and arrange a meeting · speaking",
       "minutes": 2,
-      "prompt": "请介绍你自己，然后告诉老师你明天几点、在哪里和朋友见面。",
+      "prompt": "Tell your tutor your name and whether you are a student or teacher in the role play. Give a meeting time and place using a new role card.",
       "responseMode": "live",
       "reference": "Hear the learner complete the task. Consider task fulfilment, intelligibility and tones, accuracy, range, fluency and register. Record the specific help given; a written reflection does not establish speaking proficiency."
     },
@@ -326,8 +380,9 @@
       "skill": "writing",
       "objectiveId": "1-writing",
       "title": "Introduce yourself and arrange a meeting · writing",
+      "optional": true,
       "minutes": 10,
-      "prompt": "Write your name and one simple sentence introducing yourself. Ask your tutor to check character formation.",
+      "prompt": "Optional character practice, not an HSK 1 sample-exam writing section. With the tutor’s model, copy or write one short sentence from this lesson; use pinyin for an unfamiliar personal name.",
       "minCharacters": 0,
       "reference": "This is LiANN formative guidance. Check whether the response fulfils the actual instructions; note character formation or spelling, relevant detail, clarity, organisation and language accuracy. Explain a concrete improvement and ask the learner to revise. Meeting the length requirement does not establish quality."
     },
@@ -348,28 +403,29 @@
       "title": "Introduce yourself and arrange a meeting · reading · delayed review",
       "minutes": 6,
       "prompt": "Read the passage and choose the best answers. Use evidence from the text.",
-      "passage": "我是李明。小雨是我的朋友。我们今天下午三点在商店见。我要给她一本书。",
-      "passagePinyin": "Wǒ shì Lǐ Míng. Xiǎoyǔ shì wǒ de péngyou. Wǒmen jīntiān xiàwǔ sān diǎn zài shāngdiàn jiàn. Wǒ yào gěi tā yì běn shū.",
+      "passage": "我是李明。小雨是我的朋友。我们今天下午三点在超市见。我要给她一本书。",
+      "passagePinyin": "Wǒ shì Lǐ Míng. Xiǎoyǔ shì wǒ de péngyou. Wǒmen jīntiān xiàwǔ sān diǎn zài chāoshì jiàn. Wǒ yào gěi tā yì běn shū.",
+      "reference": "Tutor-only key evidence: Q1: 小雨. Ask the learner to point to the exact supporting words in the passage; a correct guess alone is not evidence of understanding. Q2: 超市. Ask the learner to point to the exact supporting words in the passage; a correct guess alone is not evidence of understanding. Time and place are read directly; names are supported labels, not new vocabulary being tested.",
       "questions": [
         {
           "id": "q1",
           "prompt": "谁是李明的朋友？",
           "options": [
+            "小雨",
             "安娜",
-            "大卫",
-            "小雨"
+            "大卫"
           ],
-          "answer": 2
+          "answer": 0
         },
         {
           "id": "q2",
           "prompt": "他们在哪里见？",
           "options": [
-            "商店",
             "学校",
+            "超市",
             "家里"
           ],
-          "answer": 0
+          "answer": 1
         }
       ]
     },
@@ -391,16 +447,17 @@
       "minutes": 4,
       "prompt": "Listen to the script read aloud by your tutor or a Mandarin device voice, then choose the best answer.",
       "audioText": "今天上午十点，王老师在学校。你可以去学校找她。",
+      "reference": "Tutor-only key evidence: 上午十点. Use the spoken time, place, activity or quantity explicitly given in this script. Do not infer gender from a voice. Record replay or translation support.",
       "questions": [
         {
           "id": "q1",
-          "prompt": "王老师什么时候在学校？",
+          "prompt": "王老师几点在学校？",
           "options": [
-            "下午三点",
             "上午十点",
+            "下午三点",
             "晚上十点"
           ],
-          "answer": 1
+          "answer": 0
         }
       ]
     },
@@ -420,7 +477,7 @@
       "objectiveId": "1-speaking",
       "title": "Introduce yourself and arrange a meeting · speaking · delayed review",
       "minutes": 2,
-      "prompt": "向老师介绍一位朋友，并说一个新的见面安排。",
+      "prompt": "Introduce a different friend in the role play and give a new meeting place and time. The tutor records any prompting.",
       "responseMode": "live",
       "reference": "Hear the learner complete the task. Consider task fulfilment, intelligibility and tones, accuracy, range, fluency and register. Record the specific help given; a written reflection does not establish speaking proficiency."
     },
@@ -439,8 +496,9 @@
       "skill": "writing",
       "objectiveId": "1-writing",
       "title": "Introduce yourself and arrange a meeting · writing · delayed review",
+      "optional": true,
       "minutes": 10,
-      "prompt": "Write two simple sentences about a friend and a meeting time. Use a different person and time from the lesson examples.",
+      "prompt": "Optional character practice, not an HSK 1 sample-exam writing section. With support if needed, write one different short sentence using familiar characters. Record support rather than enforcing a length target.",
       "minCharacters": 0,
       "reference": "This is LiANN formative guidance. Check whether the response fulfils the actual instructions; note character formation or spelling, relevant detail, clarity, organisation and language accuracy. Explain a concrete improvement and ask the learner to revise. Meeting the length requirement does not establish quality."
     }

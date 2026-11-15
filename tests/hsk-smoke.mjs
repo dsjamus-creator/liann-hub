@@ -44,7 +44,7 @@ try{for(const width of [1280,390]){
  await p.locator('.workspace-rail [data-workspace=course]').click();await p.getByRole('heading',{name:'Your route through HSK 1',exact:true}).waitFor()
  await p.getByRole('button',{name:'View unit outline',exact:true}).click();await p.getByText('This unit does not yet contain a finished lesson pack or assessment.',{exact:false}).waitFor();assert.equal(await p.locator('#hsk-apply-unit').count(),0)
  await p.locator('#hsk-course-back').click();await p.getByRole('button',{name:'View lesson pack',exact:true}).click();await p.locator('#hsk-unit-lesson').selectOption(lessonId);await p.locator('#hsk-apply-unit').click();await p.locator('#hsk-plan-form').waitFor()
- await p.locator('.hsk-unit-teaching [lang="zh-Latn"]').waitFor();assert.equal(await p.getByLabel('Lesson title',{exact:true}).inputValue(),courseFixture.course.units[0].title);assert.equal(await p.locator('input[name=courseReviewed]').isChecked(),false);assert.equal(await p.locator('input[name=materialIds]:checked').count(),4)
+ await p.locator('.hsk-unit-teaching [lang="zh-Latn"]').waitFor();await p.locator('.hsk-pilot-guide').waitFor();assert.equal(await p.getByLabel('Lesson title',{exact:true}).inputValue(),courseFixture.course.units[0].title);assert.equal(await p.locator('input[name=courseReviewed]').isChecked(),false);assert.equal(await p.locator('input[name=materialIds]:checked').count(),4)
  await p.locator('#bell').click();await p.locator('#notifclose').click();assert.equal(await p.getByLabel('Lesson title',{exact:true}).inputValue(),courseFixture.course.units[0].title)
  if(process.env.SHOTS)await p.screenshot({path:`${process.env.SHOTS}/hsk-course-planner-${width}.png`,fullPage:true})
  await p.locator('#hsk-back').click()
