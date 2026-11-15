@@ -505,9 +505,16 @@ const TAB_PAGES = ['home', 'apps', 'library', 'downloads']
 
 export const PAGES = { home: pHome, apps: pApps, library: pLibrary, read: pRead, figures: pFigures, discover: pDemoscene, kids: pKids, shop: pShop, downloads: pDownloads, plan: pPlan }
 
-function adminRail(s) {
-  return `<nav class="admin-rail" aria-label="Super Admin"><div class="admin-rail-label">${ico('shield')}<span>Super Admin</span></div>${ADMIN_SECTIONS.map(([id, label, icon]) => `<button class="ritem" data-admin="${id}" title="${label}" aria-label="${label}" ${s.page === 'admin' && adminSection(s.adminSection) === id ? 'aria-current="page"' : ''}><span class="ic">${ico(icon)}</span><span class="lbl">${label}</span></button>`).join('')}</nav>`
+function roleOptions(s, current) {
+  const roles = [...new Set([...(s.workspaceAccess?.roles || []), ...(s.admin?.superAdmin ? ['super_admin'] : [])])].filter(role => ['student','tutor','guardian','super_admin'].includes(role))
+  if (roles.length < 2) return ''
+  const labels = { student: 'Student', tutor: 'Tutor', guardian: 'Guardian', super_admin: 'Super Admin' }
+  return '<label class="workspace-switch role-switch"><span>Switch role</span><select id="role-switcher" aria-label="Switch role">' + roles.map(role => '<option value="' + role + '" ' + (role === current ? 'selected' : '') + '>' + labels[role] + '</option>').join('') + '</select></label>'
 }
+function adminRail(s) {
+  return `<nav class="admin-rail" aria-label="Super Admin"><div class="admin-rail-label">${ico('shield')}<span>Super Admin</span></div>${roleOptions(s, s.page === 'workspace' ? s.workspaceRole : 'super_admin')}${ADMIN_SECTIONS.map(([id, label, icon]) => `<button class="ritem" data-admin="${id}" title="${label}" aria-label="${label}" ${s.page === 'admin' && adminSection(s.adminSection) === id ? 'aria-current="page"' : ''}><span class="ic">${ico(icon)}</span><span class="lbl">${label}</span></button>`).join('')}</nav>`
+}
+
 
 function pAdmin(s) {
   const section = ADMIN_SECTIONS.find(([id]) => id === adminSection(s.adminSection))
@@ -517,8 +524,8 @@ function pAdmin(s) {
 export function vHub(s) {
   if (s.institutional) return vInstitutionHub(s)
   const isAdmin = s.admin?.superAdmin === true && !s.learner
-  const hasWorkspace = !isAdmin && !s.learner && !!s.workspaceAccess
-  const isWorkspace = s.page === 'workspace' && hasWorkspace
+  const hasWorkspace = !s.learner && !!s.workspaceAccess
+  const isWorkspace = s.page === 'workspace' && hasWorkspace && s.workspaceAccess.roles?.includes(s.workspaceRole)
   const p = profileOf(s.user), page = isWorkspace ? 'workspace' : s.page === 'admin' && isAdmin ? 'admin' : PAGES[s.page] ? s.page : 'home'
   return `<div class="app ${isAdmin || hasWorkspace ? 'with-admin' : ''} ${s.slim ? 'slim' : ''}">
   <header class="top"><button class="iconbtn menu" id="slim" aria-label="${s.slim ? 'Expand' : 'Collapse'} menu">${ico('menu')}</button>${LOCKUP}
@@ -526,7 +533,7 @@ export function vHub(s) {
    <button class="iconbtn" id="apbtn" aria-label="Appearance">${ico('palette')}</button><button class="iconbtn help" aria-label="Help and account" data-nav="plan">${ico('help')}</button><button class="iconbtn${notificationsOf(s).length ? ' has-new' : ''}" id="bell" aria-label="Notifications" aria-expanded="${!!s.notif}">${ico('bell')}</button>
    <button class="tile avatar" id="me" aria-label="Profile (${esc(p.name)})">${esc(p.g)}</button></header>
   <nav class="rail" aria-label="Main">${NAV.map(rItem(page)).join('')}</nav>
-  <main id="main" class="${page === 'admin' ? 'admin-main' : ''}"><div class="wrap fade ${page === 'admin' ? 'admin-wrap' : page === 'workspace' ? 'workspace-wrap' : ''}">${s.workspaceError && !hasWorkspace && !isAdmin ? `<div class="c" role="alert">${esc(s.workspaceError)} <button class="btn ghost" id="retry-workspace-access">Retry workspace access</button></div>` : ''}${s.adminError ? `<div class="c" role="alert">${esc(s.adminError)} <button class="btn ghost" id="retry-admin">Retry admin access</button></div>` : ''}${page === 'admin' ? pAdmin(s) : page === 'workspace' ? workspacePage(s, { esc, progress: learningProgressPanel, library: pLibrary, apps: pApps }) : PAGES[page](s)}</div></main>${isAdmin ? adminRail(s) : hasWorkspace ? workspaceRail(s, {esc,ico}) : ''}
+  <main id="main" class="${page === 'admin' ? 'admin-main' : ''}"><div class="wrap fade ${page === 'admin' ? 'admin-wrap' : page === 'workspace' ? 'workspace-wrap' : ''}">${s.workspaceError && !hasWorkspace && !isAdmin ? `<div class="c" role="alert">${esc(s.workspaceError)} <button class="btn ghost" id="retry-workspace-access">Retry workspace access</button></div>` : ''}${s.adminError ? `<div class="c" role="alert">${esc(s.adminError)} <button class="btn ghost" id="retry-admin">Retry admin access</button></div>` : ''}${page === 'admin' ? pAdmin(s) : page === 'workspace' ? workspacePage(s, { esc, progress: learningProgressPanel, library: pLibrary, apps: pApps }) : PAGES[page](s)}</div></main>${page === 'admin' && isAdmin ? adminRail(s) : page === 'workspace' && hasWorkspace ? workspaceRail(s, {esc,ico}) : isAdmin ? adminRail(s) : hasWorkspace ? workspaceRail(s, {esc,ico}) : ''}
   <nav class="tabs" aria-label="Main">${NAV.filter(([k]) => TAB_PAGES.includes(k)).map(rItem(page)).join('')}<button class="ritem" id="morebtn" aria-expanded="${!!s.more}" ${TAB_PAGES.includes(page) ? '' : 'aria-current="page"'}><span class="ic">${ico('menu')}</span><span class="lbl">More</span></button></nav>
   ${s.more ? `<nav class="moresheet" aria-label="More">${NAV.filter(([k]) => !TAB_PAGES.includes(k)).map(rItem(page)).join('')}</nav>` : ''}</div>${s.appear ? appearHTML(s.theme) : ''}${s.notif ? notifsHTML(s) : ''}${s.reader ? readerHTML(s) : ''}`
 }
