@@ -82,7 +82,7 @@ try {
     await page.locator('#apbtn').click()
     await page.locator('[data-admin="staff"]').click()
     assert.equal(await frame.locator('#stEmail').inputValue(), 'unfinished@example.test')
-    assert.equal(frameLoads, 1)
+    assert.equal(frameLoads, 2, 'returning to Super Admin creates a fresh dashboard frame')
     if (process.env.ADMIN_BACKEND_DIR) {
       await frame.locator('#stName').fill('Test staff')
       await frame.locator('#stAdd').click()
