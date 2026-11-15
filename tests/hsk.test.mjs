@@ -44,3 +44,7 @@ const reviewedH={...courseH,detail:{...courseH.detail,plan:{...courseH.detail.pl
 assert.ok(printablePack(reviewedH,true).includes('Tutor pilot checklist'))
 assert.ok(!printablePack(reviewedH,false).includes('Tutor pilot checklist'))
 assert.ok(printablePack(reviewedH,false).includes('no minimum-character requirement'))
+
+const earlierPrint={...reviewedH,detail:{...reviewedH.detail,plan:{...reviewedH.detail.plan,bank_version:'earlier-bank'}}}
+assert.ok(printablePack(earlierPrint,true).includes('Earlier saved assignment'))
+assert.ok(printablePack(earlierPrint,false).includes('retain their original version'))
