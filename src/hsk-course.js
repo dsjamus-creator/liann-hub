@@ -1,0 +1,33 @@
+const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))
+const band = level => Number(level) >= 7 ? '7-9' : String(level)
+const date = value => new Date(value).toLocaleString()
+export function courseUnitFor(h,id){return h?.catalogue?.course?.units?.find(u=>u.id===id)}
+export function unitTeachingContent(unit){
+ if(!unit || unit.contentStatus!=='prepared_draft')return ''
+ return `<section class="c hsk-unit-teaching"><h3>Model dialogue</h3><p class="hsk-passage" lang="zh-CN">${esc(unit.dialogue)}</p><h3>Focus vocabulary</h3><div class="hsk-word-grid">${unit.vocabulary.map(w=>`<div><b lang="zh-CN">${esc(w.hz)}</b><span>${esc(w.pinyin)} · ${esc(w.meaning)}</span><small>${w.classification==='listed_at_or_below_target'?'Listed at or below this band':'Extension or unmatched vocabulary — adapt as needed'}${w.inventoryReference?' · syllabus p. '+Number(w.inventoryReference.printedPage):''}</small></div>`).join('')}</div><h3>Grammar to teach</h3>${unit.grammar.map(g=>`<div class="hsk-grammar"><b lang="zh-CN">${esc(g.pattern)}</b><p>${esc(g.explanation)}</p><p lang="zh-CN">${esc(g.example)}</p></div>`).join('')}<p class="muted">Focus-word references check exact entries in the official vocabulary inventory. They do not certify every word or grammar point in the passages.</p></section>`
+}
+export function coursePage(s){
+ const h=s.hsk,course=h?.catalogue?.course,teacher=s.workspaceRole==='tutor'
+ if(!h||h.status==='loading')return '<div class="c" role="status">Loading your course route…</div>'
+ if(h.status==='error')return `<div class="c" role="alert">${esc(h.error)} <button id="hsk-refresh" class="btn ghost">Try again</button></div>`
+ if(!course)return '<div class="c">The sequenced course is not available yet.</div>'
+ const level=Number(h.exploreLevel||1),units=course.units.filter(u=>u.band===band(level)),selected=courseUnitFor(h,h.unitViewId)
+ const selector=`<label class="hsk-attempt-picker">HSK course level<select id="hsk-course-level">${h.catalogue.levels.map(l=>`<option value="${l.level}" ${level===l.level?'selected':''}>Level ${l.level}${l.level>=7?' · shared advanced route':''}</option>`).join('')}</select></label>`
+ const intro=`<section class="c"><p class="hsk-eyebrow">Learn · apply · revisit</p><h2>Your route through HSK ${level}</h2><p>Work through the course with your tutor, practise independently and revisit the skill with different tasks after seven days.</p><p class="muted">The full map has ${course.scope.sequencedUnits} units: ${course.scope.preparedDraftUnits} prepared lesson drafts and ${course.scope.outlineUnits} outlines still needing authored materials. Prepared lessons require tutor review. A mapped topic is not evidence of mastery.</p></section>`
+ if(selected){
+  const available=(h.lessons||[]).filter(l=>!['cancelled','no_show'].includes(l.status))
+  return `${h.error?`<p class="err" role="alert">${esc(h.error)}</p>`:''}<button id="hsk-course-back" class="btn ghost">Back to course route</button><section class="c"><p class="hsk-eyebrow">Unit ${selected.sequence} · ${selected.contentStatus==='prepared_draft'?'Prepared draft — tutor review required':'Outline — materials still to author'}</p><h2>${esc(selected.title)}</h2><p>${esc(selected.goal)}</p><h3>Syllabus task groups</h3><ul>${selected.sourceTopics.map(t=>`<li>${esc(t.title)} · printed p. ${Number(t.printedPage)}</li>`).join('')}</ul>${selected.prerequisiteUnitIds.length?'<p class="muted">Suggested preparation: the preceding unit, or equivalent prior learning confirmed by your tutor.</p>':''}${teacher&&selected.contentStatus==='prepared_draft'?`<label class="hsk-attempt-picker">Prepare this unit for a lesson<select id="hsk-unit-lesson"><option value="">Choose a learner and lesson</option>${available.map(l=>`<option value="${esc(l.id)}">${esc(l.student)} · ${esc(l.topic||'Lesson')} · ${esc(date(l.starts_at))}</option>`).join('')}</select></label><button class="btn" id="hsk-apply-unit" ${h.busy||!available.length?'disabled':''}>Use unit in lesson planner</button>`:''}${selected.contentStatus==='outline'?'<p class="muted">Use the source topics to plan further teaching. This unit does not yet contain a finished lesson pack or assessment.</p>':''}</section>${unitTeachingContent(selected)}`
+ }
+ return `${intro}${selector}<div class="grid">${units.map(u=>{
+  const evidence=(h.coverage||[]).filter(e=>e.unitId===u.id&&e.targetLevel===level),students=new Set(evidence.map(e=>e.studentId)),reviews=evidence.filter(e=>e.purpose==='delayed_review').length
+  return `<article class="c"><p class="hsk-eyebrow">Unit ${u.sequence} · ${u.contentStatus==='prepared_draft'?'Prepared lesson draft':'Outline'}</p><h3>${esc(u.title)}</h3><p>${esc(u.goal)}</p><p class="muted">${u.sourceTopics.length} mapped task groups${u.practiceMaterialIds.length?' · '+u.practiceMaterialIds.length+' practice activities · '+u.reviewMaterialIds.length+' delayed-review activities':' · no authored practice yet'}</p>${evidence.length?`<p>${evidence.length} submitted attempts${teacher?' across '+students.size+' learner'+(students.size===1?'':'s'):''} · ${reviews} delayed reviews. These counts describe activity, not course completion.</p>`:''}<button class="btn ghost" data-hsk-unit-view="${esc(u.id)}">${u.contentStatus==='prepared_draft'?'View lesson pack':'View unit outline'}</button></article>`}).join('')}</div>${reviewSchedule(s)}`
+}
+export function reviewSchedule(s){
+ const h=s.hsk,items=(h?.reviews||[]).filter(r=>!r.review_status||r.review_status==='started')
+ if(!items.length)return ''
+ return `<section class="sec"><h2>Delayed review</h2><p class="muted">Different tasks check what remains after a delay. Results are learning evidence, not official HSK scores.</p>${items.map(r=>`<article class="c"><p class="hsk-eyebrow">${esc(r.student)} · Level ${Number(r.target_level)}</p><h3>${esc(r.title)}</h3><p>${Date.now()>=new Date(r.due_at).getTime()?'Ready to revisit':'Review opens'} · ${esc(date(r.due_at))}</p><button class="btn ghost" data-hsk-open="${esc(r.lesson_id)}">View review assignment</button></article>`).join('')}</section>`
+}
+export function topicEvidence(h,rows,level){
+ const topics=new Set(rows.flatMap(a=>(a.results||[]).flatMap(r=>r.topicIds||[]))),reviews=rows.filter(a=>a.purpose==='delayed_review').length,total=h.catalogue?.levels?.find(l=>l.level===Number(level))?.taskGroups?.length||0
+ return `<p class="muted">${topics.size}${total?' of '+total:''} syllabus task groups have recorded activity · ${reviews} delayed-review submission${reviews===1?'':'s'}. Activity coverage does not establish mastery.</p>`
+}
