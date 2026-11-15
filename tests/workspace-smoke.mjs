@@ -33,7 +33,7 @@ try{
   for(const section of sections){await page.locator(`.workspace-rail [data-workspace="${section}"]`).click();await page.locator('.workspace-heading h1').waitFor();assert.equal(await page.locator('.workspace-rail [aria-current=page]').getAttribute('data-workspace'),section)}
   await page.locator('.workspace-rail [data-workspace=progress]').click();await page.getByText('5 mastered words',{exact:true}).waitFor();assert.ok((await page.locator('#main').textContent()).includes('five consecutive correct'))
   assert.equal(await page.locator('.admin-rail [data-admin]').count(),0)
-  if(roles.length>1){await page.selectOption('#workspace-role','student');assert.ok(page.url().includes('/student/overview'));await page.getByText('Conversational Mandarin',{exact:true}).waitFor()}
+  if(roles.length>1){assert.deepEqual(await page.locator('#role-switcher option').allTextContents(),['Tutor','Student'],'only backend-confirmed roles are offered despite client metadata');await page.selectOption('#role-switcher','student');assert.ok(page.url().includes('/student/overview'));await page.getByText('Conversational Mandarin',{exact:true}).waitFor()}
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal overflow')
   await page.reload();await page.locator('.workspace-rail').waitFor();assert.ok(page.url().includes('#workspace/'))
   if(process.env.SHOTS){await page.locator('.workspace-rail [data-workspace=progress]').click();await page.waitForTimeout(400);await page.screenshot({path:`${process.env.SHOTS}/hub-${roles.join('-')}-progress-${width}.png`,fullPage:true})}

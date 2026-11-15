@@ -104,17 +104,25 @@ async function enterHub(user, access, workspaceAccess) {
     try { const result = access === undefined ? await account.adminAccess() : access; if (S.user !== user) return; S.admin = result }
     catch (error) { S.adminError = error.message }
   }
-  if (!S.learner && !S.admin?.superAdmin) {
+  if (!S.learner) {
     try { const result = workspaceAccess === undefined ? await account.workspaceAccess() : workspaceAccess; if (S.user !== user) return; S.workspaceAccess = result?.roles?.length ? result : null }
     catch (error) { if (S.user !== user) return; S.workspaceError = error.message }
   }
   if (S.user !== user) return
-  if (S.admin?.superAdmin) { S.page = 'admin'; S.adminSection = adminSection(hashParts()[1]); history.replaceState(null, '', '#admin/' + S.adminSection) }
-  else if (S.workspaceAccess && !S.learner) {
-    const parts = location.hash.slice(1).split('/'), roles = S.workspaceAccess.roles || [];
+  const parts = location.hash.slice(1).split('/'), roles = S.workspaceAccess?.roles || [];
+  if (S.workspaceAccess && !S.learner) {
     S.workspaceRole = roles.includes(parts[1]) ? parts[1] : roles[0] || 'student';
     S.workspaceSection = workspaceSection(S.workspaceRole, parts[2]);
-    if (['home','workspace','admin'].includes(S.page)) { S.page = 'workspace'; history.replaceState(null, '', '#workspace/'+S.workspaceRole+'/'+S.workspaceSection) }
+  }
+  if (S.admin?.superAdmin) {
+    if (parts[0] === 'workspace' && roles.includes(parts[1]) && !S.learner) {
+      S.page = 'workspace'; S.workspaceRole = parts[1]; S.workspaceSection = workspaceSection(parts[1], parts[2]);
+      history.replaceState(null, '', '#workspace/' + S.workspaceRole + '/' + S.workspaceSection)
+    } else {
+      S.page = 'admin'; S.adminSection = adminSection(parts[1]); history.replaceState(null, '', '#admin/' + S.adminSection)
+    }
+  } else if (S.workspaceAccess && !S.learner) {
+    S.page = 'workspace'; history.replaceState(null, '', '#workspace/' + S.workspaceRole + '/' + S.workspaceSection)
   } else if (['admin','workspace'].includes(S.page)) S.page = 'home'
   S.user = user; S.institutional = false; S.institutions = []
   S.recent = store.get(accountKey('liann-hub-recent', user), [])
@@ -123,7 +131,7 @@ async function enterHub(user, access, workspaceAccess) {
   openFromHash()
   loadLibrary()
   loadLearningProgress()
-  if (S.workspaceAccess && !S.admin?.superAdmin) loadWorkspace()
+  if (S.page === 'workspace' && S.workspaceAccess && !S.learner) loadWorkspace()
 }
 
 let workspaceRequest = 0
@@ -138,7 +146,7 @@ async function loadWorkspace() {
   S.workspaceLoading = false; render(); loadFollowups(); hsk.load()
 }
 function navigateWorkspace(section, role = S.workspaceRole) {
-  if (!S.workspaceAccess || S.learner || S.admin?.superAdmin) return
+  if (!S.workspaceAccess || S.learner) return
   if (role !== S.workspaceRole && !S.workspaceAccess.roles?.includes(role)) return
   const changed = role !== S.workspaceRole
   hsk.navigate(section)
@@ -146,6 +154,19 @@ function navigateWorkspace(section, role = S.workspaceRole) {
   S.workspaceRole = role; S.workspaceSection = workspaceSection(role,section); S.page = 'workspace'; S.more = false
   history.replaceState(null, '', '#workspace/'+role+'/'+S.workspaceSection); render()
   if (changed) loadWorkspace()
+}
+function switchRole(role) {
+  if (S.learner || S.institutional) return
+  if (role === 'super_admin') {
+    if (!S.admin?.superAdmin) return
+    classroom.close(); hsk.reset(); ++workspaceRequest; S.workspaceLoading = false; S.workspaceData = null; S.page = 'admin'; S.adminSection = adminSection(S.adminSection)
+    S.more = false; S.notif = false; S.appear = false
+    history.replaceState(null, '', '#admin/' + S.adminSection); render(); return
+  }
+  if (!S.workspaceAccess?.roles?.includes(role) || !['student','tutor','guardian'].includes(role)) return
+  classroom.close(); S.followupDetail = null; S.followupQuiz = null; S.followupDraft = null; S.followupReviewDraft = null; S.followupError = ''
+  S.workspaceRole = role; S.workspaceSection = workspaceSection(role, 'overview'); S.page = 'workspace'; S.more = false; S.notif = false; S.appear = false
+  history.replaceState(null, '', '#workspace/' + role + '/' + S.workspaceSection); render(); loadWorkspace()
 }
 const followupMessage = error => ({followup_changed_reload:'This summary changed in another tab. Reload it before saving.',lesson_not_finished:'You can save a private draft now. Share the summary after the lesson ends.',summary_goal_practice_required:'Add a summary, a learning goal and practice instructions before sharing.',not_your_lesson:'You no longer have access to this lesson.',not_your_setlist:'Choose a SetList belonging to this lesson’s tutor and learner.',choose_setlist_with_1_to_200_words:'Choose a SetList containing 1–200 words.',assignment_word_too_long:'A word in this SetList exceeds the learner Library limits. Shorten its wording before assigning it.',withdraw_before_editing:'Withdraw the shared summary before revising it.'}[error.code] || error.message)
 let followupListRequest=0, followupDetailRequest=0
@@ -604,7 +625,7 @@ function bind() {
   const nextPractice=$('#next-practice-word');if(nextPractice)nextPractice.onclick=nextPracticeWord
   document.querySelectorAll('[data-practice-answer]').forEach(b=>{b.onclick=()=>answerPractice(b.dataset.practiceAnswer)})
   document.querySelectorAll('[data-workspace]').forEach(b => { b.onclick = () => navigateWorkspace(b.dataset.workspace) })
-  const workspaceRole = $('#workspace-role'); if (workspaceRole) workspaceRole.onchange = () => navigateWorkspace('overview', workspaceRole.value)
+  const roleSwitcher = $('#role-switcher'); if (roleSwitcher) roleSwitcher.onchange = () => switchRole(roleSwitcher.value)
   const accessRetry = $('#retry-workspace-access'); if (accessRetry) accessRetry.onclick = () => enterHub(S.user)
   const workspaceRefresh = $('#refresh-workspace'); if (workspaceRefresh) workspaceRefresh.onclick = () => { loadWorkspace(); loadLearningProgress() }
   document.querySelectorAll('[data-workspace-open]').forEach(b => { b.onclick = () => openWorkspaceAction(b.dataset.workspaceOpen) })

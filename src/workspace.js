@@ -11,7 +11,8 @@ export const WORKSPACE_SECTIONS = {
 export const workspaceSection=(role,section)=>WORKSPACE_SECTIONS[role]?.some(([id])=>id===section)?section:'overview'
 export function workspaceRail(s,{esc,ico}){
  const role=WORKSPACE_SECTIONS[s.workspaceRole]?s.workspaceRole:'student', section=workspaceSection(role,s.workspaceSection)
- const switcher=(s.workspaceAccess?.roles||[]).length>1?`<label class="workspace-switch">Workspace<select id="workspace-role" aria-label="Workspace">${s.workspaceAccess.roles.map(r=>`<option value="${esc(r)}" ${r===role?'selected':''}>${roleLabel(r)}</option>`).join('')}</select></label>`:''
+ const roles=[...new Set([...(s.workspaceAccess?.roles||[]),...(s.admin?.superAdmin?['super_admin']:[])])].filter(r=>['student','tutor','guardian','super_admin'].includes(r))
+ const switcher=roles.length>1?'<label class="workspace-switch role-switch"><span>Switch role</span><select id="role-switcher" aria-label="Switch role">'+roles.map(r=>'<option value="'+esc(r)+'" '+(r===role?'selected':'')+'>'+(r==='super_admin'?'Super Admin':roleLabel(r))+'</option>').join('')+'</select></label>':''
  return `<nav class="admin-rail workspace-rail" aria-label="${roleLabel(role)} workspace"><div class="admin-rail-label">${ico('figures')}<span>${roleLabel(role)}</span></div>${switcher}${WORKSPACE_SECTIONS[role].map(([id,label,icon])=>`<button class="ritem" data-workspace="${id}" aria-label="${label}" title="${label}" ${s.page==='workspace'&&section===id?'aria-current="page"':''}><span class="ic">${ico(icon)}</span><span class="lbl">${label}</span></button>`).join('')}</nav>`
 }
 export function workspacePage(s,{esc,progress,library,apps}){
