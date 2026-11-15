@@ -350,24 +350,30 @@ function pKids(s) {
   <section class="sec"><div class="sechead"><h2>Individual sticker artwork</h2></div>${downloadsFor(s, d => d.product === 'kids' && d.platform === 'PNG' && !HIDDEN_KIDS_SLOTS.has(d.slot))}</section>`
 }
 
-function pDemoscene(s) {
-  const files = Array.isArray(s.demosceneFiles) ? s.demosceneFiles : []
-  const selected = files[s.demosceneSelected] || null
-  const folder = files[0]?.webkitRelativePath?.split('/')[0] || ''
+function pDemoscene() {
+  const files = [
+    { title: 'Out of Space', detail: 'Final approved · 30 fps · 3:09', href: 'https://downloads.lwliann.com/demoscene/out-of-space.zip' },
+    { title: 'Pinyin Tiles · Ivoryline', detail: 'Movie archive', href: 'https://downloads.lwliann.com/demoscene/pinyin-tiles.zip' },
+    { title: 'Fame · Remember My Name', detail: 'Falling note final', href: 'https://downloads.lwliann.com/demoscene/fame-remember-my-name.zip' },
+  ]
+  const demoUrl = 'https://downloads.lwliann.com/demoscene/pinyin-tiles-ivoryline.html'
+  const coverUrl = 'https://downloads.lwliann.com/demoscene/pinyin-tiles-ivoryline-front.jpeg'
   return `<section class="sec">
   <div class="sechead"><h2 style="margin:0;font-size:clamp(1.5rem,3vw,2.1rem);font-weight:900">DEMOSCENE</h2></div>
-  <p class="muted" style="max-width:70ch">Choose the <b>LWL DEMOSCENE</b> folder on your computer. The hub lists its HTML demos and opens them here; the files stay on this device and are not uploaded.</p>
-  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-    <label class="btn" for="demoscene-folder" style="cursor:pointer">Choose DEMOSCENE folder</label>
-    <input id="demoscene-folder" type="file" webkitdirectory directory multiple hidden aria-label="Choose the LWL DEMOSCENE folder">
-    ${files.length ? `<span class="muted">${files.length} HTML demo${files.length === 1 ? '' : 's'}${folder ? ` in ${esc(folder)}` : ''}</span>` : ''}
+  <p class="muted" style="max-width:70ch">Watch the LWL demo-scene films and run the Pinyin Tiles · Ivoryline demo in the Hub browser.</p>
+  <article class="c" style="padding:clamp(16px,3vw,28px);margin-top:18px">
+    <div class="t" style="font-size:1.25rem">Pinyin Tiles · Ivoryline</div>
+    <img src="${coverUrl}" alt="Pinyin Tiles · Ivoryline demo title screen" loading="lazy" style="display:block;width:min(100%,900px);max-height:52vh;object-fit:contain;object-position:left center;margin:16px 0;border-radius:14px;background:#080807">
+    <div class="acts"><a class="btn" href="${demoUrl}" target="_blank" rel="noopener">Open full-screen demo</a></div>
+  </article>
+  <div style="margin-top:18px;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#080807">
+    <div style="padding:12px 16px;border-bottom:1px solid var(--line);font-weight:800">Play in the Hub browser</div>
+    <iframe src="${demoUrl}" title="Pinyin Tiles · Ivoryline demo" sandbox="allow-scripts allow-pointer-lock allow-forms allow-modals allow-downloads" allow="fullscreen; autoplay" allowfullscreen referrerpolicy="no-referrer" style="display:block;width:100%;height:min(76vh,900px);min-height:420px;border:0;background:#080807"></iframe>
   </div>
-  ${files.length ? `<div class="chips" style="justify-content:flex-start;margin-top:18px">${files.map((file, i) => `<button class="chip" data-demo-index="${i}" aria-pressed="${i === s.demosceneSelected}">${esc(file.name)}</button>`).join('')}</div>
-    ${selected && s.demosceneUrl ? `<div style="margin-top:18px;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#080807">
-      <div style="padding:12px 16px;border-bottom:1px solid var(--line);font-weight:800">${esc(selected.webkitRelativePath || selected.name)}</div>
-      <iframe src="${esc(s.demosceneUrl)}" title="${esc(selected.name)}" sandbox="allow-scripts allow-pointer-lock allow-forms allow-modals allow-downloads" allowfullscreen style="display:block;width:100%;height:min(76vh,900px);min-height:420px;border:0;background:#080807"></iframe>
-    </div>` : ''}
-  ` : `<div class="c" style="margin-top:18px;padding:24px"><div class="t">No demo folder selected</div><p class="muted">On the computer that has the files, choose <code>C:\\Users\\dsjam\\Desktop\\LWLiANN HUB\\LWL DEMOSCENE</code>. Standalone HTML demos can run directly in this viewer.</p><p class="muted" style="margin-bottom:0">If a demo relies on separate JavaScript, CSS, or media files, it needs to be packaged as a standalone HTML file first.</p></div>`}
+  <div class="sechead" style="margin-top:28px"><h2 style="margin:0">Movie archives</h2></div>
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));margin-top:14px">
+    ${files.map(file => `<article class="c"><div class="t">${esc(file.title)}</div><p class="muted">${esc(file.detail)}</p><a class="btn ghost" href="${file.href}" target="_blank" rel="noopener">Download ZIP</a></article>`).join('')}
+  </div>
   </section>`
 }
 
