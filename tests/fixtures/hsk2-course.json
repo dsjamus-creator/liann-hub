@@ -1,0 +1,684 @@
+{
+  "unit": {
+    "id": "hsk3-course-v2-2-1",
+    "version": "liann-course-v3",
+    "band": "2",
+    "sequence": 1,
+    "title": "Describe people, places and weather",
+    "prerequisiteUnitIds": [],
+    "topicIds": [
+      "2-topic-1",
+      "2-topic-2",
+      "2-topic-3",
+      "2-topic-4",
+      "2-topic-5"
+    ],
+    "sessionPlan": {
+      "version": "liann-hsk2-sequence-v1",
+      "band": "2",
+      "status": "provisional_session_plans_tutor_review_required",
+      "plannedHours": 36,
+      "scope": "Six course units containing six one-hour session plans each. These are teaching plans, not 36 fully authored lesson packs or an official required study duration. Placement and learner evidence determine extra teaching/revision. The six starter packs remain separate representative practice.",
+      "inventory": "500 cumulative word entries (300 prerequisites plus 200 level-2 additions). Session focus words are examples; complete vocabulary/grammar teaching and mastery are not certified.",
+      "sessions": [
+        {
+          "id": "hsk2-u1-s1",
+          "number": 1,
+          "title": "Meet people and compare descriptions",
+          "durationMinutes": 60,
+          "topicIds": [
+            "2-topic-1",
+            "2-topic-3"
+          ],
+          "focusVocabulary": "个子 高 比 这么 那么",
+          "outcome": "Describe two fictional people and make one accurate comparison.",
+          "languageFocus": "A 比 B + adjective",
+          "exitEvidence": "Choose the correct person from two short descriptions.",
+          "stages": [
+            {
+              "minutes": 5,
+              "activity": "Retrieve previous learning; record unprompted answers and gaps."
+            },
+            {
+              "minutes": 10,
+              "activity": "Model and check meaning: A 比 B + adjective. Use supported examples for meet people and compare descriptions."
+            },
+            {
+              "minutes": 15,
+              "activity": "Guided reading/listening and paired rehearsal: Describe two fictional people and make one accurate comparison."
+            },
+            {
+              "minutes": 15,
+              "activity": "Change the people, time, place or constraint; learner completes a fresh task independently. Keep teacher keys hidden."
+            },
+            {
+              "minutes": 10,
+              "activity": "Choose the correct person from two short descriptions."
+            },
+            {
+              "minutes": 5,
+              "activity": "Give one specific correction; learner revises. Agree short home retrieval and schedule a fresh seven-day check."
+            }
+          ],
+          "materialStatus": "session_plan_only_fresh_stimuli_to_author",
+          "homePractice": "Retrieve a small tutor-selected word/character set and rehearse the communicative goal. Record support and do not reuse reserved review answers."
+        },
+        {
+          "id": "hsk2-u1-s2",
+          "number": 2,
+          "title": "Where is it?",
+          "durationMinutes": 60,
+          "topicIds": [
+            "2-topic-5"
+          ],
+          "focusVocabulary": "旁边 前面 后面 左边 右边 近 远",
+          "outcome": "Give directions between three places on a simple map.",
+          "languageFocus": "离; location + 在",
+          "exitEvidence": "Move a counter to a newly described place.",
+          "stages": [
+            {
+              "minutes": 5,
+              "activity": "Retrieve previous learning; record unprompted answers and gaps."
+            },
+            {
+              "minutes": 10,
+              "activity": "Model and check meaning: 离; location + 在. Use supported examples for where is it?."
+            },
+            {
+              "minutes": 15,
+              "activity": "Guided reading/listening and paired rehearsal: Give directions between three places on a simple map."
+            },
+            {
+              "minutes": 15,
+              "activity": "Change the people, time, place or constraint; learner completes a fresh task independently. Keep teacher keys hidden."
+            },
+            {
+              "minutes": 10,
+              "activity": "Move a counter to a newly described place."
+            },
+            {
+              "minutes": 5,
+              "activity": "Give one specific correction; learner revises. Agree short home retrieval and schedule a fresh seven-day check."
+            }
+          ],
+          "materialStatus": "session_plan_only_fresh_stimuli_to_author",
+          "homePractice": "Retrieve a small tutor-selected word/character set and rehearse the communicative goal. Record support and do not reuse reserved review answers."
+        },
+        {
+          "id": "hsk2-u1-s3",
+          "number": 3,
+          "title": "What is happening?",
+          "durationMinutes": 60,
+          "topicIds": [
+            "2-topic-2"
+          ],
+          "focusVocabulary": "正 着 起来 过来 出去",
+          "outcome": "Identify an ongoing action and describe a changed scene.",
+          "languageFocus": "正 + verb; verb + 着",
+          "exitEvidence": "Describe a fresh scene without copying the model.",
+          "stages": [
+            {
+              "minutes": 5,
+              "activity": "Retrieve previous learning; record unprompted answers and gaps."
+            },
+            {
+              "minutes": 10,
+              "activity": "Model and check meaning: 正 + verb; verb + 着. Use supported examples for what is happening?."
+            },
+            {
+              "minutes": 15,
+              "activity": "Guided reading/listening and paired rehearsal: Identify an ongoing action and describe a changed scene."
+            },
+            {
+              "minutes": 15,
+              "activity": "Change the people, time, place or constraint; learner completes a fresh task independently. Keep teacher keys hidden."
+            },
+            {
+              "minutes": 10,
+              "activity": "Describe a fresh scene without copying the model."
+            },
+            {
+              "minutes": 5,
+              "activity": "Give one specific correction; learner revises. Agree short home retrieval and schedule a fresh seven-day check."
+            }
+          ],
+          "materialStatus": "session_plan_only_fresh_stimuli_to_author",
+          "homePractice": "Retrieve a small tutor-selected word/character set and rehearse the communicative goal. Record support and do not reuse reserved review answers."
+        },
+        {
+          "id": "hsk2-u1-s4",
+          "number": 4,
+          "title": "Weather and reasons",
+          "durationMinutes": 60,
+          "topicIds": [
+            "2-topic-4"
+          ],
+          "focusVocabulary": "晴 阴 因为 所以 可能",
+          "outcome": "Choose suitable travel or clothing for two weather forecasts and explain why.",
+          "languageFocus": "因为…所以…; 可能",
+          "exitEvidence": "Explain a different choice from a new forecast.",
+          "stages": [
+            {
+              "minutes": 5,
+              "activity": "Retrieve previous learning; record unprompted answers and gaps."
+            },
+            {
+              "minutes": 10,
+              "activity": "Model and check meaning: 因为…所以…; 可能. Use supported examples for weather and reasons."
+            },
+            {
+              "minutes": 15,
+              "activity": "Guided reading/listening and paired rehearsal: Choose suitable travel or clothing for two weather forecasts and explain why."
+            },
+            {
+              "minutes": 15,
+              "activity": "Change the people, time, place or constraint; learner completes a fresh task independently. Keep teacher keys hidden."
+            },
+            {
+              "minutes": 10,
+              "activity": "Explain a different choice from a new forecast."
+            },
+            {
+              "minutes": 5,
+              "activity": "Give one specific correction; learner revises. Agree short home retrieval and schedule a fresh seven-day check."
+            }
+          ],
+          "materialStatus": "session_plan_only_fresh_stimuli_to_author",
+          "homePractice": "Retrieve a small tutor-selected word/character set and rehearse the communicative goal. Record support and do not reuse reserved review answers."
+        },
+        {
+          "id": "hsk2-u1-s5",
+          "number": 5,
+          "title": "Mixed information gap",
+          "durationMinutes": 60,
+          "topicIds": [
+            "2-topic-1",
+            "2-topic-2",
+            "2-topic-3",
+            "2-topic-4",
+            "2-topic-5"
+          ],
+          "focusVocabulary": "这样 那样 慢 快",
+          "outcome": "Find the correct meeting place and person from incomplete information.",
+          "languageFocus": "Combine comparison, location and reasons",
+          "exitEvidence": "Tutor records which missing details the learner asks for.",
+          "stages": [
+            {
+              "minutes": 5,
+              "activity": "Retrieve previous learning; record unprompted answers and gaps."
+            },
+            {
+              "minutes": 10,
+              "activity": "Model and check meaning: Combine comparison, location and reasons. Use supported examples for mixed information gap."
+            },
+            {
+              "minutes": 15,
+              "activity": "Guided reading/listening and paired rehearsal: Find the correct meeting place and person from incomplete information."
+            },
+            {
+              "minutes": 15,
+              "activity": "Change the people, time, place or constraint; learner completes a fresh task independently. Keep teacher keys hidden."
+            },
+            {
+              "minutes": 10,
+              "activity": "Tutor records which missing details the learner asks for."
+            },
+            {
+              "minutes": 5,
+              "activity": "Give one specific correction; learner revises. Agree short home retrieval and schedule a fresh seven-day check."
+            }
+          ],
+          "materialStatus": "session_plan_only_fresh_stimuli_to_author",
+          "homePractice": "Retrieve a small tutor-selected word/character set and rehearse the communicative goal. Record support and do not reuse reserved review answers."
+        },
+        {
+          "id": "hsk2-u1-s6",
+          "number": 6,
+          "title": "Unit transfer and feedback",
+          "durationMinutes": 60,
+          "topicIds": [
+            "2-topic-1",
+            "2-topic-2",
+            "2-topic-3",
+            "2-topic-4",
+            "2-topic-5"
+          ],
+          "focusVocabulary": "比 近 远 因为 所以",
+          "outcome": "Solve a new people/place/weather task and revise one unclear response.",
+          "languageFocus": "Retrieval; no new grammar",
+          "exitEvidence": "Independent parallel reading/listening, live exchange and character check.",
+          "stages": [
+            {
+              "minutes": 5,
+              "activity": "Retrieve previous learning; record unprompted answers and gaps."
+            },
+            {
+              "minutes": 10,
+              "activity": "Model and check meaning: Retrieval; no new grammar. Use supported examples for unit transfer and feedback."
+            },
+            {
+              "minutes": 15,
+              "activity": "Guided reading/listening and paired rehearsal: Solve a new people/place/weather task and revise one unclear response."
+            },
+            {
+              "minutes": 15,
+              "activity": "Change the people, time, place or constraint; learner completes a fresh task independently. Keep teacher keys hidden."
+            },
+            {
+              "minutes": 10,
+              "activity": "Independent parallel reading/listening, live exchange and character check."
+            },
+            {
+              "minutes": 5,
+              "activity": "Give one specific correction; learner revises. Agree short home retrieval and schedule a fresh seven-day check."
+            }
+          ],
+          "materialStatus": "session_plan_only_fresh_stimuli_to_author",
+          "homePractice": "Retrieve a small tutor-selected word/character set and rehearse the communicative goal. Record support and do not reuse reserved review answers."
+        }
+      ]
+    },
+    "sourceTopics": [
+      {
+        "id": "2-topic-1",
+        "band": "2",
+        "title": "Personal characteristics",
+        "printedPage": 6,
+        "pdfPage": 9,
+        "source": "Official HSK November 2025 examination task syllabus; English paraphrase of task heading"
+      },
+      {
+        "id": "2-topic-2",
+        "band": "2",
+        "title": "Events and circumstances",
+        "printedPage": 6,
+        "pdfPage": 9,
+        "source": "Official HSK November 2025 examination task syllabus; English paraphrase of task heading"
+      },
+      {
+        "id": "2-topic-3",
+        "band": "2",
+        "title": "Objects and comparisons",
+        "printedPage": 6,
+        "pdfPage": 9,
+        "source": "Official HSK November 2025 examination task syllabus; English paraphrase of task heading"
+      },
+      {
+        "id": "2-topic-4",
+        "band": "2",
+        "title": "Basic weather descriptions",
+        "printedPage": 6,
+        "pdfPage": 9,
+        "source": "Official HSK November 2025 examination task syllabus; English paraphrase of task heading"
+      },
+      {
+        "id": "2-topic-5",
+        "band": "2",
+        "title": "Describing a place",
+        "printedPage": 7,
+        "pdfPage": 10,
+        "source": "Official HSK November 2025 examination task syllabus; English paraphrase of task heading"
+      }
+    ],
+    "contentStatus": "prepared_draft",
+    "reviewStatus": "tutor_review_required",
+    "goal": "Describe a familiar person and place, and explain a simple choice using the weather.",
+    "practiceMaterialIds": [
+      "hsk3-course-v2-2-1-practice-reading",
+      "hsk3-course-v2-2-1-practice-listening",
+      "hsk3-course-v2-2-1-practice-speaking",
+      "hsk3-course-v2-2-1-practice-writing"
+    ],
+    "reviewMaterialIds": [
+      "hsk3-course-v2-2-1-review-reading",
+      "hsk3-course-v2-2-1-review-listening",
+      "hsk3-course-v2-2-1-review-speaking",
+      "hsk3-course-v2-2-1-review-writing"
+    ],
+    "vocabulary": [
+      {
+        "hz": "姐姐",
+        "pinyin": "jiějie",
+        "meaning": "older sister",
+        "inventoryReference": {
+          "word": "姐姐",
+          "band": "1",
+          "serial": 92,
+          "printedPage": 79,
+          "pinyin": "jiějie"
+        },
+        "classification": "listed_at_or_below_target"
+      },
+      {
+        "hz": "旁边",
+        "pinyin": "pángbiān",
+        "meaning": "beside",
+        "inventoryReference": {
+          "word": "旁边",
+          "band": "2",
+          "serial": 413,
+          "printedPage": 87,
+          "pinyin": "pángbiān"
+        },
+        "classification": "listed_at_or_below_target"
+      },
+      {
+        "hz": "天气",
+        "pinyin": "tiānqì",
+        "meaning": "weather",
+        "inventoryReference": {
+          "word": "天气",
+          "band": "1",
+          "serial": 208,
+          "printedPage": 82,
+          "pinyin": "tiānqì"
+        },
+        "classification": "listed_at_or_below_target"
+      },
+      {
+        "hz": "下雨",
+        "pinyin": "xià yǔ",
+        "meaning": "to rain",
+        "inventoryReference": {
+          "word": "下雨",
+          "band": "1",
+          "serial": 230,
+          "printedPage": 82,
+          "pinyin": "xià yǔ"
+        },
+        "classification": "listed_at_or_below_target"
+      },
+      {
+        "hz": "走路",
+        "pinyin": "zǒulù",
+        "meaning": "walk",
+        "inventoryReference": {
+          "word": "走路",
+          "band": "2",
+          "serial": 496,
+          "printedPage": 89,
+          "pinyin": "zǒulù"
+        },
+        "classification": "listed_at_or_below_target"
+      },
+      {
+        "hz": "远",
+        "pinyin": "yuǎn",
+        "meaning": "far",
+        "inventoryReference": {
+          "word": "远",
+          "band": "2",
+          "serial": 484,
+          "printedPage": 89,
+          "pinyin": "yuǎn"
+        },
+        "classification": "listed_at_or_below_target"
+      },
+      {
+        "hz": "近",
+        "pinyin": "jìn",
+        "meaning": "near",
+        "inventoryReference": {
+          "word": "近",
+          "band": "2",
+          "serial": 373,
+          "printedPage": 86,
+          "pinyin": "jìn"
+        },
+        "classification": "listed_at_or_below_target"
+      },
+      {
+        "hz": "因为",
+        "pinyin": "yīnwèi",
+        "meaning": "because",
+        "inventoryReference": {
+          "word": "因为",
+          "band": "2",
+          "serial": 475,
+          "printedPage": 88,
+          "pinyin": "yīnwèi"
+        },
+        "classification": "listed_at_or_below_target"
+      }
+    ],
+    "grammar": [
+      {
+        "pattern": "因为……所以……",
+        "explanation": "Give a reason followed by its consequence.",
+        "example": "因为今天下雨，所以我们坐车去。"
+      },
+      {
+        "pattern": "A 比 B + adjective",
+        "explanation": "Compare two people, places or things.",
+        "example": "我家比他家远。"
+      }
+    ],
+    "dialogue": "甲：你姐姐住在哪儿？\n乙：她住在学校旁边，离我家很近。\n甲：你们今天怎么去学校？\n乙：因为今天下雨，所以我们坐公交车去。",
+    "dialoguePinyin": "Jiǎ: Nǐ jiějie zhù zài nǎr?\nYǐ: Tā zhù zài xuéxiào pángbiān, lí wǒ jiā hěn jìn.\nJiǎ: Nǐmen jīntiān zěnme qù xuéxiào?\nYǐ: Yīnwèi jīntiān xiàyǔ, suǒyǐ wǒmen zuò gōngjiāochē qù.",
+    "reviewRecord": {
+      "status": "desk_revision_complete_tutor_signoff_required",
+      "scope": "Rewritten starter stimuli; exact focus-word and writing-character inventory checks completed. Full Chinese linguistic review, native sign-off, audio and learner pilot are pending.",
+      "modelApiUsed": false
+    },
+    "assessmentNotes": {
+      "examBoundary": "The verified official HSK 2 sample has 25 listening, 25 reading and 10 writing items, approximately 60 minutes overall. These short LiANN sets are formative practice, not full mock papers or calibrated official marks.",
+      "writingBoundary": "The sample writing section uses five missing-component choices and five missing-character-from-pinyin items. Each revised unit set rehearses these two formats using the shared level 1–2 writing-character inventory (syllabus p. 374). Typed matching checks character selection only; a tutor checks handwriting on paper. No 40-character essay is required here.",
+      "speakingBoundary": "Live speaking develops communicative ability. A typed reflection is not speaking evidence, and these speaking tasks are not a claim about the HSK 2 written exam format."
+    },
+    "tutorGuide": {
+      "preteach": "Confirm prerequisite learning and adapt the session plan. Rewritten starter passages and grammar still need qualified tutor sign-off; exact focus-word checks do not certify every word or construction.",
+      "baseline": "Use fresh words and a short live exchange. Record whether answers were independent or prompted.",
+      "independent": "Hide keys and pinyin support during the first independent check. Report supported performance separately.",
+      "exitCheck": "Use the session-specific transfer check; record a concrete example and one next step.",
+      "delayed": "Reserve the separate review set until seven days after submission; do not teach its exact answers beforehand.",
+      "recording": "Character recognition/typed answers, handwriting formation and live speech are different evidence. Record the support given and use private learner codes.",
+      "readAloud": "Read each listening script clearly twice without displaying it. Human audio and native tutor sign-off are still pending."
+    },
+    "authorship": {
+      "method": "previous_prepared_draft",
+      "reviewStatus": "tutor_review_required"
+    },
+    "teachingStages": {
+      "warmup": "Retrieve 姐姐、旁边、天气、下雨. Ask the learner to give a new example and note any gaps.",
+      "teaching": "Model this dialogue and check meaning:\n甲：你姐姐住在哪儿？\n乙：她住在学校旁边，离我家很近。\n甲：你们今天怎么去学校？\n乙：因为今天下雨，所以我们坐公交车去。\nTeach 因为……所以…… and A 比 B + adjective. Ask the learner to explain how each example works.",
+      "guided": "Use the reading passage and listening script. Ask the learner to locate the evidence for each answer, then practise a parallel exchange together.",
+      "independent": "Use the selected speaking and writing tasks without showing the reference guidance. Record any prompting. Adapt the writing format to the level. For HSK 2, check character components and characters from pinyin, with handwriting checked separately.",
+      "exitTicket": "Ask for one new example that demonstrates: Describe a familiar person and place, and explain a simple choice using the weather. Record the evidence and one next step. The delayed review uses different material after seven days."
+    }
+  },
+  "tasks": [
+    {
+      "band": "2",
+      "unitId": "hsk3-course-v2-2-1",
+      "topicIds": [
+        "2-topic-1",
+        "2-topic-4",
+        "2-topic-5"
+      ],
+      "stage": "practice",
+      "origin": "LiANN original course practice",
+      "reviewStatus": "tutor_review_required",
+      "id": "hsk3-course-v2-2-1-practice-reading",
+      "skill": "reading",
+      "objectiveId": "2-reading",
+      "title": "Describe people, places and weather · reading",
+      "minutes": 6,
+      "prompt": "Read the passage and choose the best answers. Use evidence from the text.",
+      "passage": "我姐姐住在学校旁边，离我家很近。我家比哥哥家大。今天下雨，我和姐姐坐公交车去学校。哥哥家离学校很远，他也坐公交车去。",
+      "reference": "Tutor-only key evidence: Where does the sister live? → Beside the school; Why do the speaker and sister take the bus? → It is raining. Ask the learner to locate the Chinese evidence; a correct guess is not an explanation.",
+      "questions": [
+        {
+          "id": "q1",
+          "prompt": "Where does the sister live?",
+          "options": [
+            "Beside the school",
+            "Inside the school",
+            "Beside the station"
+          ],
+          "answer": 0
+        },
+        {
+          "id": "q2",
+          "prompt": "Why do the speaker and sister take the bus?",
+          "options": [
+            "They are buying a bus",
+            "It is raining",
+            "The school is closed"
+          ],
+          "answer": 1
+        }
+      ]
+    },
+    {
+      "band": "2",
+      "unitId": "hsk3-course-v2-2-1",
+      "topicIds": [
+        "2-topic-1",
+        "2-topic-4",
+        "2-topic-5"
+      ],
+      "stage": "practice",
+      "origin": "LiANN original course practice",
+      "reviewStatus": "tutor_review_required",
+      "id": "hsk3-course-v2-2-1-practice-listening",
+      "skill": "listening",
+      "objectiveId": "2-listening",
+      "title": "Describe people, places and weather · listening",
+      "minutes": 4,
+      "prompt": "Listen to the script read aloud by your tutor or a Mandarin device voice, then choose the best answer.",
+      "audioText": "学校在车站左边，离车站很近。今天我走路去学校。",
+      "reference": "Tutor-only key evidence: Where is the school? → To the left of the station. Read twice without displaying the script; record additional repetitions.",
+      "questions": [
+        {
+          "id": "q1",
+          "prompt": "Where is the school?",
+          "options": [
+            "To the left of the station",
+            "To the right of the station",
+            "Inside the station"
+          ],
+          "answer": 0
+        }
+      ]
+    },
+    {
+      "band": "2",
+      "unitId": "hsk3-course-v2-2-1",
+      "topicIds": [
+        "2-topic-1",
+        "2-topic-4",
+        "2-topic-5"
+      ],
+      "stage": "practice",
+      "origin": "LiANN original course practice",
+      "reviewStatus": "tutor_review_required",
+      "id": "hsk3-course-v2-2-1-practice-speaking",
+      "skill": "speaking",
+      "objectiveId": "2-speaking",
+      "title": "Describe people, places and weather · speaking",
+      "minutes": 2,
+      "prompt": "Describe two places and compare their distance from home. Give a reason for choosing how to travel.",
+      "responseMode": "live",
+      "reference": "Hear the learner complete the task. Consider task fulfilment, intelligibility and tones, accuracy, range, fluency and register. Record the specific help given; a written reflection does not establish speaking proficiency."
+    },
+    {
+      "band": "2",
+      "unitId": "hsk3-course-v2-2-1",
+      "topicIds": [
+        "2-topic-1",
+        "2-topic-4",
+        "2-topic-5"
+      ],
+      "stage": "practice",
+      "origin": "LiANN original course practice",
+      "reviewStatus": "tutor_review_required",
+      "id": "hsk3-course-v2-2-1-practice-writing",
+      "skill": "writing",
+      "objectiveId": "2-writing",
+      "title": "Describe people, places and weather · writing",
+      "questions": [
+        {
+          "id": "component1",
+          "prompt": "Choose the missing component in 妈: 女 + □ = 妈.",
+          "options": [
+            "马",
+            "口",
+            "木"
+          ],
+          "answer": 0
+        },
+        {
+          "id": "component2",
+          "prompt": "Choose the missing component in 好: 女 + □ = 好.",
+          "options": [
+            "日",
+            "人",
+            "子"
+          ],
+          "answer": 2
+        },
+        {
+          "id": "component3",
+          "prompt": "Choose the missing component in 他: 亻 + □ = 他.",
+          "options": [
+            "木",
+            "也",
+            "口"
+          ],
+          "answer": 1
+        },
+        {
+          "id": "component4",
+          "prompt": "Choose the missing component in 们: 亻 + □ = 们.",
+          "options": [
+            "门",
+            "日",
+            "子"
+          ],
+          "answer": 0
+        },
+        {
+          "id": "component5",
+          "prompt": "Choose the missing component in 叫: 口 + □ = 叫.",
+          "options": [
+            "女",
+            "木",
+            "丩"
+          ],
+          "answer": 2
+        }
+      ],
+      "characterQuestions": [
+        {
+          "id": "character1",
+          "prompt": "我叫小林。我是学（shēng）。",
+          "answer": "生"
+        },
+        {
+          "id": "character2",
+          "prompt": "今天是星期（sān）。",
+          "answer": "三"
+        },
+        {
+          "id": "character3",
+          "prompt": "她是我妈（ma）。",
+          "answer": "妈"
+        },
+        {
+          "id": "character4",
+          "prompt": "我家有三个人：爸爸、妈妈和（wǒ）。",
+          "answer": "我"
+        },
+        {
+          "id": "character5",
+          "prompt": "现在是下午三（diǎn）。",
+          "answer": "点"
+        }
+      ],
+      "minutes": 10,
+      "prompt": "Practice set. Part A: choose the missing component in each character (5 items). Part B: write the missing character indicated by pinyin (5 items). For handwriting evidence, complete Part B on paper and show your tutor; typed answers alone do not assess formation.",
+      "minCharacters": 0,
+      "reference": "Exact component/character matches are formative checks only. Check handwritten character formation separately; accepted typed characters do not establish handwriting proficiency or official exam marks."
+    }
+  ]
+}

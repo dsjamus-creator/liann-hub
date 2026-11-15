@@ -48,3 +48,11 @@ assert.ok(printablePack(reviewedH,false).includes('no minimum-character requirem
 const earlierPrint={...reviewedH,detail:{...reviewedH.detail,plan:{...reviewedH.detail.plan,bank_version:'earlier-bank'}}}
 assert.ok(printablePack(earlierPrint,true).includes('Earlier saved assignment'))
 assert.ok(printablePack(earlierPrint,false).includes('retain their original version'))
+
+const hsk2=JSON.parse(readFileSync(new URL('./fixtures/hsk2-course.json',import.meta.url)));
+const hsk2Tasks=hsk2.tasks.map(({reference,questions,characterQuestions,...t})=>({...t,...(questions?{questions:questions.map(({answer,...q})=>q)}:{}),...(characterQuestions?{characterQuestions:characterQuestions.map(({answer,...q})=>q)}:{})}));
+const hsk2State={...learnerBase,catalogue:{...catalogue,course:{...courseFixture.course,units:[hsk2.unit]}},detail:{...learnerBase.detail,plan:{...plan,target_level:2,course_unit:{id:hsk2.unit.id},materials:hsk2Tasks}},attemptId:'hsk2',responses:{},};
+hsk2State.detail.attempts=[{id:'hsk2',plan_version:1,status:'started',snapshot:{title:'HSK 2',targetLevel:2,materials:hsk2Tasks},answers:{},results:[],observations:[]}];
+const hsk2Html=hskPage({hsk:hsk2State,workspaceRole:'student'});assert.equal((hsk2Html.match(/Missing character<input/g)||[]).length,5);assert.ok(hsk2Html.includes('maxlength="2" required'));assert.ok(!hsk2Html.includes('Reference:'));assert.ok(!hsk2Html.includes('Tutor-only key evidence'));
+const hsk2Print=printablePack(hsk2State);assert.ok(hsk2Print.includes('HSK 2 assessment boundaries'));assert.ok(!hsk2Print.includes('HSK 1 assessment boundaries'));assert.ok(hsk2Print.includes('Session 6'));assert.ok(hsk2Print.includes('not 36 fully authored'));assert.ok(!hsk2Print.includes('Correct answer'));assert.ok(!hsk2Print.includes('Reference:'));
+console.log('PASS HSK 2 character inputs, private keys, six session plans and accurate level-specific print boundaries');
