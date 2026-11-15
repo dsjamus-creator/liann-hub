@@ -31,3 +31,16 @@ assert.ok(printablePack(courseH,false).includes('Focus vocabulary'))
 assert.ok(coursePage({hsk:courseH,workspaceRole:'tutor'}).includes('Outline'))
 assert.ok(!coursePage({hsk:{...courseH,unitViewId:unit.id},workspaceRole:'student'}).includes('hsk-apply-unit'))
 console.log('PASS course outline visibility, learner restrictions and reserved print guidance separation')
+
+const optionalTask={id:'optional-writing',skill:'writing',title:'Optional writing',optional:true,prompt:'Optional character practice',minutes:5}
+const optionalAttempt={id:'optional-attempt',status:'started',plan_version:1,snapshot:{title:'HSK 1',targetLevel:1,materials:[optionalTask]},answers:{},results:[],observations:[]}
+const optionalH={...learnerBase,attemptId:optionalAttempt.id,detail:{...learnerBase.detail,attempts:[optionalAttempt]}}
+const optionalHtml=hskPage({hsk:optionalH,workspaceRole:'student'});assert.ok(!optionalHtml.match(/rows="5" required/));assert.ok(optionalHtml.includes('leave blank to skip'))
+const skipped={...optionalAttempt,status:'submitted',results:[{taskId:'optional-writing',skill:'writing',skipped:true,needsReview:false,topicIds:[]}]}
+const skippedH={...optionalH,detail:{...optionalH.detail,attempts:[skipped]}}
+assert.ok(!hskPage({hsk:skippedH,workspaceRole:'tutor'}).includes('name="optional-writing.judgement"'))
+
+const reviewedH={...courseH,detail:{...courseH.detail,plan:{...courseH.detail.plan,course_unit:{id:courseFixture.course.units[0].id}}}}
+assert.ok(printablePack(reviewedH,true).includes('Tutor pilot checklist'))
+assert.ok(!printablePack(reviewedH,false).includes('Tutor pilot checklist'))
+assert.ok(printablePack(reviewedH,false).includes('no minimum-character requirement'))
