@@ -1,5 +1,6 @@
 import { workspaceSection } from './workspace.js'
 import { createHskController } from './hsk.js'
+import { createClassroomController } from './classroom.js'
 import { initInstall, currentMode, onInstallChange, promptInstall } from './pwa.js'
 import { config, NAV, CODE_LENGTH } from './config.js'
 import { createAccount } from './account.js'
@@ -29,6 +30,7 @@ const S = { viewId: viewId(),
   followups: null, followupDetail: null, followupDraft: null, followupReviewDraft: null, followupQuiz: null, followupError: '', followupBusy: false, workspaceAccess: null, workspaceData: null, workspaceRole: 'student', workspaceSection: 'overview', workspaceLoading: false, workspaceError: '', workspaceActionError: '', admin: null, adminError: '', adminSection: adminSection(hashParts()[1]), household: undefined, learner: null, hhError: '', hhBusy: false,
 }
 const hsk = createHskController({state:S,account,render})
+const classroom = createClassroomController({state:S,account,render,navigate:navigateWorkspace})
 
 function hashParts() { const [k, arg] = location.hash.slice(1).split('/'); try { return [k, arg ? decodeURIComponent(arg) : ''] } catch { return [k, ''] } }
 function pageFromHash() { const [k] = hashParts(); return k === 'workspace' || k === 'admin' || NAV.some(([n]) => n === k) ? k : 'home' }
@@ -80,6 +82,7 @@ function render() {
   parking?.remove()
   bind()
   syncAdmin()
+  classroom.sync()
   if(formFocus){const field=document.getElementById(formFocus.form)?.elements.namedItem(formFocus.name);if(field){field.focus();try{field.setSelectionRange(formFocus.start,formFocus.end)}catch{}}}
   if (focused === 'q' || focused === 'ts') { const el = $('#' + focused); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length) } }
 }
@@ -93,6 +96,7 @@ async function sendCode(email) {
 }
 
 async function enterHub(user, access, workspaceAccess) {
+  classroom.close()
   hsk.reset()
   ++workspaceRequest; ++progressRequest; S.learningProgress = null; S.classProgress = null; S.progressSharing = {}; S.followups = null; S.followupDetail = null; S.followupDraft = null; S.followupReviewDraft = null; S.followupQuiz = null; S.followupError = ''; S.followupBusy = false
   S.user = user; S.institutional = false; S.admin = null; S.adminError = ''; S.workspaceAccess = null; S.workspaceData = null; S.workspaceError = '';
@@ -198,6 +202,7 @@ async function openWorkspaceAction(path) {
 }
 
 async function enterInstitutionHub(session) {
+  classroom.close()
   hsk.reset()
   ++workspaceRequest; S.workspaceAccess = null; S.workspaceData = null; S.admin = null; S.adminError = ''; S.user = session.user; S.institutional = true; S.learner = null; S.household = null
   S.institutions = await account.schoolMemberships()
@@ -288,6 +293,7 @@ async function finishProfile() {
 }
 
 async function signedOut() {
+  classroom.close()
   hsk.reset()
   S.reader = null; dropBook()
   ++workspaceRequest; ++progressRequest; S.learningProgress = null; S.classProgress = null; S.progressSharing = {}; S.followups = null; S.followupDetail = null; S.followupDraft = null; S.followupReviewDraft = null; S.followupQuiz = null; S.followupError = ''; S.followupBusy = false
@@ -505,6 +511,7 @@ window.addEventListener('resize', () => {
 
 function bind() {
   hsk.bind()
+  classroom.bind()
   document.querySelectorAll('[data-readep]').forEach(b => { b.onclick = () => openReader(b.dataset.readep) })
   bindReader()
   const f1 = $('#f1')

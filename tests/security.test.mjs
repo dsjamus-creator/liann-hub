@@ -7,7 +7,9 @@ const read = p => readFile(new URL(`../${p}`, import.meta.url), 'utf8')
 
 test('every page is served with the security headers', async () => {
   const all = (await read('_headers')).split(/\n(?=\S)/)[0]
-  for (const h of ['X-Content-Type-Options: nosniff', 'Referrer-Policy: no-referrer', 'X-Frame-Options: DENY', "frame-ancestors 'none'", 'Strict-Transport-Security: max-age=', 'Cross-Origin-Opener-Policy:', 'Permissions-Policy: camera=(), microphone=(), geolocation=()']) assert.ok(all.includes(h), `missing ${h}`)
+  for (const h of ['X-Content-Type-Options: nosniff', 'Referrer-Policy: no-referrer', 'X-Frame-Options: DENY', "frame-ancestors 'none'", 'Strict-Transport-Security: max-age=', 'Cross-Origin-Opener-Policy:', 'Permissions-Policy:', 'geolocation=()']) assert.ok(all.includes(h), `missing ${h}`)
+  for (const feature of ['camera','microphone','display-capture']) assert.ok(all.includes(`${feature}=(self "https://lwl-backend-mhgo.onrender.com")`), `${feature} is delegated only to the trusted classroom origin`)
+  assert.ok(!/Permissions-Policy:.*\*/.test(all), 'media permissions never use a wildcard')
   const hsts = /Strict-Transport-Security: max-age=(\d+)(.*)/.exec(all)
   assert.ok(Number(hsts[1]) >= 15552000, 'HSTS for at least six months')
   assert.ok(!/includeSubDomains|preload/i.test(hsts[2]), 'HSTS is not extended to the other lwliann.com sites without a decision')

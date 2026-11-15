@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
+import {readFileSync} from 'node:fs'
+const courseFixture=JSON.parse(readFileSync(new URL('./fixtures/hsk-course.json',import.meta.url)))
 import {chromium} from 'playwright-core'
 import {serve} from '../scripts/serve.mjs'
 import {catalogue,lesson,lessonId,tasks,cleanTasks} from './fixtures/hsk.mjs'
+catalogue.course=courseFixture.course;catalogue.materials.push(...courseFixture.tasks.filter(t=>t.stage==='practice'))
 const server=await serve(0),hub=`http://127.0.0.1:${server.address().port}/`,backend='https://lwl-backend-mhgo.onrender.com'
 const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'/usr/bin/chromium'})
 try{for(const width of [1280,390]){
@@ -23,7 +26,7 @@ try{for(const width of [1280,390]){
    if(path==='/learning/hsk/plans/'+lessonId){
     if(body){assert.equal(role,'tutor');assert.equal(body.version,plan?.version||0);plan={id:'plan',...body,target_level:body.targetLevel,objective_ids:body.objectiveIds,topic_ids:body.topicIds,private_notes:body.privateNotes,materials:tasks.filter(t=>body.materialIds.includes(t.id)),version:(plan?.version||0)+1};return r.fulfill({json:{ok:true}})}
     const shared=role==='tutor'||plan?.status==='published',p=shared&&plan?(role==='tutor'?plan:(({private_notes,...p})=>({...p,materials:cleanTasks(p.materials)}))(plan)):null
-    return r.fulfill({json:{lesson:{...lesson,as_tutor:role==='tutor',as_student:role==='student',as_guardian:role==='guardian'},plan:p,attempts:shared?attempts.map(a=>({...a,snapshot:{...a.snapshot,materials:role==='tutor'?a.snapshot.materials:cleanTasks(a.snapshot.materials,a.status!=='started')}})):[],...(role==='tutor'?{starterMaterials:tasks}:{})}})
+    return r.fulfill({json:{lesson:{...lesson,as_tutor:role==='tutor',as_student:role==='student',as_guardian:role==='guardian'},plan:p,attempts:shared?attempts.map(a=>({...a,snapshot:{...a.snapshot,materials:role==='tutor'?a.snapshot.materials:cleanTasks(a.snapshot.materials,a.status!=='started')}})):[],...(role==='tutor'?{starterMaterials:[...tasks,...courseFixture.tasks]}:{})}})
    }
    if(path.endsWith('/start')){assert.equal(role,'student');const a={id:body.attemptId,plan_version:plan.version,status:'started',version:1,mode:body.mode,started_at:new Date().toISOString(),due_at:body.mode==='timed'?new Date(Date.now()+42*60000).toISOString():null,snapshot:{title:plan.title,targetLevel:4,materials:plan.materials},answers:{},results:[],observations:[]};attempts.unshift(a);return r.fulfill({json:{attempt:{...a,snapshot:{...a.snapshot,materials:cleanTasks(a.snapshot.materials)}}}})}
    if(path.endsWith('/submit')){assert.equal(role,'student');assert.equal(body.score,undefined);const a=attempts.find(a=>path.includes(a.id));a.answers=body.answers;a.status='submitted';a.version++;a.submitted_at=new Date().toISOString();a.results=a.snapshot.materials.map(t=>t.questions?{taskId:t.id,skill:t.skill,correct:t.questions.filter((q,i)=>body.answers[t.id].choices[i]===q.answer).length,total:t.questions.length,needsReview:false}:{taskId:t.id,skill:t.skill,needsReview:true,characters:5,minimum:t.minCharacters||0,belowMinimum:!!t.minCharacters});return r.fulfill({json:{attempt:a}})}
@@ -38,6 +41,13 @@ try{for(const width of [1280,390]){
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(hub);await page.locator('.workspace-rail').waitFor();return {page,context,errors}
  }
  const tutor=await open('tutor'),p=tutor.page
+ await p.locator('.workspace-rail [data-workspace=course]').click();await p.getByRole('heading',{name:'Your route through HSK 1',exact:true}).waitFor()
+ await p.getByRole('button',{name:'View unit outline',exact:true}).click();await p.getByText('This unit does not yet contain a finished lesson pack or assessment.',{exact:false}).waitFor();assert.equal(await p.locator('#hsk-apply-unit').count(),0)
+ await p.locator('#hsk-course-back').click();await p.getByRole('button',{name:'View lesson pack',exact:true}).click();await p.locator('#hsk-unit-lesson').selectOption(lessonId);await p.locator('#hsk-apply-unit').click();await p.locator('#hsk-plan-form').waitFor()
+ assert.equal(await p.getByLabel('Lesson title',{exact:true}).inputValue(),courseFixture.course.units[0].title);assert.equal(await p.locator('input[name=courseReviewed]').isChecked(),false);assert.equal(await p.locator('input[name=materialIds]:checked').count(),4)
+ await p.locator('#bell').click();await p.locator('#notifclose').click();assert.equal(await p.getByLabel('Lesson title',{exact:true}).inputValue(),courseFixture.course.units[0].title)
+ if(process.env.SHOTS)await p.screenshot({path:`${process.env.SHOTS}/hsk-course-planner-${width}.png`,fullPage:true})
+ await p.locator('#hsk-back').click()
  await p.locator('.workspace-rail [data-workspace=preparation]').click();await p.getByRole('button',{name:'Prepare lesson',exact:true}).click();await p.locator('#hsk-plan-form').waitFor()
  await p.getByLabel('HSK level for this learner').selectOption('4')
  await p.getByLabel('Lesson title',{exact:true}).fill('Asking for help — HSK 4')

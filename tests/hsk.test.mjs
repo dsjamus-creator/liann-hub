@@ -1,3 +1,5 @@
+import {readFileSync} from 'node:fs'
+import {coursePage} from '../src/hsk-course.js'
 import assert from 'node:assert/strict'
 import {hskPage,hskProgress,printablePack,createHskController} from '../src/hsk.js'
 import {catalogue,lesson,tasks,cleanTasks} from './fixtures/hsk.mjs'
@@ -19,3 +21,13 @@ const state={user:{email:'tutor@example.test'},workspaceRole:'tutor',workspaceAc
 const controller=createHskController({state,render:()=>{},account:{hskRequest:()=>new Promise(r=>{resolveRequest=r})}})
 const pending=controller.load();controller.reset();state.workspaceRole='student';resolveRequest({catalogue,lessons:[{id:'PRIVATE-TUTOR-RECORD'}]});await pending;assert.equal(state.hsk,null)
 console.log('PASS HSK print key separation, HTML escaping, guardian read-only controls, distinct same-name learners and stale identity response rejection')
+
+const courseFixture=JSON.parse(readFileSync(new URL('./fixtures/hsk-course.json',import.meta.url)))
+const unit=courseFixture.course.units[0],review=courseFixture.tasks.find(t=>t.stage==='delayed_review')
+const courseH={...base,catalogue:{...catalogue,course:courseFixture.course},detail:{...base.detail,plan:{...plan,course_unit:{id:unit.id},review_materials:[{...review,reference:'RESERVED-REVIEW-KEY'}]}}}
+assert.ok(printablePack(courseH,true).includes('RESERVED-REVIEW-KEY'))
+assert.ok(!printablePack(courseH,false).includes('RESERVED-REVIEW-KEY'))
+assert.ok(printablePack(courseH,false).includes('Focus vocabulary'))
+assert.ok(coursePage({hsk:courseH,workspaceRole:'tutor'}).includes('Outline'))
+assert.ok(!coursePage({hsk:{...courseH,unitViewId:unit.id},workspaceRole:'student'}).includes('hsk-apply-unit'))
+console.log('PASS course outline visibility, learner restrictions and reserved print guidance separation')

@@ -1,0 +1,447 @@
+{
+  "course": {
+    "units": [
+      {
+        "id": "hsk3-course-v2-1-1",
+        "version": "liann-course-v2",
+        "band": "1",
+        "sequence": 1,
+        "title": "Introduce yourself and arrange a meeting",
+        "prerequisiteUnitIds": [],
+        "topicIds": [
+          "1-topic-1",
+          "1-topic-2",
+          "1-topic-3"
+        ],
+        "sourceTopics": [
+          {
+            "id": "1-topic-1",
+            "band": "1",
+            "title": "Personal details",
+            "printedPage": 2,
+            "pdfPage": 5,
+            "source": "Official HSK November 2025 examination task syllabus; English paraphrase of task heading"
+          },
+          {
+            "id": "1-topic-2",
+            "band": "1",
+            "title": "Event details",
+            "printedPage": 2,
+            "pdfPage": 5,
+            "source": "Official HSK November 2025 examination task syllabus; English paraphrase of task heading"
+          },
+          {
+            "id": "1-topic-3",
+            "band": "1",
+            "title": "Objects and quantities",
+            "printedPage": 2,
+            "pdfPage": 5,
+            "source": "Official HSK November 2025 examination task syllabus; English paraphrase of task heading"
+          }
+        ],
+        "contentStatus": "prepared_draft",
+        "reviewStatus": "tutor_review_required",
+        "goal": "Introduce yourself and identify who, when and where in a simple arrangement.",
+        "practiceMaterialIds": [
+          "hsk3-course-v2-1-1-practice-reading",
+          "hsk3-course-v2-1-1-practice-listening",
+          "hsk3-course-v2-1-1-practice-speaking",
+          "hsk3-course-v2-1-1-practice-writing"
+        ],
+        "reviewMaterialIds": [
+          "hsk3-course-v2-1-1-review-reading",
+          "hsk3-course-v2-1-1-review-listening",
+          "hsk3-course-v2-1-1-review-speaking",
+          "hsk3-course-v2-1-1-review-writing"
+        ],
+        "vocabulary": [
+          {
+            "hz": "叫",
+            "meaning": "to be called",
+            "inventoryReference": {
+              "band": "1",
+              "serial": 91,
+              "printedPage": 79,
+              "pinyin": "jiào"
+            },
+            "pinyin": "jiào",
+            "classification": "listed_at_or_below_target"
+          },
+          {
+            "hz": "名字",
+            "meaning": "name",
+            "inventoryReference": {
+              "band": "1",
+              "serial": 128,
+              "printedPage": 80,
+              "pinyin": "míngzi"
+            },
+            "pinyin": "míngzi",
+            "classification": "listed_at_or_below_target"
+          },
+          {
+            "hz": "学生",
+            "meaning": "student",
+            "inventoryReference": {
+              "band": "1",
+              "serial": 248,
+              "printedPage": 83,
+              "pinyin": "xuéshēng"
+            },
+            "pinyin": "xuéshēng",
+            "classification": "listed_at_or_below_target"
+          },
+          {
+            "hz": "明天",
+            "meaning": "tomorrow",
+            "inventoryReference": {
+              "band": "1",
+              "serial": 130,
+              "printedPage": 80,
+              "pinyin": "míngtiān"
+            },
+            "pinyin": "míngtiān",
+            "classification": "listed_at_or_below_target"
+          },
+          {
+            "hz": "上午",
+            "meaning": "morning",
+            "inventoryReference": {
+              "band": "1",
+              "serial": 178,
+              "printedPage": 81,
+              "pinyin": "shàngwǔ"
+            },
+            "pinyin": "shàngwǔ",
+            "classification": "listed_at_or_below_target"
+          },
+          {
+            "hz": "学校",
+            "meaning": "school",
+            "inventoryReference": {
+              "band": "1",
+              "serial": 250,
+              "printedPage": 83,
+              "pinyin": "xuéxiào"
+            },
+            "pinyin": "xuéxiào",
+            "classification": "listed_at_or_below_target"
+          },
+          {
+            "hz": "几点",
+            "meaning": "what time",
+            "inventoryReference": null,
+            "pinyin": "jǐ diǎn",
+            "classification": "extension_or_unmatched"
+          },
+          {
+            "hz": "见",
+            "meaning": "to meet",
+            "inventoryReference": {
+              "band": "1",
+              "serial": 88,
+              "printedPage": 79,
+              "pinyin": "jiàn"
+            },
+            "pinyin": "jiàn",
+            "classification": "listed_at_or_below_target"
+          }
+        ],
+        "grammar": [
+          {
+            "pattern": "是 + noun",
+            "explanation": "Use 是 to identify a person or role.",
+            "example": "我是学生。"
+          },
+          {
+            "pattern": "Time + place + action",
+            "explanation": "Put the time and location before the action in these examples.",
+            "example": "我们明天在学校见。"
+          }
+        ],
+        "dialogue": "甲：你叫什么名字？\n乙：我叫安娜。我是学生。\n甲：我们明天几点见？\n乙：上午十点，在学校见。",
+        "teachingStages": {
+          "warmup": "Retrieve 叫、名字、学生、明天. Ask the learner to give a new example and note any gaps.",
+          "teaching": "Model this dialogue and check meaning:\n甲：你叫什么名字？\n乙：我叫安娜。我是学生。\n甲：我们明天几点见？\n乙：上午十点，在学校见。\nTeach 是 + noun and Time + place + action. Ask the learner to explain how each example works.",
+          "guided": "Use the reading passage and listening script. Ask the learner to locate the evidence for each answer, then practise a parallel exchange together.",
+          "independent": "Use the selected speaking and writing tasks without showing the reference guidance. Record any prompting. Longer writing may be completed after the lesson.",
+          "exitTicket": "Ask for one new example that demonstrates: Introduce yourself and identify who, when and where in a simple arrangement. Record the evidence and one next step. The delayed review uses different material after seven days."
+        }
+      },
+      {
+        "id": "hsk3-course-v2-1-3",
+        "version": "liann-course-v2",
+        "band": "1",
+        "sequence": 3,
+        "title": "Places and weather",
+        "prerequisiteUnitIds": [
+          "hsk3-course-v2-1-2"
+        ],
+        "topicIds": [
+          "1-topic-4",
+          "1-topic-5"
+        ],
+        "sourceTopics": [
+          {
+            "id": "1-topic-4",
+            "band": "1",
+            "title": "Weather",
+            "printedPage": 2,
+            "pdfPage": 5,
+            "source": "Official HSK November 2025 examination task syllabus; English paraphrase of task heading"
+          },
+          {
+            "id": "1-topic-5",
+            "band": "1",
+            "title": "Places and surroundings",
+            "printedPage": 3,
+            "pdfPage": 6,
+            "source": "Official HSK November 2025 examination task syllabus; English paraphrase of task heading"
+          }
+        ],
+        "contentStatus": "outline",
+        "reviewStatus": "tutor_review_required",
+        "goal": "Develop and demonstrate communication across places and weather, using the official task descriptions as the detailed reference.",
+        "practiceMaterialIds": [],
+        "reviewMaterialIds": [],
+        "vocabulary": [],
+        "grammar": [],
+        "dialogue": "",
+        "teachingStages": null
+      }
+    ],
+    "scope": {
+      "sequencedUnits": 42,
+      "preparedDraftUnits": 14,
+      "outlineUnits": 28
+    }
+  },
+  "tasks": [
+    {
+      "band": "1",
+      "unitId": "hsk3-course-v2-1-1",
+      "topicIds": [
+        "1-topic-1",
+        "1-topic-2",
+        "1-topic-3"
+      ],
+      "stage": "practice",
+      "origin": "LiANN original course practice",
+      "reviewStatus": "tutor_review_required",
+      "id": "hsk3-course-v2-1-1-practice-reading",
+      "skill": "reading",
+      "objectiveId": "1-reading",
+      "title": "Introduce yourself and arrange a meeting · reading",
+      "minutes": 6,
+      "prompt": "Read the passage and choose the best answers. Use evidence from the text.",
+      "passage": "我叫小林。我是学生。明天上午九点，我和大卫在学校见面。大卫的书在我这里。",
+      "passagePinyin": "Wǒ jiào Xiǎolín. Wǒ shì xuésheng. Míngtiān shàngwǔ jiǔ diǎn, wǒ hé Dàwèi zài xuéxiào jiànmiàn. Dàwèi de shū zài wǒ zhèlǐ.",
+      "questions": [
+        {
+          "id": "q1",
+          "prompt": "小林是做什么的？",
+          "options": [
+            "学生",
+            "医生",
+            "老师"
+          ],
+          "answer": 0
+        },
+        {
+          "id": "q2",
+          "prompt": "他们几点见面？",
+          "options": [
+            "上午八点",
+            "上午九点",
+            "下午九点"
+          ],
+          "answer": 1
+        }
+      ]
+    },
+    {
+      "band": "1",
+      "unitId": "hsk3-course-v2-1-1",
+      "topicIds": [
+        "1-topic-1",
+        "1-topic-2",
+        "1-topic-3"
+      ],
+      "stage": "practice",
+      "origin": "LiANN original course practice",
+      "reviewStatus": "tutor_review_required",
+      "id": "hsk3-course-v2-1-1-practice-listening",
+      "skill": "listening",
+      "objectiveId": "1-listening",
+      "title": "Introduce yourself and arrange a meeting · listening",
+      "minutes": 4,
+      "prompt": "Listen to the script read aloud by your tutor or a Mandarin device voice, then choose the best answer.",
+      "audioText": "我叫安娜。今天下午两点，我在学校等你。请带你的书。",
+      "questions": [
+        {
+          "id": "q1",
+          "prompt": "安娜在哪里等？",
+          "options": [
+            "家里",
+            "商店",
+            "学校"
+          ],
+          "answer": 2
+        }
+      ]
+    },
+    {
+      "band": "1",
+      "unitId": "hsk3-course-v2-1-1",
+      "topicIds": [
+        "1-topic-1",
+        "1-topic-2",
+        "1-topic-3"
+      ],
+      "stage": "practice",
+      "origin": "LiANN original course practice",
+      "reviewStatus": "tutor_review_required",
+      "id": "hsk3-course-v2-1-1-practice-speaking",
+      "skill": "speaking",
+      "objectiveId": "1-speaking",
+      "title": "Introduce yourself and arrange a meeting · speaking",
+      "minutes": 2,
+      "prompt": "请介绍你自己，然后告诉老师你明天几点、在哪里和朋友见面。",
+      "responseMode": "live",
+      "reference": "Hear the learner complete the task. Consider task fulfilment, intelligibility and tones, accuracy, range, fluency and register. Record the specific help given; a written reflection does not establish speaking proficiency."
+    },
+    {
+      "band": "1",
+      "unitId": "hsk3-course-v2-1-1",
+      "topicIds": [
+        "1-topic-1",
+        "1-topic-2",
+        "1-topic-3"
+      ],
+      "stage": "practice",
+      "origin": "LiANN original course practice",
+      "reviewStatus": "tutor_review_required",
+      "id": "hsk3-course-v2-1-1-practice-writing",
+      "skill": "writing",
+      "objectiveId": "1-writing",
+      "title": "Introduce yourself and arrange a meeting · writing",
+      "minutes": 10,
+      "prompt": "Write your name and one simple sentence introducing yourself. Ask your tutor to check character formation.",
+      "minCharacters": 0,
+      "reference": "This is LiANN formative guidance. Check whether the response fulfils the actual instructions; note character formation or spelling, relevant detail, clarity, organisation and language accuracy. Explain a concrete improvement and ask the learner to revise. Meeting the length requirement does not establish quality."
+    },
+    {
+      "band": "1",
+      "unitId": "hsk3-course-v2-1-1",
+      "topicIds": [
+        "1-topic-1",
+        "1-topic-2",
+        "1-topic-3"
+      ],
+      "stage": "delayed_review",
+      "origin": "LiANN original course practice",
+      "reviewStatus": "tutor_review_required",
+      "id": "hsk3-course-v2-1-1-review-reading",
+      "skill": "reading",
+      "objectiveId": "1-reading",
+      "title": "Introduce yourself and arrange a meeting · reading · delayed review",
+      "minutes": 6,
+      "prompt": "Read the passage and choose the best answers. Use evidence from the text.",
+      "passage": "我是李明。小雨是我的朋友。我们今天下午三点在商店见。我要给她一本书。",
+      "passagePinyin": "Wǒ shì Lǐ Míng. Xiǎoyǔ shì wǒ de péngyou. Wǒmen jīntiān xiàwǔ sān diǎn zài shāngdiàn jiàn. Wǒ yào gěi tā yì běn shū.",
+      "questions": [
+        {
+          "id": "q1",
+          "prompt": "谁是李明的朋友？",
+          "options": [
+            "安娜",
+            "大卫",
+            "小雨"
+          ],
+          "answer": 2
+        },
+        {
+          "id": "q2",
+          "prompt": "他们在哪里见？",
+          "options": [
+            "商店",
+            "学校",
+            "家里"
+          ],
+          "answer": 0
+        }
+      ]
+    },
+    {
+      "band": "1",
+      "unitId": "hsk3-course-v2-1-1",
+      "topicIds": [
+        "1-topic-1",
+        "1-topic-2",
+        "1-topic-3"
+      ],
+      "stage": "delayed_review",
+      "origin": "LiANN original course practice",
+      "reviewStatus": "tutor_review_required",
+      "id": "hsk3-course-v2-1-1-review-listening",
+      "skill": "listening",
+      "objectiveId": "1-listening",
+      "title": "Introduce yourself and arrange a meeting · listening · delayed review",
+      "minutes": 4,
+      "prompt": "Listen to the script read aloud by your tutor or a Mandarin device voice, then choose the best answer.",
+      "audioText": "今天上午十点，王老师在学校。你可以去学校找她。",
+      "questions": [
+        {
+          "id": "q1",
+          "prompt": "王老师什么时候在学校？",
+          "options": [
+            "下午三点",
+            "上午十点",
+            "晚上十点"
+          ],
+          "answer": 1
+        }
+      ]
+    },
+    {
+      "band": "1",
+      "unitId": "hsk3-course-v2-1-1",
+      "topicIds": [
+        "1-topic-1",
+        "1-topic-2",
+        "1-topic-3"
+      ],
+      "stage": "delayed_review",
+      "origin": "LiANN original course practice",
+      "reviewStatus": "tutor_review_required",
+      "id": "hsk3-course-v2-1-1-review-speaking",
+      "skill": "speaking",
+      "objectiveId": "1-speaking",
+      "title": "Introduce yourself and arrange a meeting · speaking · delayed review",
+      "minutes": 2,
+      "prompt": "向老师介绍一位朋友，并说一个新的见面安排。",
+      "responseMode": "live",
+      "reference": "Hear the learner complete the task. Consider task fulfilment, intelligibility and tones, accuracy, range, fluency and register. Record the specific help given; a written reflection does not establish speaking proficiency."
+    },
+    {
+      "band": "1",
+      "unitId": "hsk3-course-v2-1-1",
+      "topicIds": [
+        "1-topic-1",
+        "1-topic-2",
+        "1-topic-3"
+      ],
+      "stage": "delayed_review",
+      "origin": "LiANN original course practice",
+      "reviewStatus": "tutor_review_required",
+      "id": "hsk3-course-v2-1-1-review-writing",
+      "skill": "writing",
+      "objectiveId": "1-writing",
+      "title": "Introduce yourself and arrange a meeting · writing · delayed review",
+      "minutes": 10,
+      "prompt": "Write two simple sentences about a friend and a meeting time. Use a different person and time from the lesson examples.",
+      "minCharacters": 0,
+      "reference": "This is LiANN formative guidance. Check whether the response fulfils the actual instructions; note character formation or spelling, relevant detail, clarity, organisation and language accuracy. Explain a concrete improvement and ask the learner to revise. Meeting the length requirement does not establish quality."
+    }
+  ]
+}
