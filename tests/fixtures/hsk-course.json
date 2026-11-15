@@ -166,7 +166,8 @@
           "guided": "Use the reading passage and listening script. Ask the learner to locate the evidence for each answer, then practise a parallel exchange together.",
           "independent": "Use the selected speaking and writing tasks without showing the reference guidance. Record any prompting. Longer writing may be completed after the lesson.",
           "exitTicket": "Ask for one new example that demonstrates: Introduce yourself and identify who, when and where in a simple arrangement. Record the evidence and one next step. The delayed review uses different material after seven days."
-        }
+        },
+        "dialoguePinyin": "Jiǎ: Nǐ jiào shénme míngzi?\nYǐ: Wǒ jiào Ānnà. Wǒ shì xuésheng.\nJiǎ: Wǒmen míngtiān jǐ diǎn jiàn?\nYǐ: Shàngwǔ shí diǎn, zài xuéxiào jiàn."
       },
       {
         "id": "hsk3-course-v2-1-3",
