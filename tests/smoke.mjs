@@ -339,9 +339,14 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
       await shot(page, 'phone-more')
       await page.click('nav.moresheet [data-nav="shop"]'); await page.locator('[data-shopf]').first().waitFor(); assert.equal(await page.locator('nav.moresheet').count(), 0)
     }
-    for (const [hash, text] of [['discover', /Choose the LWL DEMOSCENE folder/], ['shop', /Price to be set/], ['plan', /Plans[\s\S]*Couple[\s\S]*Family/], ['apps', /Coming video game/]]) {
+    for (const [hash, text] of [['discover', /Play in the Hub browser[\s\S]*Movie archives/], ['shop', /Price to be set/], ['plan', /Plans[\s\S]*Couple[\s\S]*Family/], ['apps', /Coming video game/]]) {
       await page.goto(url + '#' + hash); await page.locator('main .sec').first().waitFor()
       assert.match(await page.locator('main').innerText(), text, hash)
+      if (hash === 'discover') {
+        assert.equal(await page.locator('main iframe[title="Pinyin Tiles · Ivoryline demo"]').getAttribute('src'), 'https://downloads.lwliann.com/demoscene/pinyin-tiles-ivoryline.html')
+        assert.equal(await page.locator('main a:has-text("Download ZIP")').count(), 3)
+        assert.equal(await page.locator('main img[alt="Pinyin Tiles · Ivoryline demo title screen"]').getAttribute('src'), 'https://downloads.lwliann.com/demoscene/pinyin-tiles-ivoryline-front.jpeg')
+      }
       await noOverflow(page); await shot(page, `${tag}-${hash}`)
     }
     await page.goto(url + '#shop'); assert.equal(await page.locator('main .acts button:not([disabled])').count(), 0, 'nothing in the shop can be bought yet')
