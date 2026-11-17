@@ -1,3 +1,4 @@
+import { hskContentPage } from './hsk-content.js'
 import { workspaceRail, workspacePage } from './workspace.js'
 // Pure render functions: state in, HTML string out. Markup and art follow the approved mockup.
 import { config, APPS, NAV, CODE_LENGTH, appUrl } from './config.js'
@@ -503,7 +504,7 @@ export function appearHTML(th) {
 // Phone tab bar: four pages, then More for the rest of the menu.
 const TAB_PAGES = ['home', 'apps', 'library', 'downloads']
 
-export const PAGES = { home: pHome, apps: pApps, library: pLibrary, read: pRead, figures: pFigures, discover: pDemoscene, kids: pKids, shop: pShop, downloads: pDownloads, plan: pPlan }
+export const PAGES = { hskcontent:hskContentPage, home: pHome, apps: pApps, library: pLibrary, read: pRead, figures: pFigures, discover: pDemoscene, kids: pKids, shop: pShop, downloads: pDownloads, plan: pPlan }
 
 function roleOptions(s, current) {
   const roles = [...new Set([...(s.workspaceAccess?.roles || []), ...(s.admin?.superAdmin ? ['super_admin'] : [])])].filter(role => ['student','tutor','guardian','super_admin'].includes(role))
@@ -517,6 +518,7 @@ function adminRail(s) {
 
 
 function pAdmin(s) {
+  if(s.adminSection==='hsk')return hskContentPage(s)
   const section = ADMIN_SECTIONS.find(([id]) => id === adminSection(s.adminSection))
   return `<div class="admin-heading"><h1>Super Admin</h1><span class="muted">${esc(section[1])}</span><button class="btn ghost" id="retry-admin">Refresh dashboard</button></div><iframe id="admin-frame" title="AlongSide Super Admin controls" ${s.adminFrameParked ? '' : `src="${esc(new URL('/hub-admin', config.backend).href)}"`} referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox"></iframe>`
 }

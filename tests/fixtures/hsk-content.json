@@ -1,0 +1,266 @@
+{
+  "pack": {
+    "id": "hsk2-u1-s1",
+    "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "unitId": "hsk3-course-v2-2-1",
+    "band": "2",
+    "number": 1,
+    "title": "Example session — test fixture",
+    "outcome": "Test the review interface using fictional example content.",
+    "durationMinutes": 60,
+    "topicIds": [
+      "2-topic-1"
+    ],
+    "vocabulary": [
+      {
+        "word": "例",
+        "pinyin": "lì",
+        "meaning": "example (test only)",
+        "band": "2",
+        "serial": 0,
+        "printedPage": 0
+      }
+    ],
+    "retrievalVocabulary": [],
+    "grammar": [],
+    "dialogue": "甲：你好。\n乙：你好。",
+    "dialoguePinyin": "Jiǎ: Nǐ hǎo. Yǐ: Nǐ hǎo.",
+    "teacherNotes": {
+      "boundaries": "Synthetic interface fixture, not course or pilot evidence."
+    },
+    "stages": {
+      "warmup": "Test retrieval card",
+      "teaching": "Test teaching stage",
+      "guided": "Test guided stage",
+      "independent": "Test independent stage",
+      "exitTicket": "Test exit stage"
+    },
+    "baselineCards": [],
+    "boardCards": [],
+    "exitCards": [],
+    "homework": {
+      "transfer": "Test-only home activity"
+    },
+    "practiceMaterialIds": [
+      "hsk2-u1-s1-practice-reading",
+      "hsk2-u1-s1-practice-listening",
+      "hsk2-u1-s1-practice-speaking",
+      "hsk2-u1-s1-practice-writing"
+    ],
+    "reviewMaterialIds": [
+      "hsk2-u1-s1-review-reading",
+      "hsk2-u1-s1-review-listening",
+      "hsk2-u1-s1-review-speaking",
+      "hsk2-u1-s1-review-writing"
+    ],
+    "audioScripts": [
+      {
+        "id": "hsk2-u1-s1-practice-listening",
+        "purpose": "practice_listening",
+        "text": "测试。",
+        "mandatoryHumanApproval": true
+      },
+      {
+        "id": "hsk2-u1-s1-review-listening",
+        "purpose": "review_listening",
+        "text": "测试。",
+        "mandatoryHumanApproval": true
+      },
+      {
+        "id": "hsk2-u1-s1-dialogue",
+        "purpose": "dialogue",
+        "text": "测试。",
+        "mandatoryHumanApproval": false
+      }
+    ]
+  },
+  "manager": true,
+  "assigned": true,
+  "state": {
+    "release": {
+      "version": 1
+    },
+    "assets": [
+      {
+        "id": "aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa",
+        "script_id": "hsk2-u1-s1-practice-listening",
+        "source": "synthetic",
+        "speaker": "eSpeak NG cmn",
+        "active": true,
+        "approved_at": null
+      }
+    ],
+    "issues": [],
+    "pilotCount": 0,
+    "blockingIssues": 0,
+    "tutorApproved": false,
+    "pilotReady": false,
+    "published": false,
+    "status": "tutor_review_pending",
+    "deliveryRevision": null
+  },
+  "assignments": [
+    {
+      "tutor_id": "bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb",
+      "qualification": "TEST: Mandarin tutor and HSK experience",
+      "full_name": "Example Reviewer"
+    }
+  ],
+  "pilots": [],
+  "tutorChecks": [
+    "accuracy",
+    "naturalness",
+    "pinyin",
+    "syllabus",
+    "answerKeys",
+    "workload",
+    "ageSuitability"
+  ],
+  "audioChecks": [
+    "scriptMatch",
+    "pronunciation",
+    "pace",
+    "clarity",
+    "rights"
+  ],
+  "materials": [
+    {
+      "id": "hsk2-u1-s1-practice-reading",
+      "sessionId": "hsk2-u1-s1",
+      "skill": "reading",
+      "minutes": 2,
+      "band": "2",
+      "objectiveId": "2-reading",
+      "stage": "practice",
+      "title": "Test reading",
+      "prompt": "Test-only activity; no real learner data.",
+      "questions": [
+        {
+          "id": "q1",
+          "prompt": "Test choice",
+          "options": [
+            "Example A",
+            "Example B"
+          ],
+          "answer": 0
+        }
+      ],
+      "passage": "示例。"
+    },
+    {
+      "id": "hsk2-u1-s1-practice-listening",
+      "sessionId": "hsk2-u1-s1",
+      "skill": "listening",
+      "minutes": 2,
+      "band": "2",
+      "objectiveId": "2-listening",
+      "stage": "practice",
+      "title": "Test listening",
+      "prompt": "Test-only activity; no real learner data.",
+      "questions": [
+        {
+          "id": "q1",
+          "prompt": "Test choice",
+          "options": [
+            "Example A",
+            "Example B"
+          ],
+          "answer": 0
+        }
+      ],
+      "audioText": "测试。"
+    },
+    {
+      "id": "hsk2-u1-s1-practice-speaking",
+      "sessionId": "hsk2-u1-s1",
+      "skill": "speaking",
+      "minutes": 2,
+      "band": "2",
+      "objectiveId": "2-speaking",
+      "stage": "practice",
+      "title": "Test speaking",
+      "prompt": "Test-only activity; no real learner data."
+    },
+    {
+      "id": "hsk2-u1-s1-practice-writing",
+      "sessionId": "hsk2-u1-s1",
+      "skill": "writing",
+      "minutes": 2,
+      "band": "2",
+      "objectiveId": "2-writing",
+      "stage": "practice",
+      "title": "Test writing",
+      "prompt": "Test-only activity; no real learner data."
+    }
+  ],
+  "reviewMaterials": [
+    {
+      "id": "hsk2-u1-s1-review-reading",
+      "sessionId": "hsk2-u1-s1",
+      "skill": "reading",
+      "minutes": 2,
+      "band": "2",
+      "objectiveId": "2-reading",
+      "stage": "delayed_review",
+      "title": "Test reading",
+      "prompt": "Test-only activity; no real learner data.",
+      "questions": [
+        {
+          "id": "q1",
+          "prompt": "Test choice",
+          "options": [
+            "Example A",
+            "Example B"
+          ],
+          "answer": 0
+        }
+      ],
+      "passage": "示例。"
+    },
+    {
+      "id": "hsk2-u1-s1-review-listening",
+      "sessionId": "hsk2-u1-s1",
+      "skill": "listening",
+      "minutes": 2,
+      "band": "2",
+      "objectiveId": "2-listening",
+      "stage": "delayed_review",
+      "title": "Test listening",
+      "prompt": "Test-only activity; no real learner data.",
+      "questions": [
+        {
+          "id": "q1",
+          "prompt": "Test choice",
+          "options": [
+            "Example A",
+            "Example B"
+          ],
+          "answer": 0
+        }
+      ],
+      "audioText": "测试。"
+    },
+    {
+      "id": "hsk2-u1-s1-review-speaking",
+      "sessionId": "hsk2-u1-s1",
+      "skill": "speaking",
+      "minutes": 2,
+      "band": "2",
+      "objectiveId": "2-speaking",
+      "stage": "delayed_review",
+      "title": "Test speaking",
+      "prompt": "Test-only activity; no real learner data."
+    },
+    {
+      "id": "hsk2-u1-s1-review-writing",
+      "sessionId": "hsk2-u1-s1",
+      "skill": "writing",
+      "minutes": 2,
+      "band": "2",
+      "objectiveId": "2-writing",
+      "stage": "delayed_review",
+      "title": "Test writing",
+      "prompt": "Test-only activity; no real learner data."
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import { hskContentPage } from './hsk-content.js'
 import { roleLabel, followupCards, followupDetail, guardianPage } from './followups.js'
 import { hskPage, hskProgress } from './hsk.js'
 import { coursePage, reviewSchedule } from './hsk-course.js'
@@ -5,7 +6,7 @@ import { classroomSurface } from './classroom.js'
 // Role-specific navigation. Access comes from the backend, never user metadata.
 export const WORKSPACE_SECTIONS = {
  guardian:[['overview','Overview','apps'],['lessons','Lessons','calendar'],['practice','Practice','read'],['hsk','HSK Plans','library'],['progress','Progress','progress']],
- tutor:[['overview','Overview','apps'],['calendar','Calendar','calendar'],['people','My Students','figures'],['course','HSK Course','read'],['preparation','Preparation','kids'],['assessment','Assessment','progress'],['classroom','Classroom','read'],['authorboard','AuthorBoard','kids'],['setlists','SetLists','library'],['progress','Progress','progress'],['earnings','Earnings','plan'],['profile','Profile','settings']],
+ tutor:[['overview','Overview','apps'],['calendar','Calendar','calendar'],['people','My Students','figures'],['course','HSK Course','read'],['content','HSK Reviews','shield'],['preparation','Preparation','kids'],['assessment','Assessment','progress'],['classroom','Classroom','read'],['authorboard','AuthorBoard','kids'],['setlists','SetLists','library'],['progress','Progress','progress'],['earnings','Earnings','plan'],['profile','Profile','settings']],
  student:[['overview','My Learning','apps'],['lessons','My Lessons','calendar'],['classroom','Classroom','read'],['people','My Tutors','figures'],['course','HSK Course','read'],['practice','Practice','discover'],['hsk','HSK Practice','read'],['setlists','My SetLists','library'],['progress','Progress','progress'],['profile','Profile','settings']],
 }
 export const workspaceSection=(role,section)=>WORKSPACE_SECTIONS[role]?.some(([id])=>id===section)?section:'overview'
@@ -24,7 +25,8 @@ export function workspacePage(s,{esc,progress,library,apps}){
  const table=(rows,person)=>rows.length?`<ul class="workspace-list">${rows.map(l=>`<li><div><b>${esc(l.topic||'Lesson')}</b><p class="muted">${esc(person(l)||'')} · ${esc(new Date(l.starts_at).toLocaleString())}</p><span class="muted">${esc(l.status||'Scheduled')}</span></div>${up.includes(l)?open('/classroom/?lesson='+encodeURIComponent(l.id),'Join lesson'):`<button class="btn ghost" data-followup="${esc(l.id)}">${role==='tutor'?'Summary and practice':'Lesson summary'}</button>`}</li>`).join('')}</ul>`:'<p class="muted">No lessons to show yet.</p>'
  const who=l=>role==='tutor'?l.student:l.tutor
  let body=''
- if(section==='course') body=coursePage(s)
+ if(section==='content') body=hskContentPage(s)
+ else if(section==='course') body=coursePage(s)
  else if(['preparation','assessment','hsk'].includes(section)) body=hskPage(s)
  else if(section==='progress' && role==='tutor' && s.learningProgress?.status==='needs_profile') body=`<p class="muted">HSK evidence below comes from practice assigned in your lessons. Cross-app word mastery remains subject to its existing sharing controls.</p>`
  else if(section==='progress') body=`<p class="muted">Your learning across connected LiANN apps. Mastery is calculated from recorded practice, not lesson attendance.</p>${s.learningProgress?.status==='needs_profile'?`<div class="c"><p>Complete your learner profile to start recording progress.</p>${open('/student#profile','Set up learner profile')}</div>`:progress(s)}`

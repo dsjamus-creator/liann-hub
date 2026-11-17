@@ -16,9 +16,9 @@
     "sessionPlan": {
       "version": "liann-hsk2-sequence-v1",
       "band": "2",
-      "status": "provisional_session_plans_tutor_review_required",
+      "status": "36_authored_session_drafts_human_validation_pending",
       "plannedHours": 36,
-      "scope": "Six course units containing six one-hour session plans each. These are teaching plans, not 36 fully authored lesson packs or an official required study duration. Placement and learner evidence determine extra teaching/revision. The six starter packs remain separate representative practice.",
+      "scope": "Six units contain 36 authored one-hour session drafts. Full tutor and learner materials are prepared; qualified tutor review, approved human audio and three learner pilots per session are required before wider release. Placement and observed needs determine additional teaching time.",
       "inventory": "500 cumulative word entries (300 prerequisites plus 200 level-2 additions). Session focus words are examples; complete vocabulary/grammar teaching and mastery are not certified.",
       "sessions": [
         {
@@ -60,7 +60,7 @@
               "activity": "Give one specific correction; learner revises. Agree short home retrieval and schedule a fresh seven-day check."
             }
           ],
-          "materialStatus": "session_plan_only_fresh_stimuli_to_author",
+          "materialStatus": "authored_draft_review_and_pilot_pending",
           "homePractice": "Retrieve a small tutor-selected word/character set and rehearse the communicative goal. Record support and do not reuse reserved review answers."
         },
         {
@@ -101,7 +101,7 @@
               "activity": "Give one specific correction; learner revises. Agree short home retrieval and schedule a fresh seven-day check."
             }
           ],
-          "materialStatus": "session_plan_only_fresh_stimuli_to_author",
+          "materialStatus": "authored_draft_review_and_pilot_pending",
           "homePractice": "Retrieve a small tutor-selected word/character set and rehearse the communicative goal. Record support and do not reuse reserved review answers."
         },
         {
@@ -142,7 +142,7 @@
               "activity": "Give one specific correction; learner revises. Agree short home retrieval and schedule a fresh seven-day check."
             }
           ],
-          "materialStatus": "session_plan_only_fresh_stimuli_to_author",
+          "materialStatus": "authored_draft_review_and_pilot_pending",
           "homePractice": "Retrieve a small tutor-selected word/character set and rehearse the communicative goal. Record support and do not reuse reserved review answers."
         },
         {
@@ -183,7 +183,7 @@
               "activity": "Give one specific correction; learner revises. Agree short home retrieval and schedule a fresh seven-day check."
             }
           ],
-          "materialStatus": "session_plan_only_fresh_stimuli_to_author",
+          "materialStatus": "authored_draft_review_and_pilot_pending",
           "homePractice": "Retrieve a small tutor-selected word/character set and rehearse the communicative goal. Record support and do not reuse reserved review answers."
         },
         {
@@ -228,7 +228,7 @@
               "activity": "Give one specific correction; learner revises. Agree short home retrieval and schedule a fresh seven-day check."
             }
           ],
-          "materialStatus": "session_plan_only_fresh_stimuli_to_author",
+          "materialStatus": "authored_draft_review_and_pilot_pending",
           "homePractice": "Retrieve a small tutor-selected word/character set and rehearse the communicative goal. Record support and do not reuse reserved review answers."
         },
         {
@@ -273,7 +273,7 @@
               "activity": "Give one specific correction; learner revises. Agree short home retrieval and schedule a fresh seven-day check."
             }
           ],
-          "materialStatus": "session_plan_only_fresh_stimuli_to_author",
+          "materialStatus": "authored_draft_review_and_pilot_pending",
           "homePractice": "Retrieve a small tutor-selected word/character set and rehearse the communicative goal. Record support and do not reuse reserved review answers."
         }
       ]
@@ -482,7 +482,7 @@
       "warmup": "Retrieve 姐姐、旁边、天气、下雨. Ask the learner to give a new example and note any gaps.",
       "teaching": "Model this dialogue and check meaning:\n甲：你姐姐住在哪儿？\n乙：她住在学校旁边，离我家很近。\n甲：你们今天怎么去学校？\n乙：因为今天下雨，所以我们坐公交车去。\nTeach 因为……所以…… and A 比 B + adjective. Ask the learner to explain how each example works.",
       "guided": "Use the reading passage and listening script. Ask the learner to locate the evidence for each answer, then practise a parallel exchange together.",
-      "independent": "Use the selected speaking and writing tasks without showing the reference guidance. Record any prompting. Adapt the writing format to the level. For HSK 2, check character components and characters from pinyin, with handwriting checked separately.",
+      "independent": "Use the selected speaking and writing tasks without showing the reference guidance. Record any prompting. Check character components and characters from pinyin, with handwriting assessed separately on paper.",
       "exitTicket": "Ask for one new example that demonstrates: Describe a familiar person and place, and explain a simple choice using the weather. Record the evidence and one next step. The delayed review uses different material after seven days."
     }
   },

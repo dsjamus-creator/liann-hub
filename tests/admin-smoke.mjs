@@ -60,7 +60,7 @@ try {
     assert.equal(await page.locator('#pick').count(), 0, 'super admin opens automatically without profile selection')
     assert.ok(page.url().endsWith('#admin/overview'))
     const rail = page.getByRole('navigation', { name: 'Super Admin', exact: true })
-    assert.equal(await rail.locator('[data-admin]').count(), 12)
+    assert.equal(await rail.locator('[data-admin]').count(), 13)
     const frame = page.frameLocator('#admin-frame')
     const roleSwitch = page.locator('#role-switcher')
     assert.deepEqual(await roleSwitch.locator('option').allTextContents(), ['Tutor', 'Student', 'Super Admin'])

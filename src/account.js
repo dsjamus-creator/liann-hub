@@ -211,9 +211,15 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     return body===undefined?backendGet('/learning/followups'+path):backendCall('POST','/learning/followups'+path,body)
   }
   async function hskRequest(path='',body) {
-    if (!/^(?:\?role=(?:tutor|student|guardian)|\/plans\/[a-f0-9-]{36}(?:\/(?:start|withdraw|teaching))?|\/attempts\/[a-f0-9-]{36}\/(?:submit|review))?$/.test(path))
+    if (!/^(?:\?role=(?:tutor|student|guardian)|\/plans\/[a-f0-9-]{36}(?:\/(?:start|withdraw|teaching))?|\/attempts\/[a-f0-9-]{36}\/(?:submit|review)|\/content(?:\/access|\/audio\/[a-f0-9-]{36}|\/sessions\/hsk2-u[1-6]-s[1-6](?:\/(?:action|audio|pilots))?)?|\/audio\/[a-f0-9-]{36}\?lessonId=[a-f0-9-]{36}(?:&attemptId=[a-f0-9-]{36})?|\/pilots\/[a-f0-9-]{36}\/consent)?$/.test(path))
       throw new AccountError('Unknown HSK workspace action.', 'bad_hsk_path')
     return body===undefined?backendGet('/learning/hsk'+path):backendCall('POST','/learning/hsk'+path,body)
+  }
+  async function hskUpload(path,file,meta){
+    if(!/^\/content\/sessions\/hsk2-u[1-6]-s[1-6]\/audio$/.test(path))throw new AccountError('Unknown audio upload.','bad_hsk_path')
+    const token=await accessToken();if(!token)throw new AccountError('Sign in again.','signed_out')
+    const mime=/\.wav$/i.test(file.name)?'audio/wav':/\.mp3$/i.test(file.name)?'audio/mpeg':file.type
+    return json(`${backend}/learning/hsk${path}`,{method:'POST',mode:'cors',credentials:'omit',headers:{Authorization:`Bearer ${token}`,'Content-Type':mime,'X-HSK-Audio':encodeURIComponent(JSON.stringify(meta))},body:file})
   }
   async function workspaceLink(next) {
     if (typeof next !== 'string' || !/^\/(?:tutor(?:#.*)?|student(?:#.*)?|calendar|authorboard\/|classroom\/\?lesson=[a-zA-Z0-9-]+(?:&hub=1&channel=[a-f0-9-]{36})?)$/.test(next))
@@ -343,7 +349,7 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     }
   }
 
-  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, learningProgress, progressSharingOptions, setProgressSharing, institutionClasses, classProgress, profileLink, household, householdAction, adminAccess, adminRequest, workspaceAccess, workspaceData, workspaceLink, followupRequest, hskRequest,
+  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, learningProgress, progressSharingOptions, setProgressSharing, institutionClasses, classProgress, profileLink, household, householdAction, adminAccess, adminRequest, workspaceAccess, workspaceData, workspaceLink, followupRequest, hskRequest, hskUpload,
     beginSchoolSignIn, acceptSchoolCallback, schoolSession, schoolMemberships, linkSchoolIdentity,
     hasInstitutionSession: () => Boolean(schoolSession()), hasSession: () => Boolean(read()?.access_token) }
 }
