@@ -1,6 +1,6 @@
 // Minimal static server for local use and the smoke test. Serves this folder only.
 import { createServer } from 'node:http'
-import { readFile } from 'node:fs/promises'
+import { readFile, stat } from 'node:fs/promises'
 import { extname, join, normalize, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -13,9 +13,10 @@ export function serve(port = Number(process.env.PORT) || 4173) {
     const file = normalize(join(root, path.endsWith('/') ? path + 'index.html' : path))
     if (!file.startsWith(root + sep) || /[\\/]\.|node_modules/.test(file.slice(root.length))) { res.writeHead(404).end(); return }
     try {
-      // Like the Worker's html_handling: /polyflow serves polyflow.html.
+      // Match Worker static-asset directory routes, then the Hub's existing /page -> page.html convention.
       let served = file
-      const body = await readFile(file).catch(e => { if (e.code === 'ENOENT' && !extname(file)) { served = file + '.html'; return readFile(served) } throw e })
+      try { if ((await stat(file)).isDirectory()) served = join(file, 'index.html') } catch {}
+      const body = await readFile(served).catch(e => { if (e.code === 'ENOENT' && !extname(file)) { served = file + '.html'; return readFile(served) } throw e })
       res.writeHead(200, { 'content-type': types[extname(served)] || 'application/octet-stream', 'cache-control': 'no-store' }).end(body)
     } catch { res.writeHead(404).end('Not found') }
   })
