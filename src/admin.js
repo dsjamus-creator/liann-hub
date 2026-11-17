@@ -1,7 +1,7 @@
 import { config } from './config.js'
 
 export const ADMIN_SECTIONS = [
-  ['overview', 'Overview', 'apps'], ['tutors', 'Tutors', 'figures'], ['students', 'Students', 'read'],
+  ['overview', 'Overview', 'apps'], ['hsk', 'HSK Content', 'read'], ['tutors', 'Tutors', 'figures'], ['students', 'Students', 'read'],
   ['compliance', 'Safeguarding', 'shield'], ['finance', 'Finance', 'plan'], ['comms', 'Communications', 'bell'],
   ['calendar', 'Calendar', 'calendar'], ['waitlist', 'Waitlist', 'library'], ['campaign', 'Campaign', 'send'],
   ['inbox', 'Inbox', 'mail'], ['reports', 'Reports', 'downloads'], ['staff', 'Staff', 'settings'],
