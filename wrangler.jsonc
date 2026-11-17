@@ -10,7 +10,7 @@
     "directory": "./",
     "binding": "ASSETS",
     "not_found_handling": "404-page",
-    "run_worker_first": ["/comic/*"]
+    "run_worker_first": ["/comic/*", "/phrasepath/notes*"]
   },
   // The comic page files: a private bucket with no public address (no r2.dev, no custom domain). Only this Worker reads it.
   "r2_buckets": [
