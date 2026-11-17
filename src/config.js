@@ -20,6 +20,7 @@ export const APPS = [
   { id: 'puzzle', page: 'pinyin-puzzle', g: '谜', name: 'Pinyin Puzzle', kind: 'Game · web', desc: 'Solve across and down.', st: 'ok', path: '/playtest/puzzle/' },
   { id: 'dash', page: 'alongside', g: '伴', name: 'AlongSide', kind: 'App · Android test build', desc: 'Classes, whiteboards, SetLists and progress.', st: 'native', slot: 'alongside/android-test' },
   { id: 'poly', page: 'polyflow', g: '琴', name: 'PolyFlow', kind: 'App · web and Windows', desc: 'Play the song. The lyrics follow you.', st: 'ok', url: 'https://lwl-backend-mhgo.onrender.com/music-app/polyflow/studio.html', slot: 'polyflow/windows' },
+  { id: 'phrasepath-notes', g: '旅', name: 'PhrasePath Notes', kind: 'Notes · web', desc: 'Import and organize notes in your LWL account.', st: 'ok', url: 'https://app.lwliann.com/phrasepath/notes' },
   { id: 'lyric', page: 'lyricsync', g: '歌', name: 'LyricSync', kind: 'YouTube app · Chrome / Edge on desktop', desc: 'Turn any song into a Multi-Lingual Master.', st: 'desk', yt: 1, slot: 'lyricsync/extension' },
   { id: 'dual', page: 'dual-subs', g: '字', name: 'Dual Subs', kind: 'YouTube app · Chrome / Edge on desktop', desc: 'Multiple SubTitled Languages at Once on YouTube.', st: 'desk', yt: 1, slot: 'dualsubs/extension' },
   { id: 'trans', g: '练', name: 'TransApp', kind: 'Practice app', desc: 'Practice App Coming Soon.', st: 'soon' },
