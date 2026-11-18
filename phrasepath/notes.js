@@ -4,7 +4,7 @@ import { createAccount } from '/src/account.js'
 const account = createAccount({ pinyinApi: config.pinyinApi, backend: config.backend })
 const api = new URL('/api/phrasepath', config.backend).href.replace(/\/$/, '')
 const $ = s => document.querySelector(s)
-let notes = [], folder = '*', editingId = null, currentEmail = ''
+let notes = [], folder = '*', editingId = null, currentEmail = '', driveConfig = null, driveFolder = null, drivePickerPromise = null, driveAccessToken = '', driveTokenExpiresAt = 0
 const say = text => { $('#importStatus').textContent = text }
 const authSay = text => { $('#authStatus').textContent = text }
 const ext = file => (file.name.split('.').pop() || '').toLowerCase()
@@ -187,22 +187,124 @@ async function importFiles(inputFiles) {
   for(const file of inputFiles){if(ext(file)==='zip')items.push(...await unzip(file));else items.push(file)}
   if(!items.length){say('No note files were found.');return}
   for(let i=0;i<items.length;i++){
-    const file=items[i], extension=ext(file);status.textContent='Importing '+(i+1)+' of '+items.length+': '+file.name
+    const file=items[i], extension=ext(file);if(file.phrasePathDriveFileId&&notes.some(n=>n.driveFileId===file.phrasePathDriveFileId)){continue}status.textContent='Importing '+(i+1)+' of '+items.length+': '+file.name
     let title=titleOf(file), body=''
     try { if(extension==='sdocx'){const parsed=await decodeSdocx(file);title=parsed.title||title;body=parsed.body}else body=await readText(file) }
     catch(e){console.warn('PhrasePath Samsung Notes extraction failed',e);body='Text preview could not be created; the original file is attached.'}
     const id=crypto.randomUUID(), folderPath=pathOf(file)
-    await request('/notes/'+id,{method:'PUT',body:JSON.stringify({id,title,body,source,folderPath,createdAt:new Date(file.lastModified||Date.now()).toISOString()})})
+    await request('/notes/'+id,{method:'PUT',body:JSON.stringify({id,title,body,source,folderPath,createdAt:new Date(file.lastModified||Date.now()).toISOString(),driveFileId:file.phrasePathDriveFileId||null})})
     try { await uploadAttachment(id,file) }
     catch(e){say(e.message+' Earlier files may already be synced.');continue}
   }
-  await loadNotes();say(items.length+' notes imported and synced to your LWL account.')
+  await loadNotes();if(items.some(f=>f.phrasePathDriveFileId))say(notes.filter(n=>n.driveFileId&&items.some(f=>f.phrasePathDriveFileId===n.driveFileId)).length+' Drive notes are synced to your LWL account.');else say(items.length+' notes imported and synced to your LWL account.')
 }
+async function driveRequest(path, options={}) { return request(path, options) }
+
+async function loadDriveSettings() {
+  try {
+    driveConfig = await driveRequest('/drive/config')
+    const data = await driveRequest('/drive/folder')
+    driveFolder = data.folder || null
+    $('#driveFolderState').textContent = driveFolder
+      ? 'Connected folder: ' + driveFolder.name + (driveFolder.email ? ' · ' + driveFolder.email : '')
+      : (driveConfig.configured ? 'No folder selected. Choose the PhrasePath folder in your Google Drive.' : 'Google Drive import is waiting for the Picker API key and OAuth client setup.')
+    $('#importDriveFiles').disabled = !driveFolder || !driveConfig.configured
+    $('#disconnectDriveFolder').classList.toggle('hidden', !driveFolder)
+  } catch (e) { $('#driveFolderState').textContent = 'Could not load your Drive folder: ' + e.message }
+}
+
+function loadGoogleScript(src, test) {
+  if (test()) return Promise.resolve()
+  const existing = document.querySelector('script[data-phrasepath-google]')
+  if (existing) return new Promise((resolve,reject)=>{existing.addEventListener('load',resolve,{once:true});existing.addEventListener('error',reject,{once:true})})
+  return new Promise((resolve,reject)=>{
+    const script=document.createElement('script');script.src=src;script.async=true;script.defer=true;script.dataset.phrasepathGoogle='1'
+    script.onload=resolve;script.onerror=()=>reject(new Error('Google Drive could not load. Check your connection and try again.'))
+    document.head.append(script)
+  })
+}
+
+async function googleDriveToken() {
+  if (!driveConfig?.configured) throw new Error('Google Drive is not configured yet. The Picker API key and authorized web OAuth client are still needed.')
+  await loadGoogleScript('https://accounts.google.com/gsi/client',()=>Boolean(window.google?.accounts?.oauth2))
+  return new Promise((resolve,reject)=>{
+    if(driveAccessToken && driveTokenExpiresAt>Date.now()+60000){resolve(driveAccessToken);return}\n    const client=google.accounts.oauth2.initTokenClient({
+      client_id:driveConfig.clientId,
+      scope:'https://www.googleapis.com/auth/drive.file',
+      callback:response=>{if(response?.access_token){driveAccessToken=response.access_token;driveTokenExpiresAt=Date.now()+Number(response.expires_in||3600)*1000;resolve(driveAccessToken)}else reject(new Error(response?.error_description||'Google Drive authorization was not completed.'))}
+    })
+    client.requestAccessToken({prompt:''})
+  })
+}
+
+async function openDrivePicker(selectFolder=false) {
+  const accessToken=await googleDriveToken()
+  if (!drivePickerPromise) drivePickerPromise=loadGoogleScript('https://apis.google.com/js/api.js',()=>Boolean(window.gapi?.load)).then(()=>new Promise((resolve,reject)=>gapi.load('picker',{callback:resolve,onerror:()=>reject(new Error('Google Picker did not load.'))})))
+  await drivePickerPromise
+  return new Promise((resolve,reject)=>{
+    const builder=new google.picker.PickerBuilder().setDeveloperKey(driveConfig.pickerApiKey).setOAuthToken(accessToken).setOrigin(window.location.protocol+'//'+window.location.host)
+    if(driveConfig.appId) builder.setAppId(driveConfig.appId)
+    if(selectFolder) {
+      const view=new google.picker.DocsView(google.picker.ViewId.FOLDERS).setSelectFolderEnabled(true).setMimeTypes('application/vnd.google-apps.folder')
+      builder.addView(view).setTitle('Choose your PhrasePath folder')
+    } else {
+      const view=new google.picker.DocsView(google.picker.ViewId.DOCS).setParent(driveFolder.id).setIncludeFolders(false).setMimeTypes('application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,text/plain,application/vnd.google-apps.document')
+      builder.addView(view).enableFeature(google.picker.Feature.MULTISELECT_ENABLED).setTitle('Select exported notes')
+    }
+    builder.setCallback(async data=>{
+      if(data.action===google.picker.Action.CANCEL){resolve(null);return}
+      if(data.action!==google.picker.Action.PICKED)return
+      resolve(data.docs||[])
+    }).build().setVisible(true)
+  })
+}
+
+$('#chooseDriveFolder').addEventListener('click',async()=>{
+  $('#driveStatus').textContent='Opening Google Drive…'
+  try {
+    const docs=await openDrivePicker(true)
+    if(!docs?.length){$('#driveStatus').textContent='Folder selection cancelled.';return}
+    const chosen=docs[0]
+    const result=await driveRequest('/drive/folder',{method:'PUT',body:JSON.stringify({id:chosen.id,name:chosen.name,email:chosen.emailAddress||''})})
+    driveFolder=result.folder;await loadDriveSettings();$('#driveStatus').textContent='Your PhrasePath folder is saved to your LWL account.'
+  } catch(e){$('#driveStatus').textContent=e.message}
+})
+$('#importDriveFiles').addEventListener('click',async()=>{
+  $('#driveStatus').textContent='Opening your PhrasePath folder…'
+  try {
+    const docs=await openDrivePicker(false)
+    if(!docs?.length){$('#driveStatus').textContent='No files selected.';return}
+    if(docs.length>100){$('#driveStatus').textContent='Select up to 100 files per batch.';return}
+    const token=await googleDriveToken(), files=[]
+    for(let i=0;i<docs.length;i++){
+      const doc=docs[i]
+      $('#driveStatus').textContent='Reading '+(i+1)+' of '+docs.length+': '+doc.name
+      const googleDoc=doc.mimeType==='application/vnd.google-apps.document'
+      const endpoint=googleDoc
+        ? 'https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(doc.id)+'/export?mimeType=application/pdf'
+        : 'https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(doc.id)+'?alt=media'
+      const response=await fetch(endpoint,{headers:{Authorization:'Bearer '+token},cache:'no-store',referrerPolicy:'no-referrer'})
+      if(!response.ok)throw new Error('Could not download '+doc.name+' from Google Drive ('+response.status+').')
+      const blob=await response.blob(), name=googleDoc?doc.name+'.pdf':doc.name
+      const file=new File([blob],name,{type:googleDoc?'application/pdf':(blob.type||doc.mimeType||'application/octet-stream'),lastModified:Date.now()})
+      file.phrasePathDriveFileId=doc.id;files.push(file)
+    }
+    $('#noteSource').value='Samsung Notes'
+    $('#driveStatus').textContent='Importing '+files.length+' files…'
+    await importFiles(files)
+    $('#driveStatus').textContent='Finished importing selected files from your Google Drive.'
+  } catch(e){$('#driveStatus').textContent=e.message}
+})
+$('#disconnectDriveFolder').addEventListener('click',async()=>{
+  try{await driveRequest('/drive/folder',{method:'DELETE'});driveFolder=null;await loadDriveSettings();$('#driveStatus').textContent='The saved folder choice was removed. Google access tokens are never stored.'}
+  catch(e){$('#driveStatus').textContent=e.message}
+})
+
 function showSignedIn(user) {
   currentEmail=user?.email||''
   $('#signInPanel').classList.add('hidden');$('#library').classList.remove('hidden');$('#signOut').classList.remove('hidden')
   $('#syncState').textContent='Signed in · '+currentEmail
-  loadNotes().catch(e=>{if(e.status===401){showSignedOut();authSay('Your sign-in expired. Sign in again to sync notes.')}else say('Could not load notes: '+e.message)})
+  loadDriveSettings();loadNotes().catch(e=>{if(e.status===401){showSignedOut();authSay('Your sign-in expired. Sign in again to sync notes.')}else say('Could not load notes: '+e.message)})
 }
 function showSignedOut() {
   $('#signInPanel').classList.remove('hidden');$('#library').classList.add('hidden');$('#signOut').classList.add('hidden')
