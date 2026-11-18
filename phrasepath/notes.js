@@ -215,10 +215,10 @@ async function loadDriveSettings() {
 
 function loadGoogleScript(src, test) {
   if (test()) return Promise.resolve()
-  const existing = document.querySelector('script[data-phrasepath-google]')
+  const existing = [...document.querySelectorAll('script[data-phrasepath-google]')].find(script=>script.dataset.googleSrc===src)
   if (existing) return new Promise((resolve,reject)=>{existing.addEventListener('load',resolve,{once:true});existing.addEventListener('error',reject,{once:true})})
   return new Promise((resolve,reject)=>{
-    const script=document.createElement('script');script.src=src;script.async=true;script.defer=true;script.dataset.phrasepathGoogle='1'
+    const script=document.createElement('script');script.src=src;script.async=true;script.defer=true;script.dataset.phrasepathGoogle='1';script.dataset.googleSrc=src
     script.onload=resolve;script.onerror=()=>reject(new Error('Google Drive could not load. Check your connection and try again.'))
     document.head.append(script)
   })
