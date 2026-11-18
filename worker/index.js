@@ -131,7 +131,7 @@ export default {
     if (url.pathname.startsWith('/comic/')) return page(request, env, url, now)
     if (url.pathname === '/phrasepath/notes' || url.pathname === '/phrasepath/notes/') {
       if (request.method !== 'GET' && request.method !== 'HEAD') return new Response('Method not allowed', { status: 405, headers: { allow: 'GET, HEAD' } })
-      return env.ASSETS.fetch(new Request(new URL('/phrasepath/notes/index.html', url), request))
+      return env.ASSETS.fetch(new Request(new URL('/phrasepath/notes/', url), request))
     }
     return env.ASSETS.fetch(request)
   },
