@@ -28,7 +28,7 @@ const S = { viewId: viewId(),
   view: 'loading', email: '', user: null, page: pageFromHash(), appf: 'All', slim: false, appear: false, notif: false,
   theme: theme && DS.some(d => d[0] === theme.ds) && /^(light|dark)$/.test(theme.t) ? theme : { ds: 'liann', t: 'dark' },
   recent: [], downloads: null, comics: null, reader: null, progress: {}, setlists: null, learningProgress: null, classProgress: null, progressSharing: {}, institutionClasses: {}, openList: null, query: '', busy: false, error: '', fix: '',
-  followups: null, followupDetail: null, followupDraft: null, followupReviewDraft: null, followupQuiz: null, followupError: '', followupBusy: false, workspaceAccess: null, workspaceData: null, workspaceRole: 'student', workspaceSection: 'overview', workspaceLoading: false, workspaceError: '', workspaceActionError: '', admin: null, adminError: '', adminSection: adminSection(hashParts()[1]), household: undefined, learner: null, hhError: '', hhBusy: false,
+  followups: null, followupDetail: null, followupDraft: null, followupReviewDraft: null, followupQuiz: null, followupError: '', followupBusy: false, workspaceAccess: null, workspaceData: null, workspaceRole: 'student', workspaceSection: 'overview', workspaceLoading: false, workspaceError: '', workspaceActionError: '', workspaceCalendarEmbedded: false, workspaceCalendarLoading: false, workspaceCalendarUrl: '', workspaceCalendarError: '', admin: null, adminError: '', adminSection: adminSection(hashParts()[1]), household: undefined, learner: null, hhError: '', hhBusy: false,
 }
 const hskContent = createHskContentController({state:S,account,render})
 const hsk = createHskController({state:S,account,render})
@@ -85,6 +85,7 @@ function render() {
   bind()
   syncAdmin()
   classroom.sync()
+  if (S.view === 'hub' && S.page === 'workspace' && S.workspaceRole === 'tutor' && S.workspaceSection === 'calendar' && window.matchMedia('(min-width: 768px)').matches) { S.workspaceCalendarEmbedded = true; ensureWorkspaceCalendar() }
   if(formFocus){const field=document.getElementById(formFocus.form)?.elements.namedItem(formFocus.name);if(field){field.focus();try{field.setSelectionRange(formFocus.start,formFocus.end)}catch{}}}
   if (focused === 'q' || focused === 'ts') { const el = $('#' + focused); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length) } }
 }
@@ -101,6 +102,7 @@ async function enterHub(user, access, workspaceAccess) {
   classroom.close()
   hsk.reset();hskContent.reset()
   ++workspaceRequest; ++progressRequest; S.learningProgress = null; S.classProgress = null; S.progressSharing = {}; S.followups = null; S.followupDetail = null; S.followupDraft = null; S.followupReviewDraft = null; S.followupQuiz = null; S.followupError = ''; S.followupBusy = false
+  S.workspaceCalendarEmbedded = false; S.workspaceCalendarLoading = false; S.workspaceCalendarUrl = ''; S.workspaceCalendarError = '';
   S.user = user; S.institutional = false; S.admin = null; S.adminError = ''; S.workspaceAccess = null; S.workspaceData = null; S.workspaceError = '';
   if (!S.learner) {
     try { const result = access === undefined ? await account.adminAccess() : access; if (S.user !== user) return; S.admin = result }
@@ -155,7 +157,7 @@ function navigateWorkspace(section, role = S.workspaceRole) {
   const changed = role !== S.workspaceRole
   hsk.navigate(section)
   S.followupDetail = null; S.followupQuiz = null; S.followupDraft = null; S.followupReviewDraft = null; S.followupError = ''; S.notif = false
-  S.workspaceRole = role; S.workspaceSection = workspaceSection(role,section); S.page = 'workspace'; S.more = false
+  S.workspaceRole = role; S.workspaceSection = workspaceSection(role,section); S.workspaceCalendarEmbedded = role === 'tutor' && S.workspaceSection === 'calendar' && window.matchMedia('(min-width: 768px)').matches; S.workspaceCalendarLoading = false; S.workspaceCalendarUrl = ''; S.workspaceCalendarError = ''; S.page = 'workspace'; S.more = false
   history.replaceState(null, '', '#workspace/'+role+'/'+S.workspaceSection); render()
   if (changed) loadWorkspace()
 }
@@ -216,6 +218,23 @@ async function answerPractice(choiceId){
  S.followupBusy=true;S.followupError='';render()
  try{const result=await account.followupRequest('/'+id+'/attempt',{wordId:quiz.target.id,choiceId,eventId:quiz.eventId});if(!sameFollowupContext(context)||S.followupQuiz!==quiz)return;quiz.result=result;S.followupBusy=false;render();loadLearningProgress();account.followupRequest('/'+id).then(detail=>{if(sameFollowupContext(context)&&S.followupQuiz===quiz&&S.followupDetail?.lessonId===id){S.followupDetail={status:'ok',lessonId:id,...detail};render()}}).catch(()=>{})}
  catch(error){if(!sameFollowupContext(context)||S.followupQuiz!==quiz)return;S.followupBusy=false;S.followupError=followupMessage(error);render()}
+}
+
+async function ensureWorkspaceCalendar() {
+  if (S.workspaceCalendarLoading || S.workspaceCalendarUrl || !S.workspaceCalendarEmbedded || S.view !== 'hub' || S.page !== 'workspace' || S.workspaceRole !== 'tutor' || S.workspaceSection !== 'calendar') return
+  const user = S.user
+  S.workspaceCalendarLoading = true
+  try {
+    const target = await account.workspaceLink('/calendar')
+    if (S.user !== user || S.view !== 'hub' || S.page !== 'workspace' || S.workspaceRole !== 'tutor' || S.workspaceSection !== 'calendar') return
+    S.workspaceCalendarUrl = target
+  } catch (error) {
+    if (S.user !== user) return
+    S.workspaceCalendarError = `${error.message} You can open the calendar in a separate browser tab.`
+  } finally {
+    S.workspaceCalendarLoading = false
+    if (S.view === 'hub' && S.page === 'workspace' && S.workspaceRole === 'tutor' && S.workspaceSection === 'calendar') render()
+  }
 }
 
 async function openWorkspaceAction(path) {
