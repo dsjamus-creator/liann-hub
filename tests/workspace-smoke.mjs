@@ -4,7 +4,7 @@ import {serve} from '../scripts/serve.mjs'
 const server=await serve(0),hub=`http://127.0.0.1:${server.address().port}/`,backend='https://lwl-backend-mhgo.onrender.com'
 const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'/usr/bin/chromium'})
 try{
- for(const width of [1280,390]) for(const roles of [['tutor'],['student'],['tutor','student']]){
+ for(const width of [1280,800,390]) for(const roles of [['tutor'],['student'],['tutor','student']]){
   const context=await browser.newContext({viewport:{width,height:900}}),errors=[]
   await context.addInitScript(()=>{localStorage.setItem('liann-hub-tour-done','true');localStorage.setItem('liann-hub-session-v1',JSON.stringify({access_token:'at',refresh_token:'rt',expires_at:Math.floor(Date.now()/1000)+3600,email:'preview@example.test'}))})
   await context.route(/fonts\.(googleapis|gstatic)\.com/,r=>r.fulfill({body:'',contentType:'text/css'}))
