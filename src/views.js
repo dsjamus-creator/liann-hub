@@ -60,6 +60,7 @@ export function art(id) {
   }
   if (id === 'tiles') return img('tiles-2.jpg', 'center', '#5A6852', 'A Pinyin Tiles example board with horizontal and vertical words', 'background-size:contain;background-repeat:no-repeat')
   if (id === 'puzzle') return img('puzzle-2.jpg', 'center', '#2E412C', 'A Pinyin Puzzle board with across and down clue lists', 'background-size:contain;background-repeat:no-repeat')
+  if (id === 'phrasepath-notes') return img('phrasepath-notes-preview.svg', 'center', '#E8EBE2', 'PhrasePath travel notes and trip map preview')
   if (id === 'dash') return img('alongside-1.jpg', 'left top', '#1B1C18', 'AlongSide whiteboard with the import menu and saved words panel')
   if (id === 'poly') return img('polyflow-1.jpg', 'center bottom', '#24211C', 'PolyFlow advancing a lyric line with pinyin and English over a piano keyboard')
   if (id === 'lyric') return img('lyricsync-1.jpg', 'center', '#D8D2C6', 'LyricSync panels: on-screen subtitles capture and burned-in lyrics OCR')
