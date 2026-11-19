@@ -344,10 +344,12 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
       assert.match(await page.locator('main').innerText(), text, hash)
       if (hash === 'discover') {
         assert.equal(await page.locator('main iframe[title="Pinyin Tiles · Ivoryline demo"]').getAttribute('src'), 'https://downloads.lwliann.com/demoscene/pinyin-tiles-ivoryline.html')
-        assert.equal(await page.locator('main .demo-film video').count(), 3)
-        assert.equal(await page.locator('main .demo-film video source[type="video/mp4"]').count(), 3)
-        assert.equal(await page.locator('main a:has-text("Open video in browser")').count(), 3)
-        assert.equal(await page.locator('main a:has-text("Download archive")').count(), 3)
+        assert.equal(await page.locator('main .demo-film video').count(), 2)
+        assert.equal(await page.locator('main .demo-film video source[type="video/mp4"]').count(), 2)
+        assert.deepEqual(await page.locator('main .demo-film .t').allInnerTexts(), ['Fame · Remember My Name', 'Out of Space'])
+        assert.equal(await page.locator('main a:has-text("Open video in browser")').count(), 2)
+        assert.equal(await page.locator('main a:has-text("Download archive")').count(), 2)
+        assert.equal(await page.locator('main .demo-film:has-text("Pinyin Tiles · Ivoryline")').count(), 0)
         assert.equal(await page.locator('main a:has-text("Open full-screen demo")').count(), 0)
         assert.equal(await page.locator('main img[alt="Pinyin Tiles · Ivoryline demo title screen"]').count(), 0)
       }
