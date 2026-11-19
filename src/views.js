@@ -151,7 +151,7 @@ export function appCard(app, s) {
   const act = app.st === 'ok' ? `${app.slot ? '<button class="btn ghost" data-nav="downloads">Install</button>' : ''}<a class="btn" href="${esc(url)}" target="_blank" rel="noopener" data-open="${app.id}">Open</a>`
     : app.st === 'soon' ? '<button class="btn ghost" disabled>Coming soon</button>'
       : `<button class="btn ghost" data-nav="downloads">Get</button>`
-  return `<div class="c app-card" data-app="${app.id}">${app.yt ? `<div class="app-preview" style="position:relative">${art(app.id)}<span class="ytb">▶ YouTube app</span></div>` : `<div class="app-preview">${art(app.id)}</div>`}<div class="h"><div class="tile">${app.g}</div><div><div class="t">${esc(app.name)}</div><div class="s">${esc(app.kind)}</div></div></div>
+  return `<div class="c app-card" data-app="${app.id}">${app.yt ? `<div class="app-preview" style="position:relative">${art(app.id)}<span class="ytb">▶ YouTube app</span></div>` : `<div class="app-preview">${art(app.id)}</div>`}<div class="h"><div class="tile">${app.icon ? `<img src="${esc(app.icon)}" alt="" style="display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit">` : app.g}</div><div><div class="t">${esc(app.name)}</div><div class="s">${esc(app.kind)}</div></div></div>
   <div class="status ${st.cls}">${esc(st.text)}</div><div class="d">${esc(app.desc)}</div><div class="acts">${app.page ? `<a class="btn ghost" href="/${esc(app.page)}" data-page="${esc(app.page)}">Details</a>` : ''}${act}</div></div>`
 }
 
