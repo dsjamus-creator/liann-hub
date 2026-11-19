@@ -29,3 +29,10 @@ The PhrasePath web importer accepts Apple Notes exports such as Markdown and PDF
 1. Deploy the paired Google Drive changes after the Google Cloud settings are ready.
 2. Add OneDrive Picker v8 after the Microsoft app registration and account audience are settled.
 3. Scope an installable PhrasePath iOS app and Share Extension separately. Until then, retain Apple Notes export-to-Files batch import.
+
+## References
+
+- [Apple: Export or print notes on iPhone](https://support.apple.com/en-mide/guide/iphone/iphdf551cfa2/ios)
+- [Apple Developer Forums: Apple Notes API](https://developer.apple.com/forums/thread/813810) — Apple Developer Technical Support confirms there is no Notes API and that AppleScript is Mac-only.
+- [Apple: Share extensions](https://developer.apple.com/library/archive/documentation/General/Conceptual/ExtensibilityPG/Share.html)
+- [Microsoft: OneDrive File Picker v8](https://learn.microsoft.com/en-us/onedrive/developer/controls/file-pickers/)
