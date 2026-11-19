@@ -151,7 +151,7 @@ export function appCard(app, s) {
   const act = app.st === 'ok' ? `${app.slot ? '<button class="btn ghost" data-nav="downloads">Install</button>' : ''}<a class="btn" href="${esc(url)}" target="_blank" rel="noopener" data-open="${app.id}">Open</a>`
     : app.st === 'soon' ? '<button class="btn ghost" disabled>Coming soon</button>'
       : `<button class="btn ghost" data-nav="downloads">Get</button>`
-  return `<div class="c" data-app="${app.id}">${app.yt ? `<div style="position:relative">${art(app.id)}<span class="ytb">▶ YouTube app</span></div>` : art(app.id)}<div class="h"><div class="tile">${app.g}</div><div><div class="t">${esc(app.name)}</div><div class="s">${esc(app.kind)}</div></div></div>
+  return `<div class="c app-card" data-app="${app.id}">${app.yt ? `<div class="app-preview" style="position:relative">${art(app.id)}<span class="ytb">▶ YouTube app</span></div>` : `<div class="app-preview">${art(app.id)}</div>`}<div class="h"><div class="tile">${app.g}</div><div><div class="t">${esc(app.name)}</div><div class="s">${esc(app.kind)}</div></div></div>
   <div class="status ${st.cls}">${esc(st.text)}</div><div class="d">${esc(app.desc)}</div><div class="acts">${app.page ? `<a class="btn ghost" href="/${esc(app.page)}" data-page="${esc(app.page)}">Details</a>` : ''}${act}</div></div>`
 }
 
@@ -188,7 +188,7 @@ function pHome(s) {
 
 function pApps(s) {
   const f = s.appf || 'All'
-  const sec = (t, list) => list.length ? `<section class="sec"><div class="sechead"><h2>${t}</h2></div><div class="grid">${list.map(a => appCard(a, s)).join('')}</div></section>` : ''
+  const sec = (t, list) => list.length ? `<section class="sec"><div class="sechead"><h2>${t}</h2></div><div class="grid apps-grid">${list.map(a => appCard(a, s)).join('')}</div></section>` : ''
   return `<section class="sec"><div class="sechead"><h2>Games &amp; apps</h2></div>
   <div class="chips" style="justify-content:flex-start">${['All', 'Games', 'Apps'].map(c => `<button class="chip" data-appf="${c}" aria-pressed="${c === f}">${c}</button>`).join('')}</div></section>
   ${f !== 'Apps' ? sec('Games', GAMES()) : ''}${f !== 'Games' ? sec('Apps', TOOLS()) : ''}`
