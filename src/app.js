@@ -221,7 +221,7 @@ async function answerPractice(choiceId){
 }
 
 async function ensureWorkspaceCalendar() {
-  if (S.workspaceCalendarLoading || S.workspaceCalendarUrl || !S.workspaceCalendarEmbedded || S.view !== 'hub' || S.page !== 'workspace' || S.workspaceRole !== 'tutor' || S.workspaceSection !== 'calendar') return
+  if (S.workspaceCalendarLoading || S.workspaceCalendarUrl || S.workspaceCalendarError || !S.workspaceCalendarEmbedded || S.view !== 'hub' || S.page !== 'workspace' || S.workspaceRole !== 'tutor' || S.workspaceSection !== 'calendar') return
   const user = S.user
   S.workspaceCalendarLoading = true
   try {
