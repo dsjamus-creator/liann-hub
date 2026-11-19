@@ -1,0 +1,58 @@
+name: Publish demoscene media
+
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/publish-demoscene-media.yml]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-demoscene-media
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Download source archives
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl --fail --location --retry 3 --output out-of-space.zip https://downloads.lwliann.com/demoscene/out-of-space.zip
+          curl --fail --location --retry 3 --output pinyin-tiles.zip https://downloads.lwliann.com/demoscene/pinyin-tiles.zip
+          unzip -j out-of-space.zip 'Out-of-Space-final-approved-30fps-3m09s_FINAL.mp4'
+          unzip -j pinyin-tiles.zip '2026-09-12 22-45-56.mp4'
+
+      - name: Prepare browser-streamable masters
+        working-directory: ${{ runner.temp }}
+        run: |
+          ffmpeg -hide_banner -loglevel warning -y -i 'Out-of-Space-final-approved-30fps-3m09s_FINAL.mp4' -map 0:v:0 -map 0:a:0? -c:v libx264 -preset fast -crf 18 -maxrate 12M -bufsize 24M -pix_fmt yuv420p -movflags +faststart -c:a aac -b:a 192k out-of-space.mp4
+          ffmpeg -hide_banner -loglevel warning -y -i '2026-09-12 22-45-56.mp4' -map 0:v:0 -map 0:a:0? -c:v libx264 -preset fast -crf 18 -maxrate 12M -bufsize 24M -pix_fmt yuv420p -movflags +faststart -c:a aac -b:a 192k pinyin-tiles-movie.mp4
+          test "$(stat -c%s out-of-space.mp4)" -lt 315000000
+          test "$(stat -c%s pinyin-tiles-movie.mp4)" -lt 315000000
+          ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height,r_frame_rate -of compact out-of-space.mp4
+          ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height,r_frame_rate -of compact pinyin-tiles-movie.mp4
+
+      - name: Upload browser media to R2
+        working-directory: ${{ runner.temp }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx --prefix "$GITHUB_WORKSPACE" wrangler r2 object put liann-downloads/demoscene/out-of-space.mp4 --file out-of-space.mp4 --content-type video/mp4 --cache-control 'public, max-age=14400' --remote --force
+          npx --prefix "$GITHUB_WORKSPACE" wrangler r2 object put liann-downloads/demoscene/pinyin-tiles-movie.mp4 --file pinyin-tiles-movie.mp4 --content-type video/mp4 --cache-control 'public, max-age=14400' --remote --force
+
+      - name: Verify public playback assets
+        run: |
+          curl --fail --head https://downloads.lwliann.com/demoscene/out-of-space.mp4
+          curl --fail --head https://downloads.lwliann.com/demoscene/pinyin-tiles-movie.mp4
+          curl --fail --head https://downloads.lwliann.com/demoscene/fame-remember-my-name.mp4
