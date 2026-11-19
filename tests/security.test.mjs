@@ -20,6 +20,7 @@ test('the content security policy stays tight', async () => {
   const dir = name => (new RegExp(`(?:^|; )${name} ([^;]*)`).exec(csp) || [])[1]
   assert.equal(dir('default-src'), "'self'")
   assert.equal(dir('script-src'), "'self'", 'no inline or eval scripts, no outside scripts')
+  assert.equal(dir('media-src'), "'self' https://downloads.lwliann.com", 'film playback is limited to the Hub and its media host')
   assert.equal(dir('object-src'), "'none'"); assert.equal(dir('base-uri'), "'none'"); assert.equal(dir('form-action'), "'none'")
   assert.ok(!/unsafe-eval|unsafe-inline/.test(dir('script-src')))
   for (const [name, list] of Object.entries({ 'connect-src': dir('connect-src'), 'img-src': dir('img-src') })) assert.ok(!/(^| )\*( |$)|http:/.test(list), `${name} has no wildcard or plain http`)
