@@ -24,6 +24,11 @@ jobs:
           cache: npm
       - run: npm ci
 
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes ffmpeg
+
       - name: Download source archives
         working-directory: ${{ runner.temp }}
         run: |
