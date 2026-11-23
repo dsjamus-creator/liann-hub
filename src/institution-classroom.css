@@ -1,0 +1,30 @@
+.institution-classroom{min-height:100vh;background:var(--bg);color:var(--text)}
+.ic-shell{width:min(980px,100%);margin:0 auto;padding:clamp(16px,4vw,38px)}
+.ic-back{display:inline-block;margin-bottom:22px;color:var(--muted);font-weight:800;text-decoration:none}
+.ic-back:hover{color:var(--text)}
+.ic-card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:clamp(18px,4vw,32px);box-shadow:0 16px 48px #0002}
+.ic-card h1{font-size:clamp(1.7rem,5vw,2.5rem);margin:0 0 8px}
+.ic-card h2{font-size:1.35rem;margin:0 0 10px}
+.ic-muted{color:var(--muted);line-height:1.55}
+.ic-meta{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}
+.ic-chip{display:inline-flex;align-items:center;padding:7px 11px;border-radius:999px;background:color-mix(in srgb,var(--accent) 15%,var(--card));font-weight:800;font-size:.9rem}
+.ic-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.ic-field{display:grid;gap:6px;margin:12px 0}
+.ic-field label{font-size:.92rem;font-weight:800}
+.ic-field input,.ic-field textarea,.ic-field select{width:100%;min-height:48px;border-radius:12px;border:1px solid var(--line);padding:11px 13px;background:var(--bg);color:var(--text);font:inherit}
+.ic-field textarea{min-height:96px;resize:vertical}
+.ic-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.ic-actions .btn{min-height:46px}
+.ic-divider{height:1px;background:var(--line);margin:22px 0}
+.ic-status{padding:11px 14px;border-radius:12px;background:var(--bg);margin:14px 0;color:var(--muted)}
+.ic-status[role=alert]{color:#d65a50}
+.ic-activity{border:1px solid var(--line);border-radius:16px;padding:18px;margin-top:18px}
+.ic-activity .prompt{font-size:1.2rem;font-weight:800;line-height:1.45;white-space:pre-wrap}
+.ic-responses{display:grid;gap:10px;margin-top:14px}
+.ic-response{background:var(--bg);border:1px solid var(--line);border-radius:13px;padding:14px}
+.ic-response strong{display:block;margin-bottom:7px}
+.ic-response p{margin:5px 0;line-height:1.45}
+.ic-empty{padding:18px;border:1px dashed var(--line);border-radius:14px;color:var(--muted)}
+.ic-timer{font-variant-numeric:tabular-nums;font-size:1.2rem;font-weight:900}
+.ic-saved{border-left:4px solid var(--accent);padding:10px 14px;background:var(--bg);border-radius:0 12px 12px 0;margin-top:9px}
+@media(max-width:650px){.ic-grid{grid-template-columns:1fr}.ic-actions{display:grid}.ic-actions .btn{width:100%}}
