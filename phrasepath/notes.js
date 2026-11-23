@@ -228,7 +228,8 @@ async function googleDriveToken() {
   if (!driveConfig?.configured) throw new Error('Google Drive is not configured yet. The Picker API key and authorized web OAuth client are still needed.')
   await loadGoogleScript('https://accounts.google.com/gsi/client',()=>Boolean(window.google?.accounts?.oauth2))
   return new Promise((resolve,reject)=>{
-    if(driveAccessToken && driveTokenExpiresAt>Date.now()+60000){resolve(driveAccessToken);return}\n    const client=google.accounts.oauth2.initTokenClient({
+    if(driveAccessToken && driveTokenExpiresAt>Date.now()+60000){resolve(driveAccessToken);return}
+    const client=google.accounts.oauth2.initTokenClient({
       client_id:driveConfig.clientId,
       scope:'https://www.googleapis.com/auth/drive.file',
       callback:response=>{if(response?.access_token){driveAccessToken=response.access_token;driveTokenExpiresAt=Date.now()+Number(response.expires_in||3600)*1000;resolve(driveAccessToken)}else reject(new Error(response?.error_description||'Google Drive authorization was not completed.'))}
