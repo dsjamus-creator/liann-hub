@@ -207,7 +207,7 @@ async function loadDriveSettings() {
     driveFolder = data.folder || null
     $('#driveFolderState').textContent = driveFolder
       ? 'Connected folder: ' + driveFolder.name + (driveFolder.email ? ' · ' + driveFolder.email : '')
-      : (driveConfig.configured ? 'No folder selected. Choose the PhrasePath folder in your Google Drive.' : 'Google Drive import is waiting for the Picker API key and OAuth client setup.')
+      : (driveConfig.configured ? 'No folder selected. Choose the PhrasePath folder in your Google Drive.' : 'Google Drive import is waiting for its API key, project number and dedicated OAuth client.')
     $('#importDriveFiles').disabled = !driveFolder || !driveConfig.configured
     $('#disconnectDriveFolder').classList.toggle('hidden', !driveFolder)
   } catch (e) { $('#driveFolderState').textContent = 'Could not load your Drive folder: ' + e.message }
@@ -225,7 +225,7 @@ function loadGoogleScript(src, test) {
 }
 
 async function googleDriveToken() {
-  if (!driveConfig?.configured) throw new Error('Google Drive is not configured yet. The Picker API key and authorized web OAuth client are still needed.')
+  if (!driveConfig?.configured) throw new Error('Google Drive is not configured yet. Its API key, project number and authorized web OAuth client are still needed.')
   await loadGoogleScript('https://accounts.google.com/gsi/client',()=>Boolean(window.google?.accounts?.oauth2))
   return new Promise((resolve,reject)=>{
     if(driveAccessToken && driveTokenExpiresAt>Date.now()+60000){resolve(driveAccessToken);return}
