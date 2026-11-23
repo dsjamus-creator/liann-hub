@@ -350,6 +350,22 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
       headers: { 'content-type': 'application/json', Authorization: `Bearer ${school.access_token}` }, body: '{}' })
   }
 
+  async function saveInstitutionClassroomWork(classId, sessionId, activityId) {
+    const school = schoolSession()
+    if (!school?.access_token) throw new AccountError('Sign in with your school again.', 'signed_out')
+    return json(`${backend}/learning/classes/${encodeURIComponent(classId)}/classroom-sessions/${encodeURIComponent(sessionId)}/saved-work`, {
+      method: 'POST', mode: 'cors', credentials: 'omit',
+      headers: { 'content-type': 'application/json', Authorization: `Bearer ${school.access_token}` },
+      body: JSON.stringify({ activityId }) })
+  }
+  async function institutionClassroomSavedWork(classId, sessionId) {
+    const school = schoolSession()
+    if (!school?.access_token) throw new AccountError('Sign in with your school again.', 'signed_out')
+    const result = await json(`${backend}/learning/classes/${encodeURIComponent(classId)}/classroom-sessions/${encodeURIComponent(sessionId)}/saved-work`, {
+      mode: 'cors', credentials: 'omit', headers: { Authorization: `Bearer ${school.access_token}` } })
+    return Array.isArray(result.savedWork) ? result.savedWork : []
+  }
+
   async function classProgress(classId) {
     const school = schoolSession()
     if (!school?.access_token) throw new AccountError('Sign in with your school again.', 'signed_out')
@@ -378,7 +394,7 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     }
   }
 
-  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, learningProgress, progressSharingOptions, setProgressSharing, institutionClasses, institutionClassroomActive, startInstitutionClassroom, endInstitutionClassroom, institutionClassroomSocketPass, classProgress, profileLink, household, householdAction, adminAccess, adminRequest, workspaceAccess, workspaceData, workspaceLink, followupRequest, hskRequest, hskUpload,
+  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, learningProgress, progressSharingOptions, setProgressSharing, institutionClasses, institutionClassroomActive, startInstitutionClassroom, endInstitutionClassroom, institutionClassroomSocketPass, saveInstitutionClassroomWork, institutionClassroomSavedWork, classProgress, profileLink, household, householdAction, adminAccess, adminRequest, workspaceAccess, workspaceData, workspaceLink, followupRequest, hskRequest, hskUpload,
     beginSchoolSignIn, acceptSchoolCallback, schoolSession, schoolMemberships, linkSchoolIdentity,
     hasInstitutionSession: () => Boolean(schoolSession()), hasSession: () => Boolean(read()?.access_token) }
 }
