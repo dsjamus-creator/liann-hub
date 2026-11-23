@@ -110,16 +110,18 @@ async function connectRoom() {
 function bind() {
   const start = document.querySelector('#start-session')
   if (start) start.onsubmit = async event => {
-    event.preventDefault(); s.busy=true; s.status='Launching the class session…'; render()
+    event.preventDefault()
+    const details = {
+      title:document.querySelector('#session-title').value,
+      textbookTitle:document.querySelector('#book-title').value,
+      textbookEdition:document.querySelector('#book-edition').value,
+      unitReference:document.querySelector('#unit-ref').value,
+      pageReference:document.querySelector('#page-ref').value,
+      minutes:Number(document.querySelector('#session-minutes').value),
+    }
+    s.busy=true; s.status='Launching the class session…'; render()
     try {
-      await account.startInstitutionClassroom(classId, {
-        title:document.querySelector('#session-title').value,
-        textbookTitle:document.querySelector('#book-title').value,
-        textbookEdition:document.querySelector('#book-edition').value,
-        unitReference:document.querySelector('#unit-ref').value,
-        pageReference:document.querySelector('#page-ref').value,
-        minutes:Number(document.querySelector('#session-minutes').value),
-      })
+      await account.startInstitutionClassroom(classId, details)
       s.busy=false; await load()
     } catch(error) { s.busy=false; s.status=error.message; render() }
   }
