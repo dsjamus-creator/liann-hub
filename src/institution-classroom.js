@@ -97,7 +97,7 @@ async function connectRoom() {
       let msg; try { msg = JSON.parse(event.data) } catch { return }
       if (msg.t === 'group-role') s.role = msg.role
       if (msg.t === 'group-presence') { s.presence = Number(msg.count) || 0; const el=document.querySelector('[data-presence]'); if(el)el.textContent=`${s.presence} connected` }
-      if (msg.t === 'group-activity-start') { s.activity={ id:msg.activityId,prompt:msg.prompt,endAt:msg.endAt }; s.responses=[]; s.revealed=false; clearInterval(s.tick); s.tick=setInterval(nowClock,250); s.status='The teacher has started an activity.'; render(); nowClock() }
+      if (msg.t === 'group-activity-start') { s.activity={ id:msg.activityId,prompt:msg.prompt,endAt:msg.endAt }; s.responses=Array.isArray(msg.responses)?msg.responses:[]; s.revealed=msg.t==='group-activity-reveal'; clearInterval(s.tick); s.tick=setInterval(nowClock,250); s.status='The teacher has started an activity.'; render(); nowClock() }
       if (msg.t === 'group-activity-response' && s.role === 'teacher' && msg.activityId === s.activity?.id) { const ix=s.responses.findIndex(r=>r.participant===msg.response.participant); if(ix<0)s.responses.push(msg.response); else s.responses[ix]=msg.response; render() }
       if (msg.t === 'group-activity-reveal' && msg.activityId === s.activity?.id) { s.revealed=true; s.responses=Array.isArray(msg.responses)?msg.responses:s.responses; s.status='Responses are revealed for class discussion.'; render(); nowClock() }
       if (msg.t === 'group-activity-close') { s.activity=null; s.responses=[]; s.revealed=false; s.status='The teacher closed the activity.'; render() }
