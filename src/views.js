@@ -555,9 +555,16 @@ function vInstitutionHub(s) {
     : classProgress?.status === 'error' ? `<div class="c"><p class="err">${esc(classProgress.error)}</p><button class="btn ghost" id="class-progress-back">Back to classes</button></div>`
     : classProgress?.status === 'ok' ? `<section class="sec"><div class="sechead"><h2>Class progress</h2><button class="link" id="class-progress-back">Back to classes</button></div><div class="grid">${(classProgress.learners || []).map(l => `<div class="c"><div class="t">${esc(l.displayName)}</div><div class="s">${Number(l.masteredWords) || 0} mastered word${Number(l.masteredWords) === 1 ? '' : 's'}</div><div class="chips" style="justify-content:flex-start">${(l.milestones || []).map(m => `<span class="chip">${m.achieved ? '✓ ' : ''}${Number(m.masteredWords)} mastered</span>`).join('')}</div><p class="muted">${(l.words || []).filter(w => w.mastered).map(w => esc(w.hz)).join(' · ') || 'No mastered words shared yet.'}</p></div>`).join('') || '<div class="empty">No students have opted in to share progress for this class.</div>'}</div></section>`
     : ''
-  const classSections = membershipsWithApps.filter(m => ['teacher','institution_admin'].includes(m.role)).map(m => {
+  const classSections = membershipsWithApps.map(m => {
     const classes = s.institutionClasses?.[m.institutionId] || []
-    return classes.length ? `<section class="sec"><h2>${esc(m.name)} · Classes</h2><div class="grid">${classes.map(c => `<div class="c"><div class="t">${esc(c.name)}</div><p class="muted">Only learners who have opted in appear in progress reports.</p><button class="btn ghost" data-progress-class="${esc(c.id)}">View shared progress</button></div>`).join('')}</div></section>` : ''
+    return classes.length ? `<section class="sec"><h2>${esc(m.name)} · Classes</h2><div class="grid">${classes.map(c => {
+      const roomAction = c.classRole === 'teacher'
+        ? `<button class="btn primary" data-open-classroom="${esc(c.id)}">Open classroom</button><button class="btn ghost" data-progress-class="${esc(c.id)}">View shared progress</button>`
+        : c.classRole === 'learner' ? `<button class="btn primary" data-open-classroom="${esc(c.id)}">Join classroom</button>` : ''
+      const note = c.classRole === 'teacher' ? 'Launch a timed, textbook-linked activity for your class.'
+        : c.classRole === 'learner' ? 'Join your teacher’s live class activity.' : 'Class roster access is managed by your institution.'
+      return `<div class="c"><div class="t">${esc(c.name)}</div><p class="muted">${note}</p><div class="acts">${roomAction}</div></div>`
+    }).join('')}</div></section>` : ''
   }).join('')
   const sharingSections = membershipsWithApps.filter(m => m.role === 'learner').map(m => {
     const enabled = !!s.progressSharing?.[m.institutionId]
