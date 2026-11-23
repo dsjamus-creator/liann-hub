@@ -321,6 +321,35 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
       mode: 'cors', credentials: 'omit', headers: { Authorization: `Bearer ${school.access_token}` } })
     return Array.isArray(result.classes) ? result.classes : []
   }
+  async function institutionClassroomActive(classId) {
+    const school = schoolSession()
+    if (!school?.access_token) throw new AccountError('Sign in with your school again.', 'signed_out')
+    return json(`${backend}/learning/classes/${encodeURIComponent(classId)}/classroom-sessions/active`, {
+      mode: 'cors', credentials: 'omit', headers: { Authorization: `Bearer ${school.access_token}` } })
+  }
+  async function startInstitutionClassroom(classId, details) {
+    const school = schoolSession()
+    if (!school?.access_token) throw new AccountError('Sign in with your school again.', 'signed_out')
+    return json(`${backend}/learning/classes/${encodeURIComponent(classId)}/classroom-sessions`, {
+      method: 'POST', mode: 'cors', credentials: 'omit',
+      headers: { 'content-type': 'application/json', Authorization: `Bearer ${school.access_token}` },
+      body: JSON.stringify(details) })
+  }
+  async function endInstitutionClassroom(classId, sessionId) {
+    const school = schoolSession()
+    if (!school?.access_token) throw new AccountError('Sign in with your school again.', 'signed_out')
+    return json(`${backend}/learning/classes/${encodeURIComponent(classId)}/classroom-sessions/${encodeURIComponent(sessionId)}/end`, {
+      method: 'POST', mode: 'cors', credentials: 'omit',
+      headers: { 'content-type': 'application/json', Authorization: `Bearer ${school.access_token}` }, body: '{}' })
+  }
+  async function institutionClassroomSocketPass(classId, sessionId) {
+    const school = schoolSession()
+    if (!school?.access_token) throw new AccountError('Sign in with your school again.', 'signed_out')
+    return json(`${backend}/learning/classes/${encodeURIComponent(classId)}/classroom-sessions/${encodeURIComponent(sessionId)}/socket-pass`, {
+      method: 'POST', mode: 'cors', credentials: 'omit',
+      headers: { 'content-type': 'application/json', Authorization: `Bearer ${school.access_token}` }, body: '{}' })
+  }
+
   async function classProgress(classId) {
     const school = schoolSession()
     if (!school?.access_token) throw new AccountError('Sign in with your school again.', 'signed_out')
@@ -349,7 +378,7 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     }
   }
 
-  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, learningProgress, progressSharingOptions, setProgressSharing, institutionClasses, classProgress, profileLink, household, householdAction, adminAccess, adminRequest, workspaceAccess, workspaceData, workspaceLink, followupRequest, hskRequest, hskUpload,
+  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, learningProgress, progressSharingOptions, setProgressSharing, institutionClasses, institutionClassroomActive, startInstitutionClassroom, endInstitutionClassroom, institutionClassroomSocketPass, classProgress, profileLink, household, householdAction, adminAccess, adminRequest, workspaceAccess, workspaceData, workspaceLink, followupRequest, hskRequest, hskUpload,
     beginSchoolSignIn, acceptSchoolCallback, schoolSession, schoolMemberships, linkSchoolIdentity,
     hasInstitutionSession: () => Boolean(schoolSession()), hasSession: () => Boolean(read()?.access_token) }
 }
