@@ -672,7 +672,7 @@ function bind() {
   } })
   document.querySelectorAll('[data-list]').forEach(b => { b.onclick = () => { S.page = 'library'; openList(b.dataset.list) } })
   document.querySelectorAll('[data-progress-class]').forEach(b => { b.onclick = () => openClassProgress(b.dataset.progressClass) })
-  document.querySelectorAll('[data-open-classroom]').forEach(b => { b.onclick = () => { const url = new URL('/institution-classroom.html', location.origin); url.searchParams.set('classId', b.dataset.openClassroom); window.open(url.href, '_blank', 'noopener') } })
+  document.querySelectorAll('[data-open-classroom]').forEach(b => { b.onclick = () => { const url = new URL('/institution-classroom.html', location.origin); url.searchParams.set('classId', b.dataset.openClassroom); location.assign(url.href) } })
   document.querySelectorAll('[data-share-progress]').forEach(b => { b.onclick = () => setSharing(b.dataset.shareProgress, b.dataset.enabled !== 'true') })
   const rp = $('#refresh-progress'); if (rp) rp.onclick = () => loadLearningProgress(S.learner?.id)
   const cpback = $('#class-progress-back'); if (cpback) cpback.onclick = () => { S.classProgress = null; render() }
