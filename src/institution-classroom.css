@@ -1,7 +1,7 @@
-.institution-classroom{min-height:100vh;background:var(--bg);color:var(--text)}
+.institution-classroom{min-height:100vh;background:var(--bg);color:var(--fg)}
 .ic-shell{width:min(980px,100%);margin:0 auto;padding:clamp(16px,4vw,38px)}
 .ic-back{display:inline-block;margin-bottom:22px;color:var(--muted);font-weight:800;text-decoration:none}
-.ic-back:hover{color:var(--text)}
+.ic-back:hover{color:var(--fg)}
 .ic-card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:clamp(18px,4vw,32px);box-shadow:0 16px 48px #0002}
 .ic-card h1{font-size:clamp(1.7rem,5vw,2.5rem);margin:0 0 8px}
 .ic-card h2{font-size:1.35rem;margin:0 0 10px}
@@ -11,7 +11,7 @@
 .ic-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .ic-field{display:grid;gap:6px;margin:12px 0}
 .ic-field label{font-size:.92rem;font-weight:800}
-.ic-field input,.ic-field textarea,.ic-field select{width:100%;min-height:48px;border-radius:12px;border:1px solid var(--line);padding:11px 13px;background:var(--bg);color:var(--text);font:inherit}
+.ic-field input,.ic-field textarea,.ic-field select{width:100%;min-height:48px;border-radius:12px;border:1px solid var(--line);padding:11px 13px;background:var(--bg);color:var(--fg);font:inherit}
 .ic-field textarea{min-height:96px;resize:vertical}
 .ic-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
 .ic-actions .btn{min-height:46px}
