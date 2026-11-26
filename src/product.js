@@ -90,7 +90,7 @@ export function productHTML(product, downloads, os, others = []) {
   const deviceCaption = deviceRows.length > 1 ? `Your device options: ${esc(OS[os] || os)}` : deviceRows.length ? `Your device first: ${esc(deviceRows[0].label)}` : 'Every platform'
   const links = (product.links || []).map(([t, h]) => `<li><a href="${esc(h)}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join('')
   return `<div class="product fade">
-  <header class="ptop"><a class="plock" href="/" aria-label="Learning with LiANN hub">${LOCKUP}</a>
+  <header class="ptop"><a class="plock" href="/">${LOCKUP}</a>
     <nav class="plinks"><a href="/#apps">All apps</a><a href="/#downloads">Downloads</a>${THEME_SWITCH}</nav></header>
   <main class="pmain">
     <section class="hero${product.app ? '' : ' solo'}">${product.app ? `<div class="pic">${art(product.app)}</div>` : ''}
