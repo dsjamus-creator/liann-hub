@@ -11,16 +11,16 @@
 :root[data-ds="liann"][data-t="light"]{--bg:#FBF6EE;--main:#F3F0E9;--card:#FFFDF9;--line:#DCE4D7;--fg:#2B2B28;--muted:#66705F;--accent:#C24837;--accent-fg:#FFFFFF;--sage:#5F7457;--rail-sel:#2B2B28;--rail-sel-fg:#FBF6EE;color-scheme:light}
 :root[data-ds="liann"][data-t="dark"]{--bg:#121410;--main:#151813;--card:#1B1914;--line:rgba(248,241,229,.13);--fg:#F8F1E5;--muted:#B7AFA2;--accent:#DE5A4F;--accent-fg:#FFFFFF;--sage:#8A9B7E;--rail-sel:#F8F1E5;--rail-sel-fg:#121410;color-scheme:dark}
 /* Filled controls with white text (buttons, badges): the LiANN dark coral #DE5A4F gives only 3.7:1 against white;
-   #B94436 gives 5.33:1 (WCAG AA). Other themes fall back to their own --accent. */
+   #B94436 gives 5.33:1 (WCAG AA). Cadence light sets its own (#A2661E, 4.71:1). Other themes fall back to --accent. */
 :root:not([data-ds]),:root[data-ds="liann"][data-t="dark"]{--accent-fill:#B94436}
 :root[data-ds="cadence"]{--ui:"Hanken Grotesk",system-ui,"Segoe UI",sans-serif;--disp:"Spectral",Georgia,serif;--dispw:600}
-:root[data-ds="cadence"][data-t="light"]{--bg:#FAF5EC;--main:#F2EBDD;--card:#F7F1E7;--line:#E7DDCA;--fg:#1C1712;--muted:#6D6256;--accent:#A86A1F;--accent-fg:#FFFFFF;--sage:#287348;--rail-sel:#1C1712;--rail-sel-fg:#FAF5EC;color-scheme:light}
+:root[data-ds="cadence"][data-t="light"]{--bg:#FAF5EC;--main:#F2EBDD;--card:#F7F1E7;--line:#E7DDCA;--fg:#1C1712;--muted:#6D6256;--accent:#A86A1F;--accent-fg:#FFFFFF;--sage:#287348;--rail-sel:#1C1712;--rail-sel-fg:#FAF5EC;color-scheme:light;--accent-fill:#A2661E}
 :root[data-ds="cadence"][data-t="dark"]{--bg:#14110F;--main:#191512;--card:#211C18;--line:#2C2621;--fg:#EFE6D8;--muted:#B3A596;--accent:#E0A141;--accent-fg:#1C1005;--sage:#62C28A;--rail-sel:#EFE6D8;--rail-sel-fg:#14110F;color-scheme:dark}
 :root[data-ds="amberline"]{--ui:"Hanken Grotesk",system-ui,"Segoe UI",sans-serif;--disp:"Spectral",Georgia,serif;--dispw:400}
-:root[data-ds="amberline"][data-t="light"]{--bg:#FBF9F5;--main:#FCFAF6;--card:#FFFFFF;--line:#ECE6DD;--fg:#1A1712;--muted:#6B655C;--accent:#8A5F24;--accent-fg:#FFFFFF;--sage:#2E8B7B;--rail-sel:#1A1712;--rail-sel-fg:#FBF9F5;color-scheme:light}
+:root[data-ds="amberline"][data-t="light"]{--bg:#FBF9F5;--main:#FCFAF6;--card:#FFFFFF;--line:#ECE6DD;--fg:#1A1712;--muted:#6B655C;--accent:#8A5F24;--accent-fg:#FFFFFF;--sage:#297C6E;--rail-sel:#1A1712;--rail-sel-fg:#FBF9F5;color-scheme:light}
 :root[data-ds="amberline"][data-t="dark"]{--bg:#14110D;--main:#191510;--card:#1E1A15;--line:#2E2820;--fg:#F3EEE5;--muted:#B4AA9C;--accent:#D89A45;--accent-fg:#14110D;--sage:#4FBFAA;--rail-sel:#F3EEE5;--rail-sel-fg:#14110D;color-scheme:dark}
 :root[data-ds="steelline"]{--ui:"Hanken Grotesk",system-ui,"Segoe UI",sans-serif;--disp:"Spectral",Georgia,serif;--dispw:300}
-:root[data-ds="steelline"][data-t="light"]{--bg:#EDF0F4;--main:#F8FAFC;--card:#FFFFFF;--line:#E0E5EC;--fg:#10151B;--muted:#5B6773;--accent:#4A7196;--accent-fg:#FFFFFF;--sage:#4E9A6B;--rail-sel:#10151B;--rail-sel-fg:#EDF0F4;color-scheme:light}
+:root[data-ds="steelline"][data-t="light"]{--bg:#EDF0F4;--main:#F8FAFC;--card:#FFFFFF;--line:#E0E5EC;--fg:#10151B;--muted:#5B6773;--accent:#4A7196;--accent-fg:#FFFFFF;--sage:#3C7652;--rail-sel:#10151B;--rail-sel-fg:#EDF0F4;color-scheme:light}
 :root[data-ds="steelline"][data-t="dark"]{--bg:#0F1216;--main:#13171C;--card:#171B21;--line:#262C35;--fg:#EDF1F5;--muted:#9AA6B4;--accent:#7FA8CC;--accent-fg:#0F1216;--sage:#6BBE86;--rail-sel:#EDF1F5;--rail-sel-fg:#0F1216;color-scheme:dark}
 :root[data-ds="ivoryline"]{--ui:"Nunito",ui-rounded,"Segoe UI",system-ui,sans-serif;--disp:Georgia,"Times New Roman",serif;--dispw:700}
 :root[data-ds="ivoryline"][data-t="light"]{--bg:#EFE2C8;--main:#F2E8D2;--card:#F7EFDD;--line:#E3D5B8;--fg:#3A3830;--muted:#6B6354;--accent:#8F5C20;--accent-fg:#FFFFFF;--sage:#2B7046;--rail-sel:#3A3830;--rail-sel-fg:#EFE2C8;color-scheme:light}
