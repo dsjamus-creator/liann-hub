@@ -78,10 +78,25 @@ function render() {
   if (adminFrame && S.view === 'hub' && S.page === 'admin' && S.admin?.superAdmin && !S.learner && document.body.moveBefore) {
     parking = document.createElement('div'); parking.hidden = true; document.body.append(parking); parking.moveBefore(adminFrame, null)
   }
+  // The tutor calendar frame signs in with a one-time pass in its address. Rebuilding it from innerHTML reloads that
+  // address, and the used pass is refused ("That sign-in link no longer works"). Keep the live frame across redraws
+  // where the browser can move it without reloading; elsewhere, ask for a fresh pass once it has loaded.
+  const calendarFrame = $('#tutor-calendar-frame')
+  const onCalendar = S.view === 'hub' && S.page === 'workspace' && S.workspaceRole === 'tutor' && S.workspaceSection === 'calendar' && S.workspaceCalendarEmbedded
+  let calendarParking
+  if (calendarFrame && onCalendar && S.workspaceCalendarUrl && calendarFrame.getAttribute('src') === S.workspaceCalendarUrl) {
+    if (document.body.moveBefore) { calendarParking = document.createElement('div'); calendarParking.hidden = true; document.body.append(calendarParking); calendarParking.moveBefore(calendarFrame, null) }
+    else if (calendarFrame.dataset.loaded) S.workspaceCalendarUrl = ''
+  }
   $('#root').innerHTML = view(parking ? { ...S, adminFrameParked: true } : S)
   const replacement = $('#admin-frame')
   if (parking && replacement) { replacement.parentElement.moveBefore(adminFrame, replacement); replacement.remove() }
   parking?.remove()
+  const calendarReplacement = $('#tutor-calendar-frame')
+  if (calendarParking && calendarReplacement) { calendarReplacement.parentElement.moveBefore(calendarFrame, calendarReplacement); calendarReplacement.remove() }
+  calendarParking?.remove()
+  const liveCalendar = $('#tutor-calendar-frame')
+  if (liveCalendar && !liveCalendar.dataset.watched) { liveCalendar.dataset.watched = '1'; liveCalendar.addEventListener('load', () => { liveCalendar.dataset.loaded = '1' }) }
   bind()
   syncAdmin()
   classroom.sync()
