@@ -441,3 +441,15 @@ a.btn{display:inline-block;text-decoration:none;text-align:center}
   .apps-grid>.app-card>.status,.apps-grid>.app-card>.d,.apps-grid>.app-card>.acts{margin-left:16px;margin-right:16px}
   .apps-grid>.app-card>.acts{padding-bottom:16px}
 }
+
+/* Pinyin outreach tracker in Super Admin Campaigns */
+.outreach-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:8px;margin:16px 0}
+.outreach-metrics>div{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--main)}
+.outreach-metrics dt,.outreach-table small{color:var(--muted)}
+.outreach-metrics dd{margin:4px 0 0;font-size:1.35rem;font-weight:700;font-variant-numeric:tabular-nums}
+.outreach-table{max-width:100%;overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+.outreach-table table{border-collapse:collapse;width:100%;min-width:650px}
+.outreach-table th,.outreach-table td{padding:9px 10px;vertical-align:top;text-align:left;border-bottom:1px solid var(--line)}
+.outreach-table thead{background:var(--main)}
+.outreach-table tbody tr:last-child>*{border-bottom:0}
+.outreach-table small{display:block;margin-top:4px}
