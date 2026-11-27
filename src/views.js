@@ -527,7 +527,7 @@ function campaignPage() {
   const gmailUrl = 'https://mail.google.com/mail/u/?authuser=info%40lwliann.com#search/' +
     encodeURIComponent('subject:"Pinyin Challenge" after:2026/11/25')
   return `<div class="admin-heading"><h1>Super Admin</h1><span class="muted">Campaigns</span></div>
-  <section class="c" aria-labelledby="pinyin-campaign-title">
+  <section class="c outreach-campaign" aria-labelledby="pinyin-campaign-title" tabindex="0">
     <h2 id="pinyin-campaign-title">London Colleges Pinyin Challenge</h2>
     <p>Outreach for the 25 January to 5 February 2027 pilot.</p>
     <div id="pinyin-outreach" aria-busy="true">
