@@ -186,17 +186,23 @@ async function importFiles(inputFiles) {
   let items=[]
   for(const file of inputFiles){if(ext(file)==='zip')items.push(...await unzip(file));else items.push(file)}
   if(!items.length){say('No note files were found.');return}
+  let saved=0, attachmentFailures=[], skipped=0
   for(let i=0;i<items.length;i++){
-    const file=items[i], extension=ext(file);if(file.phrasePathDriveFileId&&notes.some(n=>n.driveFileId===file.phrasePathDriveFileId)){continue}status.textContent='Importing '+(i+1)+' of '+items.length+': '+file.name
+    const file=items[i], extension=ext(file);if(file.phrasePathDriveFileId&&notes.some(n=>n.driveFileId===file.phrasePathDriveFileId)){skipped++;continue}status.textContent='Importing '+(i+1)+' of '+items.length+': '+file.name
     let title=titleOf(file), body=''
     try { if(extension==='sdocx'){const parsed=await decodeSdocx(file);title=parsed.title||title;body=parsed.body}else body=await readText(file) }
     catch(e){console.warn('PhrasePath Samsung Notes extraction failed',e);body='Text preview could not be created; the original file is attached.'}
     const id=crypto.randomUUID(), folderPath=pathOf(file)
     await request('/notes/'+id,{method:'PUT',body:JSON.stringify({id,title,body,source,folderPath,createdAt:new Date(file.lastModified||Date.now()).toISOString(),driveFileId:file.phrasePathDriveFileId||null})})
-    try { await uploadAttachment(id,file) }
-    catch(e){say(e.message+' Earlier files may already be synced.');continue}
+    try { await uploadAttachment(id,file);saved++ }
+    catch(e){attachmentFailures.push(file.name);say(file.name+': note text saved, but the original file could not be attached.')}
   }
-  await loadNotes();if(items.some(f=>f.phrasePathDriveFileId))say(notes.filter(n=>n.driveFileId&&items.some(f=>f.phrasePathDriveFileId===n.driveFileId)).length+' Drive notes are synced to your LWL account.');else say(items.length+' notes imported and synced to your LWL account.')
+  await loadNotes()
+  const summary=[]
+  if(saved)summary.push(saved+' notes imported and synced to your LWL account')
+  if(attachmentFailures.length)summary.push(attachmentFailures.length+' original attachments failed ('+attachmentFailures.slice(0,3).join(', ')+(attachmentFailures.length>3?'…':'')+'). The note text was saved.')
+  if(skipped)summary.push(skipped+' already-imported Drive files skipped')
+  say(summary.join('. ')||'All selected Drive files were already in your Notes Library.')
 }
 async function driveRequest(path, options={}) { return request(path, options) }
 
