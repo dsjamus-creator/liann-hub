@@ -3,7 +3,7 @@ import { config } from './config.js'
 export const ADMIN_SECTIONS = [
   ['overview', 'Overview', 'apps'], ['hsk', 'HSK Content', 'read'], ['tutors', 'Tutors', 'figures'], ['students', 'Students', 'read'],
   ['compliance', 'Safeguarding', 'shield'], ['finance', 'Finance', 'plan'], ['comms', 'Communications', 'bell'],
-  ['calendar', 'Calendar', 'calendar'], ['waitlist', 'Waitlist', 'library'], ['campaign', 'Campaign', 'send'],
+  ['calendar', 'Calendar', 'calendar'], ['waitlist', 'Waitlist', 'library'], ['campaign', 'Campaigns', 'send'], ['recruitment', 'Recruitment', 'figures'],
   ['inbox', 'Inbox', 'mail'], ['reports', 'Reports', 'downloads'], ['staff', 'Staff', 'settings'],
 ]
 export const adminSection = value => ADMIN_SECTIONS.some(([id]) => id === value) ? value : 'overview'
@@ -14,8 +14,10 @@ export function bindAdminBridge({ account, state, onDenied }) {
   const backendOrigin = new URL(config.backend).origin
   const navigate = () => {
     const s = state(), frame = document.querySelector('#admin-frame')
-    if (frame && s.admin?.superAdmin && !s.learner)
-      frame.contentWindow.postMessage({ type: 'liann-admin:navigate', section: adminSection(s.adminSection), theme: s.theme }, backendOrigin)
+    if (!frame || !s.admin?.superAdmin || s.learner) return
+    const section = adminSection(s.adminSection)
+    // Recruitment retains the existing backend dashboard and its sending controls.
+    frame.contentWindow.postMessage({ type: 'liann-admin:navigate', section: section === 'recruitment' ? 'campaign' : section, theme: s.theme }, backendOrigin)
   }
   window.addEventListener('message', async event => {
     const frame = document.querySelector('#admin-frame'), s = state()
