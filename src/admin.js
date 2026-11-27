@@ -19,6 +19,12 @@ export function bindAdminBridge({ account, state, onDenied }) {
     // Recruitment retains the existing backend dashboard and its sending controls.
     frame.contentWindow.postMessage({ type: 'liann-admin:navigate', section: section === 'recruitment' ? 'campaign' : section, theme: s.theme }, backendOrigin)
   }
+  document.addEventListener('click', event => {
+    const s = state(), frame = document.querySelector('#admin-frame')
+    if (!frame || s.page !== 'admin' || s.adminSection !== 'inbox' ||
+        !s.admin?.superAdmin || s.learner || frame.contains(event.target)) return
+    frame.contentWindow.postMessage({ type: 'liann-admin:outside-click' }, backendOrigin)
+  }, true)
   window.addEventListener('message', async event => {
     const frame = document.querySelector('#admin-frame'), s = state()
     if (!frame || event.source !== frame.contentWindow || event.origin !== backendOrigin || !s.admin?.superAdmin || s.learner) return
