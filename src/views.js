@@ -524,17 +524,16 @@ function adminRail(s) {
 
 
 function campaignPage() {
-  const trackerUrl = 'https://chatgpt.com/space/page_be2748adaa488191b07f3cd49907bc01'
   const gmailUrl = 'https://mail.google.com/mail/u/?authuser=info%40lwliann.com#search/' +
     encodeURIComponent('subject:"Pinyin Challenge" after:2026/11/25')
   return `<div class="admin-heading"><h1>Super Admin</h1><span class="muted">Campaigns</span></div>
   <section class="c" aria-labelledby="pinyin-campaign-title">
     <h2 id="pinyin-campaign-title">London Colleges Pinyin Challenge</h2>
     <p>Outreach for the 25 January to 5 February 2027 pilot.</p>
-    <ul>
-      <li><a href="${esc(trackerUrl)}" target="_blank" rel="noopener noreferrer">Open the outreach tracker</a><br><span class="muted">See replies, response windows and suggested follow-ups.</span></li>
-      <li><a href="${esc(gmailUrl)}" target="_blank" rel="noopener noreferrer">Find Pinyin Challenge conversations in Gmail</a></li>
-    </ul>
+    <div id="pinyin-outreach" aria-busy="true">
+      <p role="status">Loading outreach tracker…</p>
+    </div>
+    <p><a href="${esc(gmailUrl)}" target="_blank" rel="noopener noreferrer">Find Pinyin Challenge conversations in Gmail</a></p>
   </section>`
 }
 
