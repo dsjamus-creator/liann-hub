@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises'
 import { parseManifest, safeFileUrl, formatBytes } from '../src/downloads.js'
 import { parseComics, clampPage, spreadsOf, spreadIndexOf, firstPageOf, visiblePages, lensGeometry } from '../src/comics.js'
 import { createAccount } from '../src/account.js'
-import { APPS, appUrl, config } from '../src/config.js'
+import { APPS, appUrl, config, TYPO } from '../src/config.js'
 import { esc, vHub, vWho, statusOf, profileOf, sourceName } from '../src/views.js'
 
 const BASE = 'https://app.lwliann.com/data/downloads.json'
@@ -292,4 +292,10 @@ test('workspace actions use a constrained one-time pass and reject outside desti
  for(const path of ['https://evil.example','//evil.example','/admin','/authorboard/../admin','/classroom/?lesson=x&role=tutor']) await assert.rejects(()=>account.workspaceLink(path))
  assert.equal(requests.length,1)
  await assert.rejects(()=>account.workspaceData('admin'))
+})
+
+test('sign-in typo hint catches common email-domain misspellings and never rewrites a real domain', () => {
+  for (const [typo, fix] of [['gmial.com', 'gmail.com'], ['gamil.com', 'gmail.com'], ['gmil.com', 'gmail.com'], ['hotmial.com', 'hotmail.com'], ['outlok.com', 'outlook.com']]) assert.equal(TYPO[typo], fix)
+  for (const real of ['gmail.com', 'googlemail.com', 'hotmail.com', 'hotmail.co.uk', 'outlook.com', 'yahoo.com', 'yahoo.co.uk', 'icloud.com', 'lwliann.com']) assert.equal(TYPO[real], undefined, `${real} is a real domain`)
+  for (const fix of Object.values(TYPO)) assert.equal(TYPO[fix], undefined, `${fix} must not itself be treated as a typo`)
 })
