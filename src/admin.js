@@ -1,10 +1,12 @@
 import { config } from './config.js'
 
 export const ADMIN_SECTIONS = [
-  ['overview', 'Overview', 'apps'], ['hsk', 'HSK Content', 'read'], ['tutors', 'Tutors', 'figures'], ['students', 'Students', 'read'],
+  ['overview', 'Overview', 'apps'],
+  ['inbox', 'Inbox', 'mail'], ['campaign', 'Campaigns', 'send'],
+  ['calendar', 'Calendar', 'calendar'], ['recruitment', 'Recruitment', 'figures'],
+  ['hsk', 'HSK Content', 'read'], ['tutors', 'Tutors', 'figures'], ['students', 'Students', 'read'],
   ['compliance', 'Safeguarding', 'shield'], ['finance', 'Finance', 'plan'], ['comms', 'Communications', 'bell'],
-  ['calendar', 'Calendar', 'calendar'], ['waitlist', 'Waitlist', 'library'], ['campaign', 'Campaigns', 'send'], ['recruitment', 'Recruitment', 'figures'],
-  ['inbox', 'Inbox', 'mail'], ['reports', 'Reports', 'downloads'], ['staff', 'Staff', 'settings'],
+  ['waitlist', 'Waitlist', 'library'], ['reports', 'Reports', 'downloads'], ['staff', 'Staff', 'settings'],
 ]
 export const adminSection = value => ADMIN_SECTIONS.some(([id]) => id === value) ? value : 'overview'
 

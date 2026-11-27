@@ -70,6 +70,8 @@ try {
     assert.ok(page.url().endsWith('#admin/overview'))
     const rail = page.getByRole('navigation', { name: 'Super Admin', exact: true })
     assert.equal(await rail.locator('[data-admin]').count(), 14)
+    assert.deepEqual(await rail.locator('[data-admin]').evaluateAll(tabs => tabs.slice(0, 5).map(tab => tab.dataset.admin)),
+      ['overview', 'inbox', 'campaign', 'calendar', 'recruitment'])
     assert.equal(await rail.getByRole('button', { name: 'Campaigns', exact: true }).count(), 1)
     assert.equal(await rail.getByRole('button', { name: 'Recruitment', exact: true }).count(), 1)
     const frame = page.frameLocator('#admin-frame')
