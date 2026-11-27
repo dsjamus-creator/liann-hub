@@ -544,7 +544,7 @@ function campaignPage(s) {
     <div id="campaign-tracker" aria-busy="true">
       <p role="status">Loading outreach tracker…</p>
     </div>
-    <p><a href="${esc(campaign.correspondenceUrl)}" target="_blank" rel="noopener noreferrer">Find Pinyin Challenge conversations in Gmail</a></p>
+    <p><a href="${esc(campaign.correspondenceUrl)}" target="_blank" rel="noopener noreferrer">Find campaign conversations in Gmail</a></p>
   </section>`
 }
 
