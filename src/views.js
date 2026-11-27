@@ -545,7 +545,6 @@ function campaignPage(s) {
     <div id="campaign-tracker" aria-busy="true">
       <p role="status">Loading outreach tracker…</p>
     </div>
-    <p class="muted">Use the tracker for replies and follow-up dates.</p>
   </section>`
 }
 
