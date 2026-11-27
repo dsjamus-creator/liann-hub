@@ -114,6 +114,9 @@ try {
     const campaign = page.getByRole('region', { name: 'London Colleges Pinyin Challenge' })
     const picker = page.getByRole('combobox', { name: 'Campaign', exact: true })
     assert.equal(await picker.inputValue(), 'london-colleges-pinyin')
+    const mail = page.getByRole('link', { name: 'View campaign emails in Gmail' })
+    assert.match(await mail.getAttribute('href'), /authuser=info%40lwliann\.com/)
+    assert.equal(await campaign.locator('a').count(), 0)
     assert.equal(await page.locator('time[datetime="2026-11-26"]').textContent(), '26 November 2026')
     const lastGroup = campaign.getByRole('rowheader', { name: 'Outreach group 6' })
     await lastGroup.waitFor()
@@ -126,8 +129,8 @@ try {
     await page.keyboard.press('End')
     await page.waitForFunction(() => {
       const panel = document.querySelector('.outreach-campaign')
-      const link = panel.querySelector('a')
-      return link.getBoundingClientRect().bottom <= panel.getBoundingClientRect().bottom
+      const lastRow = panel.querySelector('tbody tr:last-child')
+      return lastRow.getBoundingClientRect().bottom <= panel.getBoundingClientRect().bottom
     })
     await page.locator('[data-admin="overview"]').click()
     await page.locator('#admin-frame').waitFor()
