@@ -6,6 +6,7 @@ import { initInstall, currentMode, onInstallChange, promptInstall } from './pwa.
 import { config, NAV, CODE_LENGTH, TYPO } from './config.js'
 import { createAccount } from './account.js'
 import { adminSection, bindAdminBridge } from './admin.js'
+import { loadPinyinOutreach } from './pinyin-outreach.js'
 import { loadDownloads } from './downloads.js'
 import { createBook, webglOK } from './book3d.js'
 import { createPageSigner } from './pages.js'
@@ -99,6 +100,8 @@ function render() {
   if (liveCalendar && !liveCalendar.dataset.watched) { liveCalendar.dataset.watched = '1'; liveCalendar.addEventListener('load', () => { liveCalendar.dataset.loaded = '1' }) }
   bind()
   syncAdmin()
+  const outreach = $('#pinyin-outreach')
+  if (outreach) loadPinyinOutreach(outreach, account.adminRequest)
   classroom.sync()
   if (S.view === 'hub' && S.page === 'workspace' && S.workspaceRole === 'tutor' && S.workspaceSection === 'calendar' && window.matchMedia('(min-width: 768px)').matches) { S.workspaceCalendarEmbedded = true; ensureWorkspaceCalendar() }
   if(formFocus){const field=document.getElementById(formFocus.form)?.elements.namedItem(formFocus.name);if(field){field.focus();try{field.setSelectionRange(formFocus.start,formFocus.end)}catch{}}}
