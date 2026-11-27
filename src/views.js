@@ -536,6 +536,7 @@ function campaignPage(s) {
         `<option value="${esc(option.id)}"${option.id === campaign.id ? ' selected' : ''}>${esc(option.title)}</option>`
       ).join('')}</select>
       <span class="muted">Started <time datetime="${esc(campaign.startDate)}">${campaignDateFormat.format(new Date(campaign.startDate))}</time></span>
+      <a class="btn ghost" href="${esc(campaign.correspondenceUrl)}" target="_blank" rel="noopener noreferrer">View campaign emails in Gmail</a>
     </div>
   </div>
   <section class="c outreach-campaign" aria-labelledby="campaign-title" tabindex="0">
@@ -544,7 +545,7 @@ function campaignPage(s) {
     <div id="campaign-tracker" aria-busy="true">
       <p role="status">Loading outreach tracker…</p>
     </div>
-    <p><a href="${esc(campaign.correspondenceUrl)}" target="_blank" rel="noopener noreferrer">Find campaign conversations in Gmail</a></p>
+    <p class="muted">Use the tracker for replies and follow-up dates.</p>
   </section>`
 }
 
