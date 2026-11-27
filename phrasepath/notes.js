@@ -296,7 +296,7 @@ $('#importDriveFiles').addEventListener('click',async()=>{
       const file=new File([blob],name,{type:googleDoc?'application/pdf':(blob.type||doc.mimeType||'application/octet-stream'),lastModified:Date.now()})
       file.phrasePathDriveFileId=doc.id;files.push(file)
     }
-    $('#noteSource').value='Samsung Notes'
+    $('#noteSource').value='Google Drive'
     $('#driveStatus').textContent='Importing '+files.length+' files…'
     await importFiles(files)
     $('#driveStatus').textContent='Finished importing selected files from your Google Drive.'
