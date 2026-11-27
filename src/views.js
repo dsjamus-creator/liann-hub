@@ -3,6 +3,7 @@ import { workspaceRail, workspacePage } from './workspace.js'
 // Pure render functions: state in, HTML string out. Markup and art follow the approved mockup.
 import { config, APPS, NAV, CODE_LENGTH, appUrl } from './config.js'
 import { ADMIN_SECTIONS, adminSection } from './admin.js'
+import { campaigns, selectedCampaign } from './campaigns.js'
 import { formatBytes } from './downloads.js'
 import { clampPage, visiblePages } from './comics.js'
 import { watermarkStyle } from './pages.js'
@@ -523,23 +524,33 @@ function adminRail(s) {
 }
 
 
-function campaignPage() {
-  const gmailUrl = 'https://mail.google.com/mail/u/?authuser=info%40lwliann.com#search/' +
-    encodeURIComponent('subject:"Pinyin Challenge" after:2026/11/25')
-  return `<div class="admin-heading"><h1>Super Admin</h1><span class="muted">Campaigns</span></div>
-  <section class="c" aria-labelledby="pinyin-campaign-title">
-    <h2 id="pinyin-campaign-title">London Colleges Pinyin Challenge</h2>
-    <p>Outreach for the 25 January to 5 February 2027 pilot.</p>
-    <div id="pinyin-outreach" aria-busy="true">
+const campaignDateFormat = new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'UTC' })
+
+function campaignPage(s) {
+  const campaign = selectedCampaign(s.campaignId)
+  return `<div>
+    <div class="admin-heading"><h1>Super Admin</h1><span class="muted">Campaigns</span></div>
+    <div class="campaign-toolbar">
+      <label for="campaign-picker">Campaign</label>
+      <select id="campaign-picker">${campaigns.map(option =>
+        `<option value="${esc(option.id)}"${option.id === campaign.id ? ' selected' : ''}>${esc(option.title)}</option>`
+      ).join('')}</select>
+      <span class="muted">Started <time datetime="${esc(campaign.startDate)}">${campaignDateFormat.format(new Date(campaign.startDate))}</time></span>
+    </div>
+  </div>
+  <section class="c outreach-campaign" aria-labelledby="campaign-title" tabindex="0">
+    <h2 id="campaign-title">${esc(campaign.title)}</h2>
+    <p>${esc(campaign.description)}</p>
+    <div id="campaign-tracker" aria-busy="true">
       <p role="status">Loading outreach tracker…</p>
     </div>
-    <p><a href="${esc(gmailUrl)}" target="_blank" rel="noopener noreferrer">Find Pinyin Challenge conversations in Gmail</a></p>
+    <p><a href="${esc(campaign.correspondenceUrl)}" target="_blank" rel="noopener noreferrer">Find campaign conversations in Gmail</a></p>
   </section>`
 }
 
 function pAdmin(s) {
   if(s.adminSection==='hsk')return hskContentPage(s)
-  if (s.adminSection === 'campaign') return campaignPage()
+  if (s.adminSection === 'campaign') return campaignPage(s)
   const section = ADMIN_SECTIONS.find(([id]) => id === adminSection(s.adminSection))
   return `<div class="admin-heading"><h1>Super Admin</h1><span class="muted">${esc(section[1])}</span><button class="btn ghost" id="retry-admin">Refresh dashboard</button></div><iframe id="admin-frame" title="AlongSide Super Admin controls" ${s.adminFrameParked ? '' : `src="${esc(new URL('/hub-admin', config.backend).href)}"`} referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox"></iframe>`
 }

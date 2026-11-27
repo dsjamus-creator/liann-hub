@@ -443,6 +443,10 @@ a.btn{display:inline-block;text-decoration:none;text-align:center}
 }
 
 /* Pinyin outreach tracker in Super Admin Campaigns */
+.campaign-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin-top:10px}
+.campaign-toolbar label{font-weight:700}
+.campaign-toolbar select{min-width:0;max-width:100%;font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+.outreach-campaign{min-height:0;overflow:auto}
 .outreach-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:8px;margin:16px 0}
 .outreach-metrics>div{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--main)}
 .outreach-metrics dt,.outreach-table small{color:var(--muted)}

@@ -42,6 +42,15 @@ try {
         assert.ok(!r.request().headers().cookie)
         requests.push({ path, method: r.request().method(), body: r.request().postData() })
         if (!permitted) return r.fulfill({ status: 403, json: { error: 'super_admin_only' } })
+        if (path === '/admin/pinyin-outreach') return r.fulfill({ json: { snapshot: {
+          checked_at: '2026-11-27T12:14:00Z',
+          groups: Array.from({ length: 6 }, (_, i) => ({
+            name: 'Outreach group ' + (i + 1), addresses: 5, acknowledgements: 0, replies: 0, bounces: 0,
+            status: 'The institution acknowledged receipt and will respond after speaking to the Mandarin teaching team.',
+            responseWindow: 'Five working days from the initial correspondence.',
+            nextStep: 'Follow up with the school or college after the initial reply deadline has passed.',
+          })),
+        } } })
         if (path === '/admin/whoami') return r.fulfill({ json: { email: 'owner@example.test', superAdmin: true, permissions: [] } })
         return r.fulfill({ json: { tutors: [], students: [], waitlist: [], intros: [], upcoming: [], recentFlags: [], cases: [], items: [], staff: [], reports: [], audit: [], connected: true, campaign: {}, recipients: [], deliveries: [], permissions: [] } })
       }
@@ -100,6 +109,28 @@ try {
     assert.ok(bounds.x >= main.x + main.width - 1, 'admin navigation sits to the right of hub content')
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'no sideways overflow')
     if (process.env.SHOTS) await page.screenshot({ animations: 'disabled', path: `${process.env.SHOTS}/hub-super-admin-${viewport.width}.png` })
+    await page.setViewportSize({ width: viewport.width, height: 560 })
+    await page.locator('[data-admin="campaign"]').click()
+    const campaign = page.getByRole('region', { name: 'London Colleges Pinyin Challenge' })
+    const picker = page.getByRole('combobox', { name: 'Campaign', exact: true })
+    assert.equal(await picker.inputValue(), 'london-colleges-pinyin')
+    assert.equal(await page.locator('time[datetime="2026-11-26"]').textContent(), '26 November 2026')
+    const lastGroup = campaign.getByRole('rowheader', { name: 'Outreach group 6' })
+    await lastGroup.waitFor()
+    const campaignHasOverflow = await campaign.evaluate(panel => panel.scrollHeight > panel.clientHeight)
+    assert.ok(campaignHasOverflow, 'campaign fixture extends below the visible panel')
+    await campaign.getByRole('region', { name: 'Outreach status table' }).hover({ position: { x: 35, y: 20 } })
+    await page.mouse.wheel(0, 220)
+    await page.waitForFunction(() => document.querySelector('.outreach-campaign').scrollTop > 0)
+    await campaign.focus()
+    await page.keyboard.press('End')
+    await page.waitForFunction(() => {
+      const panel = document.querySelector('.outreach-campaign')
+      const link = panel.querySelector('a')
+      return link.getBoundingClientRect().bottom <= panel.getBoundingClientRect().bottom
+    })
+    await page.locator('[data-admin="overview"]').click()
+    await page.locator('#admin-frame').waitFor()
     // Losing server permission removes both the frame and the privileged rail.
     permitted = false
     if (process.env.ADMIN_BACKEND_DIR) await page.locator('[data-admin="staff"]').click()
