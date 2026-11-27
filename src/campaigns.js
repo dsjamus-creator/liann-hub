@@ -6,7 +6,7 @@ export const campaigns = [{
   startDate: '2026-11-26',
   description: 'Outreach for the 25 January to 5 February 2027 pilot.',
   correspondenceUrl: 'https://mail.google.com/mail/u/?authuser=info%40lwliann.com#search/' +
-    encodeURIComponent('subject:"Pinyin Challenge" after:2026/11/25'),
+    encodeURIComponent('{subject:"Pinyin Challenge" (from:alexandrapark.school subject:"Learning Pinyin")} after:2026/11/25'),
   loadTracker: loadPinyinOutreach,
 }]
 
