@@ -234,7 +234,10 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     // No absolute URLs, traversal, cookie fallback or arbitrary proxy requests.
     if (typeof path !== 'string' || !/^\/admin\/[a-z0-9/?&=_%+@.,:-]+$/i.test(path === '/me' ? '/admin/whoami' : path) || path.includes('..') || /%2f|%5c|%2e/i.test(path))
       throw new AccountError('Unknown admin request.', 'bad_admin_path')
-    if (!['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].includes(method) || (body !== undefined && (typeof body !== 'string' || body.length > 1_000_000)))
+    const inboxEditorRequest = (method === 'POST' && path === '/admin/inbox') ||
+      (method === 'PUT' && /^\/admin\/inbox\/[a-f0-9-]+\/draft$/i.test(path))
+    const bodyLimit = inboxEditorRequest ? 8 * 1024 * 1024 : 1_000_000
+    if (!['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].includes(method) || (body !== undefined && (typeof body !== 'string' || body.length > bodyLimit)))
       throw new AccountError('Invalid admin request.', 'bad_admin_request')
     const token = await accessToken()
     if (!token) throw new AccountError('Sign in again to use Super Admin.', 'signed_out')

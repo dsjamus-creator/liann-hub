@@ -552,7 +552,7 @@ function pAdmin(s) {
   if(s.adminSection==='hsk')return hskContentPage(s)
   if (s.adminSection === 'campaign') return campaignPage(s)
   const section = ADMIN_SECTIONS.find(([id]) => id === adminSection(s.adminSection))
-  return `<div class="admin-heading"><h1>Super Admin</h1><span class="muted">${esc(section[1])}</span><button class="btn ghost" id="retry-admin">Refresh dashboard</button></div><iframe id="admin-frame" title="AlongSide Super Admin controls" ${s.adminFrameParked ? '' : `src="${esc(new URL('/hub-admin', config.backend).href)}"`} referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox"></iframe>`
+  return `<div class="admin-heading"><h1>Super Admin</h1><span class="muted">${esc(section[1])}</span><button class="btn ghost" id="retry-admin">Refresh dashboard</button></div><iframe id="admin-frame" title="AlongSide Super Admin controls" ${s.adminFrameParked ? '' : `src="${esc(new URL('/hub-admin', config.backend).href)}"`} referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-downloads"></iframe>`
 }
 
 export function vHub(s) {
