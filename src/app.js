@@ -3,7 +3,7 @@ import { workspaceSection } from './workspace.js'
 import { createHskController } from './hsk.js'
 import { createClassroomController } from './classroom.js'
 import { initInstall, currentMode, onInstallChange, promptInstall } from './pwa.js'
-import { config, NAV, CODE_LENGTH } from './config.js'
+import { config, NAV, CODE_LENGTH, TYPO } from './config.js'
 import { createAccount } from './account.js'
 import { adminSection, bindAdminBridge } from './admin.js'
 import { loadDownloads } from './downloads.js'
@@ -105,7 +105,6 @@ function render() {
   if (focused === 'q' || focused === 'ts') { const el = $('#' + focused); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length) } }
 }
 
-const TYPO = { 'gmil.com': 'gmail.com', 'gmal.com': 'gmail.com', 'gmai.com': 'gmail.com', 'gnail.com': 'gmail.com', 'gmail.co': 'gmail.com', 'googlemail.co': 'googlemail.com', 'hotmial.com': 'hotmail.com', 'hotmai.com': 'hotmail.com', 'outlok.com': 'outlook.com', 'yaho.com': 'yahoo.com', 'icloud.co': 'icloud.com' }
 
 async function sendCode(email) {
   S.busy = true; S.error = ''; render()

@@ -32,6 +32,17 @@ export const APPS = [
 // account.js still accepts 6–10 digits.
 export const CODE_LENGTH = 6
 
+// Common misspellings of email domains, offered back as "Did you mean …?" on the sign-in form.
+export const TYPO = {
+  'gmil.com': 'gmail.com', 'gmal.com': 'gmail.com', 'gmai.com': 'gmail.com', 'gnail.com': 'gmail.com', 'gmail.co': 'gmail.com',
+  'gmial.com': 'gmail.com', 'gamil.com': 'gmail.com', 'gmaill.com': 'gmail.com', 'gmail.con': 'gmail.com',
+  'googlemail.co': 'googlemail.com',
+  'hotmial.com': 'hotmail.com', 'hotmai.com': 'hotmail.com', 'hotmal.com': 'hotmail.com',
+  'outlok.com': 'outlook.com', 'outloo.com': 'outlook.com',
+  'yaho.com': 'yahoo.com', 'yahooo.com': 'yahoo.com',
+  'icloud.co': 'icloud.com', 'iclod.com': 'icloud.com',
+}
+
 export const appUrl = app => app.url || (app.path ? new URL(app.path, config.gamesOrigin).href : null)
 
 // The menu of the approved hub design (claude.ai/artifact/VtAytf4capbkRU6NDA35yh).
