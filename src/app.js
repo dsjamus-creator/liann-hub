@@ -586,10 +586,26 @@ function bind() {
   hskContent.bind()
   classroom.bind()
   const picker = $('#campaign-picker')
-  if (picker) picker.onchange = () => {
-    S.campaignId = picker.value
-    render()
-    $('#campaign-picker')?.focus()
+  if (picker) {
+    picker.add(new Option('Tutor email outreach', 'tutor-outreach'))
+    picker.onchange = () => {
+      const choice = picker.value
+      if (choice === 'tutor-outreach') location.hash = '#admin/tutor-outreach'
+      else if (/^[a-f0-9-]{36}$/i.test(choice)) location.hash = '#admin/campaign-work/' + choice
+      else {
+        S.campaignId = choice
+        render()
+        $('#campaign-picker')?.focus()
+      }
+    }
+    void account.adminRequest('/admin/ops/campaigns').then(result => {
+      if (!picker.isConnected || result.status !== 200 || !Array.isArray(result.body.campaigns)) return
+      for (const campaign of result.body.campaigns) {
+        // The Pinyin tracker already has its own option and native view.
+        if (campaign.id === '48764ebf-b224-41b9-8701-6075125f3194') continue
+        picker.add(new Option(campaign.name, campaign.id))
+      }
+    }).catch(() => {})
   }
   document.querySelectorAll('[data-readep]').forEach(b => { b.onclick = () => openReader(b.dataset.readep) })
   bindReader()

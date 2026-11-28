@@ -552,7 +552,6 @@ function campaignPage(s) {
       <span class="muted">Started <time datetime="${esc(campaign.startDate)}">${campaignDateFormat.format(new Date(campaign.startDate))}</time></span>
       <a class="btn ghost" href="${esc(campaign.correspondenceUrl)}" target="_blank" rel="noopener noreferrer">View campaign emails in Gmail</a>
       <a class="btn ghost" href="#admin/campaign-work">Manage campaigns and contacts</a>
-      <a class="btn ghost" href="#admin/tutor-outreach">Tutor email outreach</a>
     </div>
   </div>
   <section class="c outreach-campaign" aria-labelledby="campaign-title" tabindex="0">
