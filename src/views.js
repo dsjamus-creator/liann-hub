@@ -135,7 +135,7 @@ export function vWho(s) {
   ${s.household?.household?.plan === 'family' && s.household.children.length < s.household.household.limits.children
     ? '<button class="prof" id="addprofile"><div class="add">+</div>Add profile<span class="lock muted">A child under 13</span></button>'
     : '<div class="prof" aria-disabled="true" title="Family profiles arrive with Family plans"><div class="add">+</div>Add profile<span class="lock muted">With Family plans</span></div>'}</div>
-  <div><button class="btn ghost" id="signout">Sign out</button></div></div>`
+  <div><button class="btn ghost" id="open-personal-calendar">My Google calendars</button> <button class="btn ghost" id="signout">Sign out</button></div></div>`
 }
 
 const rItem = page => ([k, l]) => `<button class="ritem" data-nav="${k}" ${page === k ? 'aria-current="page"' : ''} title="${l}"><span class="ic">${ico(k)}</span><span class="lbl">${l}</span></button>`
@@ -473,7 +473,7 @@ function pPlan(s) {
   ${s.household?.household
     ? `<div class="c"><div class="t">${s.household.household.plan === 'family' ? 'Family' : 'Couple'} plan</div><div class="s">${s.household.household.role === 'owner' ? 'Plan holder' : 'Member of a household'}</div><div class="d">Every adult keeps their own LiANN account and SetLists.${s.household.household.plan === 'family' ? ' Children under 13 learn on their own profile.' : ''}</div></div>`
     : '<div class="c"><div class="t">Free</div><div class="s">Learner · no charge</div><div class="d">Pinyin games, Bella &amp; LiANN and your SetLists from every game.</div></div>'}
-  <div class="c"><div class="t">LiANN account</div><div class="s">${esc(s.user.email)}</div><div class="d">You sign in with a code sent to this email. The same account works in every game and in AlongSide.</div><div class="acts"><button class="btn ghost" id="link-school">Link school sign-in</button><button class="btn ghost" id="signout">Sign out</button></div></div>
+  <div class="c"><div class="t">LiANN account</div><div class="s">${esc(s.user.email)}</div><div class="d">You sign in with a code sent to this email. The same account works in every game and in AlongSide.</div><div class="acts"><a class="btn ghost" href="#my-calendar">My Google calendars</a><button class="btn ghost" id="link-school">Link school sign-in</button><button class="btn ghost" id="signout">Sign out</button></div></div>
   ${s.household ? '' : '<div class="c"><div class="t">Profiles</div><div class="s">1 profile</div><div class="d">Separate profiles for each learner arrive with Couple and Family plans.</div></div>'}
   <div class="c"><div class="t">Appearance</div><div class="s">${esc(DS.find(d => d[0] === th.ds)[1])} · ${th.t === 'dark' ? 'Dark' : 'Light'}</div><div class="d">LiANN, Amberline, Steelline, Cadence or Ivoryline, in light or dark.</div><div class="acts"><button class="btn ghost" id="apbtn2">Change</button></div></div></div></section>
   ${s.household ? householdSection(s) : ''}
@@ -511,7 +511,21 @@ export function appearHTML(th) {
 // Phone tab bar: four pages, then More for the rest of the menu.
 const TAB_PAGES = ['home', 'apps', 'library', 'downloads']
 
-export const PAGES = { hskcontent:hskContentPage, home: pHome, apps: pApps, library: pLibrary, read: pRead, figures: pFigures, discover: pDemoscene, kids: pKids, shop: pShop, downloads: pDownloads, plan: pPlan }
+export function pPersonalCalendar(s) {
+  if (s.learner || s.institutional) return '<section class="sec"><h2>My Google calendars</h2><p>Open your own LiANN profile to connect a Google account.</p></section>'
+  return `<section class="sec" id="personal-calendar">
+    <div class="sechead"><h2>My Google calendars</h2></div>
+    <div class="c">
+      <div class="acts"><button class="btn" data-calendar-connect>Connect Google account</button><button class="btn ghost" data-calendar-refresh>Refresh calendars</button></div>
+      <p><label>Google account <select name="googleAccount" disabled></select></label></p>
+      <p><label>Calendar <select name="googleCalendar" disabled></select></label></p>
+      <button class="btn ghost" data-calendar-disconnect disabled>Disconnect selected account</button>
+      <h3>Upcoming events</h3><p role="status"></p><div data-personal-events></div>
+    </div>
+  </section>`
+}
+
+const PAGES = { 'my-calendar':pPersonalCalendar, hskcontent:hskContentPage, home: pHome, apps: pApps, library: pLibrary, read: pRead, figures: pFigures, discover: pDemoscene, kids: pKids, shop: pShop, downloads: pDownloads, plan: pPlan }
 
 function roleOptions(s, current) {
   const roles = [...new Set([...(s.workspaceAccess?.roles || []), ...(s.admin?.superAdmin ? ['super_admin'] : [])])].filter(role => ['student','tutor','guardian','super_admin'].includes(role))

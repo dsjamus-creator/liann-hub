@@ -1,3 +1,4 @@
+import { mountPersonalCalendar } from './personal-calendar.js'
 import { createHskContentController } from './hsk-content.js'
 import { workspaceSection } from './workspace.js'
 import { createHskController } from './hsk.js'
@@ -36,7 +37,7 @@ const hsk = createHskController({state:S,account,render})
 const classroom = createClassroomController({state:S,account,render,navigate:navigateWorkspace})
 
 function hashParts() { const [k, arg] = location.hash.slice(1).split('/'); try { return [k, arg ? decodeURIComponent(arg) : ''] } catch { return [k, ''] } }
-function pageFromHash() { const [k] = hashParts(); return k === 'hskcontent' || k === 'workspace' || k === 'admin' || NAV.some(([n]) => n === k) ? k : 'home' }
+function pageFromHash() { const [k] = hashParts(); return k === 'my-calendar' || k === 'hskcontent' || k === 'workspace' || k === 'admin' || NAV.some(([n]) => n === k) ? k : 'home' }
 // A reader link: #read/<episode id> opens that comic as soon as the hub and the episodes are ready.
 function openFromHash() {
   const [k, arg] = hashParts()
@@ -135,7 +136,9 @@ async function enterHub(user, access, workspaceAccess) {
     S.workspaceRole = roles.includes(parts[1]) ? parts[1] : roles[0] || 'student';
     S.workspaceSection = workspaceSection(S.workspaceRole, parts[2]);
   }
-  if (S.admin?.superAdmin) {
+  if (parts[0] === 'my-calendar') {
+    S.page = 'my-calendar'
+  } else if (S.admin?.superAdmin) {
     if (parts[0] === 'workspace' && roles.includes(parts[1]) && !S.learner) {
       S.page = 'workspace'; S.workspaceRole = parts[1]; S.workspaceSection = workspaceSection(parts[1], parts[2]);
       history.replaceState(null, '', '#workspace/' + S.workspaceRole + '/' + S.workspaceSection)
@@ -571,6 +574,14 @@ window.addEventListener('resize', () => {
 })
 
 function bind() {
+  const personalCalendar = $('#personal-calendar')
+  if (personalCalendar) mountPersonalCalendar(personalCalendar, account.personalCalendars)
+  const openPersonalCalendar = $('#open-personal-calendar')
+  if (openPersonalCalendar) openPersonalCalendar.onclick = () => {
+    S.learner = null
+    history.replaceState(null, '', '#my-calendar')
+    enterHub(S.user)
+  }
   hsk.bind()
   hskContent.bind()
   classroom.bind()

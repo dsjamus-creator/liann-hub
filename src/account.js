@@ -269,6 +269,8 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     return json(`${backend}${path}`, { method, headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
       body: body === undefined ? undefined : JSON.stringify(body) })
   }
+  const personalCalendars = (method, path) => backendCall(method, '/learning/personal-calendars' + path)
+
   async function household() {
     try { return await backendGet('/learning/household') } catch (error) { if (error.status === 404) return null; throw error }
   }
@@ -352,7 +354,7 @@ export function createAccount({ pinyinApi, backend, fetchImpl = (...a) => fetch(
     }
   }
 
-  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, learningProgress, progressSharingOptions, setProgressSharing, institutionClasses, classProgress, profileLink, household, householdAction, adminAccess, adminRequest, workspaceAccess, workspaceData, workspaceLink, followupRequest, hskRequest, hskUpload,
+  return { requestCode, verifyCode, acceptLink, accessToken, user, signOut, setlists, setlistWords, learningProgress, progressSharingOptions, setProgressSharing, institutionClasses, classProgress, profileLink, household, householdAction, personalCalendars, adminAccess, adminRequest, workspaceAccess, workspaceData, workspaceLink, followupRequest, hskRequest, hskUpload,
     beginSchoolSignIn, acceptSchoolCallback, schoolSession, schoolMemberships, linkSchoolIdentity,
     hasInstitutionSession: () => Boolean(schoolSession()), hasSession: () => Boolean(read()?.access_token) }
 }
