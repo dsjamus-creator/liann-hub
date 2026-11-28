@@ -2,7 +2,7 @@ import { hskContentPage } from './hsk-content.js'
 import { workspaceRail, workspacePage } from './workspace.js'
 // Pure render functions: state in, HTML string out. Markup and art follow the approved mockup.
 import { config, APPS, NAV, CODE_LENGTH, appUrl } from './config.js'
-import { ADMIN_SECTIONS, adminSection } from './admin.js'
+import { ADMIN_SECTIONS, adminRailSection } from './admin.js'
 import { campaigns, selectedCampaign } from './campaigns.js'
 import { formatBytes } from './downloads.js'
 import { clampPage, visiblePages } from './comics.js'
@@ -520,7 +520,7 @@ function roleOptions(s, current) {
   return '<label class="workspace-switch role-switch"><span>Switch role</span><select id="role-switcher" aria-label="Switch role">' + roles.map(role => '<option value="' + role + '" ' + (role === current ? 'selected' : '') + '>' + labels[role] + '</option>').join('') + '</select></label>'
 }
 function adminRail(s) {
-  return `<nav class="admin-rail" aria-label="Super Admin"><div class="admin-rail-label">${ico('shield')}<span>Super Admin</span></div>${roleOptions(s, s.page === 'workspace' ? s.workspaceRole : 'super_admin')}${ADMIN_SECTIONS.map(([id, label, icon]) => `<button class="ritem" data-admin="${id}" title="${label}" aria-label="${label}" ${s.page === 'admin' && adminSection(s.adminSection) === id ? 'aria-current="page"' : ''}><span class="ic">${ico(icon)}</span><span class="lbl">${label}</span></button>`).join('')}</nav>`
+  return `<nav class="admin-rail" aria-label="Super Admin"><div class="admin-rail-label">${ico('shield')}<span>Super Admin</span></div>${roleOptions(s, s.page === 'workspace' ? s.workspaceRole : 'super_admin')}${ADMIN_SECTIONS.map(([id, label, icon]) => `<button class="ritem" data-admin="${id}" title="${label}" aria-label="${label}" ${s.page === 'admin' && adminRailSection(s.adminSection) === id ? 'aria-current="page"' : ''}><span class="ic">${ico(icon)}</span><span class="lbl">${label}</span></button>`).join('')}</nav>`
 }
 
 
@@ -537,6 +537,8 @@ function campaignPage(s) {
       ).join('')}</select>
       <span class="muted">Started <time datetime="${esc(campaign.startDate)}">${campaignDateFormat.format(new Date(campaign.startDate))}</time></span>
       <a class="btn ghost" href="${esc(campaign.correspondenceUrl)}" target="_blank" rel="noopener noreferrer">View campaign emails in Gmail</a>
+      <a class="btn ghost" href="#admin/campaign-work">Manage campaigns and contacts</a>
+      <a class="btn ghost" href="#admin/tutor-outreach">Tutor email outreach</a>
     </div>
   </div>
   <section class="c outreach-campaign" aria-labelledby="campaign-title" tabindex="0">
@@ -551,7 +553,7 @@ function campaignPage(s) {
 function pAdmin(s) {
   if(s.adminSection==='hsk')return hskContentPage(s)
   if (s.adminSection === 'campaign') return campaignPage(s)
-  const section = ADMIN_SECTIONS.find(([id]) => id === adminSection(s.adminSection))
+  const section = ADMIN_SECTIONS.find(([id]) => id === adminRailSection(s.adminSection))
   return `<div class="admin-heading"><h1>Super Admin</h1><span class="muted">${esc(section[1])}</span><button class="btn ghost" id="retry-admin">Refresh dashboard</button></div><iframe id="admin-frame" title="AlongSide Super Admin controls" ${s.adminFrameParked ? '' : `src="${esc(new URL('/hub-admin', config.backend).href)}"`} referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-downloads"></iframe>`
 }
 

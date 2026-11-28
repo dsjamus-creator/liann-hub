@@ -140,7 +140,7 @@ async function enterHub(user, access, workspaceAccess) {
       S.page = 'workspace'; S.workspaceRole = parts[1]; S.workspaceSection = workspaceSection(parts[1], parts[2]);
       history.replaceState(null, '', '#workspace/' + S.workspaceRole + '/' + S.workspaceSection)
     } else {
-      S.page = 'admin'; S.adminSection = adminSection(parts[1]); history.replaceState(null, '', '#admin/' + S.adminSection)
+      S.page = 'admin'; S.adminSection = adminSection(parts[1]); history.replaceState(null, '', '#admin/' + S.adminSection + (/^[a-f0-9-]{36}$/i.test(parts[2] || '') ? '/' + parts[2] : ''))
     }
   } else if(parts[0]==='hskcontent'&&!S.learner){
     S.page='hskcontent'
