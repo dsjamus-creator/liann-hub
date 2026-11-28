@@ -51,6 +51,7 @@ try {
             nextStep: 'Follow up with the school or college after the initial reply deadline has passed.',
           })),
         } } })
+        if (path === '/admin/ops/campaigns') return r.fulfill({ json: { campaigns: [{id:'95086d82-24e4-45e3-a9a1-f1207f27dca5', name:'Autumn outreach', starts_on:'2026-09-01'}], contacts: [] } })
         if (path === '/admin/whoami') return r.fulfill({ json: { email: 'owner@example.test', superAdmin: true, permissions: [] } })
         return r.fulfill({ json: { tutors: [], students: [], waitlist: [], intros: [], upcoming: [], recentFlags: [], cases: [], items: [], staff: [], reports: [], audit: [], connected: true, campaign: {}, recipients: [], deliveries: [], permissions: [] } })
       }
@@ -116,6 +117,8 @@ try {
     const campaign = page.getByRole('region', { name: 'London Colleges Pinyin Challenge' })
     const picker = page.getByRole('combobox', { name: 'Campaign', exact: true })
     assert.equal(await picker.inputValue(), 'london-colleges-pinyin')
+    await picker.locator('option[value="95086d82-24e4-45e3-a9a1-f1207f27dca5"]').waitFor({ state: 'attached' })
+    assert.equal(await picker.locator('option[value="95086d82-24e4-45e3-a9a1-f1207f27dca5"]').textContent(), 'Autumn outreach')
     const mail = page.getByRole('link', { name: 'View campaign emails in Gmail' })
     assert.match(await mail.getAttribute('href'), /authuser=info%40lwliann\.com/)
     assert.equal(await campaign.locator('a').count(), 0)

@@ -8,7 +8,9 @@ export const ADMIN_SECTIONS = [
   ['compliance', 'Safeguarding', 'shield'], ['finance', 'Finance', 'plan'], ['comms', 'Communications', 'bell'],
   ['waitlist', 'Waitlist', 'library'], ['reports', 'Reports', 'downloads'], ['staff', 'Staff', 'settings'],
 ]
-export const adminSection = value => ADMIN_SECTIONS.some(([id]) => id === value) ? value : 'overview'
+const campaignViews = new Set(['campaign-work', 'tutor-outreach'])
+export const adminSection = value => campaignViews.has(value) || ADMIN_SECTIONS.some(([id]) => id === value) ? value : 'overview'
+export const adminRailSection = value => campaignViews.has(value) ? 'campaign' : adminSection(value)
 
 // Accept requests only from this exact backend frame. The frame never receives
 // the token; the hub refreshes it as needed for each request through account.js.
@@ -31,23 +33,28 @@ export function bindAdminBridge({ account, state, onDenied }) {
     if (next.dirty) window.addEventListener('beforeunload', warnBeforeLeaving)
     else window.removeEventListener('beforeunload', warnBeforeLeaving)
   }
+  const closeInboxForNavigation = frame => {
+    if (frame?.contentWindow !== inboxFrame || !inboxState.open) return true
+    if (inboxState.busy || (inboxState.dirty && !window.confirm('Close this message and discard unsaved changes?'))) return false
+    rememberInboxState(inboxFrame, { open: false, dirty: false, busy: false })
+    inboxFrame.postMessage({ type: 'liann-admin:outside-inbox' }, backendOrigin)
+    return true
+  }
   document.addEventListener('click', event => {
     const frame = currentInboxFrame()
     if (!frame || frame.contentWindow !== inboxFrame || !inboxState.open || frame.contains(event.target)) return
-    if (inboxState.busy || (inboxState.dirty && !window.confirm('Close this message and discard unsaved changes?'))) {
+    if (!closeInboxForNavigation(frame)) {
       event.preventDefault()
       event.stopImmediatePropagation()
-      return
     }
-    rememberInboxState(inboxFrame, { open: false, dirty: false, busy: false })
-    inboxFrame.postMessage({ type: 'liann-admin:outside-inbox' }, backendOrigin)
   }, true)
   const navigate = () => {
     const s = state(), frame = document.querySelector('#admin-frame')
     if (!frame || !s.admin?.superAdmin || s.learner) return
     const section = adminSection(s.adminSection)
-    // Recruitment retains the existing backend dashboard and its sending controls.
-    frame.contentWindow.postMessage({ type: 'liann-admin:navigate', section: section === 'recruitment' ? 'campaign' : section, theme: s.theme }, backendOrigin)
+    const target = section === 'campaign-work' ? 'outreach' : section === 'tutor-outreach' ? 'campaign' : section
+    const record = location.hash.split('/')[2]
+    frame.contentWindow.postMessage({ type: 'liann-admin:navigate', section: target, theme: s.theme, record }, backendOrigin)
   }
   window.addEventListener('message', async event => {
     const frame = document.querySelector('#admin-frame'), s = state()
@@ -60,6 +67,12 @@ export function bindAdminBridge({ account, state, onDenied }) {
     if (data?.type === 'liann-admin:inbox-state') {
       if (typeof data.open === 'boolean' && typeof data.dirty === 'boolean' && typeof data.busy === 'boolean') {
         rememberInboxState(event.source, { open: data.open, dirty: data.dirty, busy: data.busy })
+      }
+      return
+    }
+    if (data?.type === 'liann-admin:open-record') {
+      if (typeof data.hash === 'string' && /^#admin\/(?:inbox|campaign-work|campaign|recruitment|finance|tutor-outreach)(?:\/[0-9a-f-]{36})?$/i.test(data.hash) && closeInboxForNavigation(currentInboxFrame())) {
+        location.hash = data.hash
       }
       return
     }
